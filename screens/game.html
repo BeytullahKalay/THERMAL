@@ -1,0 +1,1612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>THERMAL — Unit 4 Operator Terminal</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap');
+
+  :root {
+    --phosphor: #a8ff3e;
+    --phosphor-dim: #4a7a1a;
+    --phosphor-glow: rgba(168, 255, 62, 0.15);
+    --amber: #ffb830;
+    --red-alert: #ff3a3a;
+    --bg: #080a04;
+    --panel-bg: #0b0f05;
+    --border: #2a3a10;
+    --scanline: rgba(0,0,0,0.18);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+
+  body {
+    background: var(--bg);
+    font-family: 'Share Tech Mono', monospace;
+    color: var(--phosphor);
+    height: 100vh;
+    overflow: hidden;
+    cursor: crosshair;
+  }
+
+  /* CRT screen effect */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      var(--scanline) 0px,
+      var(--scanline) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+    pointer-events: none;
+    z-index: 1000;
+  }
+
+  /* CRT vignette */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.85) 100%);
+    pointer-events: none;
+    z-index: 999;
+  }
+
+  /* CRT power-on: thin bright line expands to full screen */
+  @keyframes powerOn {
+    0%   { transform: scaleY(0.01); filter: brightness(8) saturate(0); opacity: 0.6; }
+    12%  { transform: scaleY(0.01); filter: brightness(12) saturate(0); opacity: 1; }
+    24%  { transform: scaleY(1);    filter: brightness(2); opacity: 1; }
+    36%  { transform: scaleY(1);    filter: brightness(0.75); opacity: 1; }
+    50%  { transform: scaleY(1);    filter: brightness(1.3); opacity: 1; }
+    70%  { transform: scaleY(1);    filter: brightness(1); opacity: 1; }
+    100% { transform: scaleY(1);    filter: brightness(1); opacity: 1; }
+  }
+
+  @keyframes flicker {
+    0%, 97%, 100% { opacity: 1; }
+    98% { opacity: 0.92; }
+    99% { opacity: 0.97; }
+  }
+
+  .terminal {
+    display: grid;
+    grid-template-rows: 36px 1fr 52px;
+    grid-template-columns: 1fr;
+    height: 100vh;
+    padding: 8px;
+    gap: 6px;
+    animation: powerOn 0.8s cubic-bezier(0, 0, 0.4, 1) forwards, flicker 8s 0.8s infinite;
+    transform-origin: center center;
+  }
+
+  /* HEADER */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border: 1px solid var(--border);
+    padding: 0 14px;
+    background: var(--panel-bg);
+    font-family: 'VT323', monospace;
+    font-size: 18px;
+    letter-spacing: 3px;
+  }
+
+  .header-title {
+    color: var(--phosphor);
+    text-shadow: 0 0 8px var(--phosphor);
+  }
+
+  .header-status {
+    display: flex;
+    gap: 24px;
+    font-size: 14px;
+    letter-spacing: 2px;
+  }
+
+  .status-ok { color: var(--phosphor); }
+  .status-warn { color: var(--amber); animation: blink 1.2s step-end infinite; }
+  .status-time {
+    color: var(--phosphor-dim);
+    border-left: 1px solid var(--border);
+    padding-left: 24px;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  /* MAIN CONTENT */
+  .main {
+    display: grid;
+    grid-template-columns: 280px 1fr 260px;
+    gap: 6px;
+  }
+
+  /* PANEL: LEFT */
+  .panel {
+    border: 1px solid var(--border);
+    background: var(--panel-bg);
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .panel-title {
+    font-family: 'VT323', monospace;
+    font-size: 15px;
+    letter-spacing: 3px;
+    color: var(--phosphor-dim);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 8px;
+    margin-bottom: 4px;
+  }
+
+  /* GAUGES */
+  .gauge-block {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .gauge-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 11px;
+    letter-spacing: 2px;
+  }
+
+  .gauge-label .val { 
+    font-family: 'VT323', monospace;
+    font-size: 16px;
+  }
+
+  .gauge-label .val.ok { color: var(--phosphor); text-shadow: 0 0 6px var(--phosphor); }
+  .gauge-label .val.warn { color: var(--amber); text-shadow: 0 0 6px var(--amber); }
+  .gauge-label .val.crit { color: var(--red-alert); text-shadow: 0 0 8px var(--red-alert); animation: blink 0.6s step-end infinite; }
+
+  .gauge-bar-bg {
+    height: 12px;
+    background: #111805;
+    border: 1px solid var(--border);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .gauge-bar-fill {
+    height: 100%;
+    transition: width 1s ease;
+    position: relative;
+  }
+
+  .gauge-bar-fill.ok {
+    background: linear-gradient(90deg, #3a7a0a, var(--phosphor));
+    box-shadow: 0 0 8px var(--phosphor);
+  }
+
+  .gauge-bar-fill.warn {
+    background: linear-gradient(90deg, #7a4a00, var(--amber));
+    box-shadow: 0 0 8px var(--amber);
+  }
+
+  .gauge-bar-fill.crit {
+    background: linear-gradient(90deg, #7a0000, var(--red-alert));
+    box-shadow: 0 0 10px var(--red-alert);
+    animation: pulseRed 0.5s ease-in-out infinite alternate;
+  }
+
+  @keyframes pulseRed {
+    from { box-shadow: 0 0 6px var(--red-alert); }
+    to { box-shadow: 0 0 16px var(--red-alert); }
+  }
+
+  /* RESOURCE DISTRIBUTION */
+  .resource-section {
+    margin-top: 8px;
+    border-top: 1px solid var(--border);
+    padding-top: 12px;
+  }
+
+  .resource-title {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--phosphor-dim);
+    margin-bottom: 10px;
+  }
+
+  .resource-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .resource-name {
+    font-size: 10px;
+    letter-spacing: 1px;
+    width: 52px;
+    color: var(--phosphor-dim);
+  }
+
+  .resource-btn {
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--phosphor);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 13px;
+    width: 20px;
+    height: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.1s;
+  }
+
+  .resource-btn:hover {
+    background: var(--phosphor-glow);
+    border-color: var(--phosphor);
+    box-shadow: 0 0 6px var(--phosphor);
+  }
+
+  .resource-val {
+    font-family: 'VT323', monospace;
+    font-size: 18px;
+    width: 24px;
+    text-align: center;
+    color: var(--phosphor);
+    text-shadow: 0 0 4px var(--phosphor);
+  }
+
+  .resource-dots {
+    flex: 1;
+    display: flex;
+    gap: 2px;
+  }
+
+  .dot {
+    width: 8px;
+    height: 8px;
+    border: 1px solid var(--border);
+    background: #111805;
+  }
+
+  .dot.filled {
+    background: var(--phosphor);
+    box-shadow: 0 0 4px var(--phosphor);
+  }
+
+  /* LOG FEED: CENTER */
+  .log-feed {
+    border: 1px solid var(--border);
+    background: var(--panel-bg);
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .log-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 8px;
+  }
+
+  .log-title {
+    font-family: 'VT323', monospace;
+    font-size: 15px;
+    letter-spacing: 3px;
+    color: var(--phosphor-dim);
+  }
+
+  .log-indicator {
+    width: 8px;
+    height: 8px;
+    background: var(--phosphor);
+    box-shadow: 0 0 6px var(--phosphor);
+    animation: blink 1.8s step-end infinite;
+  }
+
+  .log-entries {
+    flex: 1;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .log-entry {
+    font-size: 11px;
+    line-height: 1.7;
+    letter-spacing: 0.5px;
+    opacity: 0;
+    animation: fadeIn 0.3s forwards;
+  }
+
+  @keyframes fadeIn {
+    to { opacity: 1; }
+  }
+
+  .log-entry .timestamp {
+    color: var(--phosphor-dim);
+    margin-right: 10px;
+  }
+
+  .log-entry.normal { color: #7aaa3a; }
+  .log-entry.warning { color: var(--amber); }
+  .log-entry.anomaly { color: var(--red-alert); letter-spacing: 1px; }
+  .log-entry.system { color: var(--phosphor-dim); font-style: italic; }
+  .log-entry.conflict {
+    color: var(--amber);
+    border-left: 2px solid var(--amber);
+    padding-left: 8px;
+    background: rgba(255, 184, 48, 0.04);
+  }
+
+  .log-cursor {
+    display: inline-block;
+    width: 7px;
+    height: 13px;
+    background: var(--phosphor);
+    animation: blink 0.8s step-end infinite;
+    vertical-align: middle;
+    margin-left: 3px;
+  }
+
+  /* ── SENSOR COLUMN (right panel) ───────────────────────────────── */
+  .sensor-column {
+    border: 1px solid var(--border);
+    background: var(--panel-bg);
+    padding: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    overflow: hidden;
+  }
+
+  .sensor-col-title {
+    font-family: 'VT323', monospace;
+    font-size: 15px;
+    letter-spacing: 3px;
+    color: var(--phosphor-dim);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 8px;
+    flex-shrink: 0;
+  }
+
+  /* ── Individual sensor panel ─────────────────────────────────────── */
+  .sensor-panel {
+    flex: 1;
+    border: 1px solid var(--border);
+    background: rgba(8, 10, 4, 0.6);
+    padding: 10px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    position: relative;
+    overflow: hidden;
+  }
+
+  @keyframes borderPulseRed {
+    0%, 100% { border-color: var(--border);           box-shadow: none; }
+    50%       { border-color: rgba(255,58,58,0.65);   box-shadow: inset 0 0 10px rgba(255,58,58,0.06); }
+  }
+
+  .sensor-panel.crit-active { animation: borderPulseRed 0.8s ease-in-out infinite; }
+
+  /* ── Panel header + shake ────────────────────────────────────────── */
+  .sensor-panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 6px;
+    border-bottom: 1px solid #131f06;
+    flex-shrink: 0;
+  }
+
+  @keyframes sensorShake {
+    0%, 100% { transform: translateX(0); }
+    25%       { transform: translateX(-2px); }
+    75%       { transform: translateX(2px); }
+  }
+
+  .sensor-panel.anomaly-active .sensor-panel-header { animation: sensorShake 0.10s linear infinite; }
+  .sensor-panel.crit-active    .sensor-panel-header { animation: sensorShake 0.05s linear infinite; }
+
+  .sensor-panel-name {
+    font-family: 'VT323', monospace;
+    font-size: 12px;
+    letter-spacing: 1.5px;
+    color: var(--phosphor-dim);
+  }
+
+  .sensor-status-group { display: flex; align-items: center; gap: 5px; }
+
+  .sensor-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--phosphor);
+    box-shadow: 0 0 5px var(--phosphor);
+    flex-shrink: 0;
+  }
+
+  .sensor-status-text { font-size: 8px; letter-spacing: 1.5px; color: var(--phosphor); }
+
+  /* ── Sensor data rows ─────────────────────────────────────────────── */
+  .sensor-row {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding: 4px 0;
+    border-bottom: 1px solid #0f1a06;
+  }
+
+  .sensor-row:last-of-type { border-bottom: none; }
+
+  .sensor-row-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+
+  .sensor-row-label { font-size: 9px; letter-spacing: 1.5px; color: #3a5a18; }
+
+  .sensor-row-value {
+    font-family: 'VT323', monospace;
+    font-size: 15px;
+    letter-spacing: 1px;
+    color: var(--phosphor);
+    text-shadow: 0 0 4px var(--phosphor);
+    transition: color 0.4s ease, text-shadow 0.4s ease;
+  }
+
+  .sensor-row-value.warn { color: var(--amber);     text-shadow: 0 0 6px var(--amber); }
+  .sensor-row-value.crit { color: var(--red-alert); text-shadow: 0 0 8px var(--red-alert); }
+
+  .sensor-minibar-bg { height: 3px; background: #080d03; }
+
+  .sensor-minibar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #2a5a08, var(--phosphor));
+    box-shadow: 0 0 3px var(--phosphor);
+    transition: width 1.5s ease, background 0.5s ease, box-shadow 0.5s ease;
+  }
+
+  .sensor-minibar-fill.warn { background: linear-gradient(90deg, #7a4a00, var(--amber));     box-shadow: 0 0 3px var(--amber); }
+  .sensor-minibar-fill.crit { background: linear-gradient(90deg, #7a0000, var(--red-alert)); box-shadow: 0 0 4px var(--red-alert); }
+
+  /* Anomaly warning text under affected value */
+  .sensor-warning-text {
+    font-size: 8px;
+    letter-spacing: 1.5px;
+    color: var(--amber);
+    min-height: 11px;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+  }
+
+  .sensor-warning-text.visible      { opacity: 1; }
+  .sensor-warning-text.visible.crit { color: var(--red-alert); }
+
+  .sensor-timestamp {
+    font-size: 8px;
+    letter-spacing: 1px;
+    color: #2a3a10;
+    margin-top: auto;
+    padding-top: 6px;
+    border-top: 1px solid #0f1a06;
+    flex-shrink: 0;
+  }
+
+  /* BOTTOM ACTION BAR */
+  .action-bar {
+    border: 1px solid var(--border);
+    background: var(--panel-bg);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+    gap: 12px;
+  }
+
+  .action-left {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--phosphor-dim);
+  }
+
+  .action-buttons {
+    display: flex;
+    gap: 10px;
+  }
+
+  .action-btn {
+    border: 1px solid;
+    background: none;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    padding: 8px 22px;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-transform: uppercase;
+  }
+
+  .btn-report {
+    border-color: var(--amber);
+    color: var(--amber);
+  }
+
+  .btn-report:hover {
+    background: rgba(255, 184, 48, 0.12);
+    box-shadow: 0 0 12px rgba(255, 184, 48, 0.3);
+  }
+
+  .btn-normal {
+    border-color: var(--phosphor-dim);
+    color: var(--phosphor-dim);
+  }
+
+  .btn-normal:hover {
+    border-color: var(--phosphor);
+    color: var(--phosphor);
+    background: var(--phosphor-glow);
+    box-shadow: 0 0 8px var(--phosphor-glow);
+  }
+
+  .action-right {
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: var(--phosphor-dim);
+    text-align: right;
+  }
+
+  .action-right span {
+    color: var(--phosphor);
+    display: block;
+    font-family: 'VT323', monospace;
+    font-size: 16px;
+  }
+
+  /* SHIFT PROGRESS */
+  .shift-progress {
+    position: absolute;
+    bottom: 60px;
+    left: 8px;
+    right: 8px;
+    height: 2px;
+    background: #111805;
+    border: none;
+    z-index: 10;
+  }
+
+  .shift-fill {
+    height: 100%;
+    width: 35%;
+    background: linear-gradient(90deg, var(--phosphor-dim), var(--phosphor));
+    box-shadow: 0 0 4px var(--phosphor);
+    transition: width 1s linear;
+  }
+
+  /* Glow text utility */
+  .glow {
+    text-shadow: 0 0 8px currentColor;
+  }
+</style>
+</head>
+<body>
+
+<div class="terminal">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-title glow">THERMAL — UNIT 4 / OPERATOR TERMINAL</div>
+    <div class="header-status">
+      <span class="status-ok">● REACTOR ONLINE</span>
+      <span class="status-warn">▲ SOĞUTMA HAT 2</span>
+      <span class="status-time">02:14</span>
+    </div>
+  </div>
+
+  <!-- MAIN PANELS -->
+  <div class="main">
+
+    <!-- LEFT: CONTROL PANEL -->
+    <div class="panel">
+      <div class="panel-title">// KONTROL PANELİ</div>
+
+      <!-- TEMP gauge -->
+      <div class="gauge-block" id="gauge-block-sicaklik">
+        <div class="gauge-label">
+          <span>SICAKLIK</span>
+          <span class="val ok" id="gauge-val-sicaklik">72.0°C</span>
+        </div>
+        <div class="gauge-bar-bg">
+          <div class="gauge-bar-fill ok" id="gauge-bar-sicaklik" style="width: 60%"></div>
+        </div>
+        <div id="gauge-hint-sicaklik" style="font-size:9px; color: var(--phosphor-dim); letter-spacing:1px;">GÜVENLİ: 40–85°C</div>
+      </div>
+
+      <!-- PRESSURE gauge -->
+      <div class="gauge-block" id="gauge-block-basinc">
+        <div class="gauge-label">
+          <span>BASINÇ</span>
+          <span class="val ok" id="gauge-val-basinc">61.0%</span>
+        </div>
+        <div class="gauge-bar-bg">
+          <div class="gauge-bar-fill ok" id="gauge-bar-basinc" style="width: 61%"></div>
+        </div>
+        <div id="gauge-hint-basinc" style="font-size:9px; color: var(--phosphor-dim); letter-spacing:1px;">GÜVENLİ: %40–80</div>
+      </div>
+
+      <!-- POWER gauge -->
+      <div class="gauge-block" id="gauge-block-guc">
+        <div class="gauge-label">
+          <span>GÜÇ</span>
+          <span class="val ok" id="gauge-val-guc">70.0%</span>
+        </div>
+        <div class="gauge-bar-bg">
+          <div class="gauge-bar-fill ok" id="gauge-bar-guc" style="width: 70%"></div>
+        </div>
+        <div id="gauge-hint-guc" style="font-size:9px; color: var(--phosphor-dim); letter-spacing:1px;">GÜVENLİ: %30–90</div>
+      </div>
+
+      <!-- RESOURCE DISTRIBUTION -->
+      <div class="resource-section">
+        <div class="resource-title">// KAYNAK DAĞITIMI [TOPLAM: 10]</div>
+
+        <div class="resource-row">
+          <span class="resource-name">SICAKLIK</span>
+          <button class="resource-btn" id="res-minus-sicaklik">−</button>
+          <span class="resource-val" id="res-val-sicaklik">4</span>
+          <button class="resource-btn" id="res-plus-sicaklik">+</button>
+          <div class="resource-dots" id="res-dots-sicaklik">
+            <div class="dot filled"></div><div class="dot filled"></div>
+            <div class="dot filled"></div><div class="dot filled"></div>
+            <div class="dot"></div><div class="dot"></div>
+            <div class="dot"></div><div class="dot"></div>
+            <div class="dot"></div><div class="dot"></div>
+          </div>
+        </div>
+
+        <div class="resource-row">
+          <span class="resource-name">BASINÇ</span>
+          <button class="resource-btn" id="res-minus-basinc">−</button>
+          <span class="resource-val" id="res-val-basinc">3</span>
+          <button class="resource-btn" id="res-plus-basinc">+</button>
+          <div class="resource-dots" id="res-dots-basinc">
+            <div class="dot filled"></div><div class="dot filled"></div>
+            <div class="dot filled"></div><div class="dot"></div>
+            <div class="dot"></div><div class="dot"></div>
+            <div class="dot"></div><div class="dot"></div>
+            <div class="dot"></div><div class="dot"></div>
+          </div>
+        </div>
+
+        <div class="resource-row">
+          <span class="resource-name">GÜÇ</span>
+          <button class="resource-btn" id="res-minus-guc">−</button>
+          <span class="resource-val" id="res-val-guc">3</span>
+          <button class="resource-btn" id="res-plus-guc">+</button>
+          <div class="resource-dots" id="res-dots-guc">
+            <div class="dot filled"></div><div class="dot filled"></div>
+            <div class="dot filled"></div><div class="dot"></div>
+            <div class="dot"></div><div class="dot"></div>
+            <div class="dot"></div><div class="dot"></div>
+            <div class="dot"></div><div class="dot"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CENTER: LOG FEED -->
+    <div class="log-feed">
+      <div class="log-header">
+        <span class="log-title">// SİSTEM KAYITLARI</span>
+        <div class="log-indicator"></div>
+      </div>
+      <div class="log-entries" id="log-entries">
+        <div class="log-entry system" style="animation-delay:0s"><span class="timestamp">22:00</span>Vardiya devri tamamlandı. Operatör aktif.</div>
+        <div class="log-entry normal" style="animation-delay:0.1s"><span class="timestamp">22:01</span>Tüm sistemler nominal. Soğutma hatları aktif.</div>
+        <div class="log-entry normal" style="animation-delay:0.2s"><span class="timestamp">22:14</span>Soğutma hattı 2 verim düşüşü. Takviye önerilir.</div>
+        <div class="log-entry normal" style="animation-delay:0.3s"><span class="timestamp">22:31</span>Kaynak dağıtımı güncellendi. Sicaklik: 4 birim.</div>
+        <div class="log-entry normal" style="animation-delay:0.4s"><span class="timestamp">23:02</span>Basınç valfi B3 otomatik devreye girdi.</div>
+        <div class="log-entry conflict" style="animation-delay:0.5s"><span class="timestamp">23:02</span>⚠ NOT: Kamera 2 — valf B3 kapalı görünüyor.</div>
+        <div class="log-entry normal" style="animation-delay:0.6s"><span class="timestamp">23:15</span>Güç tüketimi artışı tespit edildi. İzleniyor.</div>
+        <div class="log-entry warning" style="animation-delay:0.7s"><span class="timestamp">01:08</span>Protokol 7 aktif. Harici müdahale tespit edildi.</div>
+        <div class="log-entry system" style="animation-delay:0.8s"><span class="timestamp">01:15</span>Protokol 7 sonlandırıldı. Sebep: harici faktör.</div>
+        <div class="log-entry warning" style="animation-delay:0.9s"><span class="timestamp">01:44</span>Güç tüketimi kritik eşiğe yaklaşıyor. %94.</div>
+        <div class="log-entry conflict" style="animation-delay:1.0s"><span class="timestamp">02:01</span>⚠ Kamera 1 — soğutma odası kapısı açık görünüyor.</div>
+        <div class="log-entry normal" style="animation-delay:1.1s"><span class="timestamp">02:01</span>Kapı durumu: KİLİTLİ. Sensör okuması normal.</div>
+        <div class="log-entry system" style="animation-delay:1.2s"><span class="timestamp">02:14</span>Operatör müdahalesi bekleniyor.<span class="log-cursor"></span></div>
+      </div>
+    </div>
+
+    <!-- RIGHT: SENSOR PANELS -->
+    <div class="sensor-column">
+      <div class="sensor-col-title">// SENSÖR PANELLERİ</div>
+
+      <!-- ── SENSOR A: SOĞUTMA ODASI ───────────────────────────── -->
+      <div class="sensor-panel" id="sensor-A">
+        <div class="sensor-panel-header">
+          <span class="sensor-panel-name">SEN.A — SOĞUTMA ODASI</span>
+          <div class="sensor-status-group">
+            <div class="sensor-dot" id="dot-A"></div>
+            <span class="sensor-status-text" id="status-A">NOMİNAL</span>
+          </div>
+        </div>
+
+        <div class="sensor-row" id="row-A-temp">
+          <div class="sensor-row-top">
+            <span class="sensor-row-label">SICAKLIK</span>
+            <span class="sensor-row-value" id="val-A-temp">82.4°C</span>
+          </div>
+          <div class="sensor-minibar-bg">
+            <div class="sensor-minibar-fill" id="bar-A-temp" style="width:55%"></div>
+          </div>
+          <div class="sensor-warning-text" id="warn-A-temp"></div>
+        </div>
+
+        <div class="sensor-row" id="row-A-flow">
+          <div class="sensor-row-top">
+            <span class="sensor-row-label">AKIŞ HIZI</span>
+            <span class="sensor-row-value" id="val-A-flow">4.2 m/s</span>
+          </div>
+          <div class="sensor-minibar-bg">
+            <div class="sensor-minibar-fill" id="bar-A-flow" style="width:42%"></div>
+          </div>
+          <div class="sensor-warning-text" id="warn-A-flow"></div>
+        </div>
+
+        <div class="sensor-row" id="row-A-valve">
+          <div class="sensor-row-top">
+            <span class="sensor-row-label">VALF DURUMU</span>
+            <span class="sensor-row-value" id="val-A-valve">KAPALI</span>
+          </div>
+          <div class="sensor-warning-text" id="warn-A-valve"></div>
+        </div>
+
+        <div class="sensor-timestamp" id="ts-A">Son güncelleme: —:—:—</div>
+      </div>
+
+      <!-- ── SENSOR B: REAKTÖR ODASI ───────────────────────────── -->
+      <div class="sensor-panel" id="sensor-B">
+        <div class="sensor-panel-header">
+          <span class="sensor-panel-name">SEN.B — REAKTÖR ODASI</span>
+          <div class="sensor-status-group">
+            <div class="sensor-dot" id="dot-B"></div>
+            <span class="sensor-status-text" id="status-B">NOMİNAL</span>
+          </div>
+        </div>
+
+        <div class="sensor-row" id="row-B-coreTemp">
+          <div class="sensor-row-top">
+            <span class="sensor-row-label">ÇEKİRDEK ISISI</span>
+            <span class="sensor-row-value" id="val-B-coreTemp">340°C</span>
+          </div>
+          <div class="sensor-minibar-bg">
+            <div class="sensor-minibar-fill" id="bar-B-coreTemp" style="width:43%"></div>
+          </div>
+          <div class="sensor-warning-text" id="warn-B-coreTemp"></div>
+        </div>
+
+        <div class="sensor-row" id="row-B-radiation">
+          <div class="sensor-row-top">
+            <span class="sensor-row-label">RADYASYON</span>
+            <span class="sensor-row-value" id="val-B-radiation">0.80 mSv</span>
+          </div>
+          <div class="sensor-minibar-bg">
+            <div class="sensor-minibar-fill" id="bar-B-radiation" style="width:8%"></div>
+          </div>
+          <div class="sensor-warning-text" id="warn-B-radiation"></div>
+        </div>
+
+        <div class="sensor-row" id="row-B-pressure">
+          <div class="sensor-row-top">
+            <span class="sensor-row-label">BASINÇ</span>
+            <span class="sensor-row-value" id="val-B-pressure">0.61 atm</span>
+          </div>
+          <div class="sensor-minibar-bg">
+            <div class="sensor-minibar-fill" id="bar-B-pressure" style="width:31%"></div>
+          </div>
+          <div class="sensor-warning-text" id="warn-B-pressure"></div>
+        </div>
+
+        <div class="sensor-timestamp" id="ts-B">Son güncelleme: —:—:—</div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <!-- ACTION BAR -->
+  <div class="action-bar">
+    <div class="action-left">
+      VARDİYA İLERLEMESİ<br>
+      <span style="font-family:'VT323',monospace; font-size:14px; color: var(--phosphor);">▓▓▓▒░░░░░░░░░░░ 35%</span>
+    </div>
+
+    <div class="action-buttons">
+      <button class="action-btn btn-report">▲ ANOMALİ RAPORU</button>
+      <button class="action-btn btn-normal">✓ DURUM NORMAL</button>
+    </div>
+
+    <div class="action-right">
+      SAAT 02:14<br>
+      <span>06:00'A 3 SA. 46 DK.</span>
+    </div>
+  </div>
+
+</div>
+
+<style>
+@keyframes scanGlitch {
+  0%, 90%, 100% { top: 0; opacity: 0; }
+  92% { top: 30%; opacity: 0.4; }
+  94% { top: 60%; opacity: 0.2; }
+  96% { top: 45%; opacity: 0.5; }
+}
+
+/* CRT turn-off: flash bright → collapse to horizontal line → black */
+@keyframes crtOff {
+  0%   { transform: scaleY(1);    filter: brightness(1); opacity: 1; }
+  8%   { transform: scaleY(1);    filter: brightness(3) saturate(0); opacity: 1; }
+  22%  { transform: scaleY(0.04); filter: brightness(8); opacity: 1; }
+  55%  { transform: scaleY(0.02); filter: brightness(3); opacity: 1; }
+  100% { transform: scaleY(0.01); filter: brightness(0); opacity: 0; }
+}
+
+/* ── PAUSE OVERLAY ─────────────────────────────────────────────── */
+#pause-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(8, 10, 4, 0.92);
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+#pause-overlay.active {
+  opacity: 1;
+  pointer-events: all;
+}
+
+.pause-panel {
+  width: 360px;
+  border: 1px solid var(--border);
+  background: var(--panel-bg);
+  padding: 28px 32px;
+  position: relative;
+  box-shadow: 0 0 40px rgba(168, 255, 62, 0.06), inset 0 0 30px rgba(0,0,0,0.4);
+}
+
+/* Corner tick marks */
+.pause-panel::before {
+  content: '+ + + + + + + + + + + + + + + + + + + + + + + +';
+  position: absolute;
+  top: -1px; left: 0; right: 0;
+  font-size: 8px;
+  letter-spacing: 4px;
+  color: var(--phosphor-dim);
+  overflow: hidden;
+  height: 10px;
+  opacity: 0.4;
+}
+
+.pause-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: 16px;
+}
+
+.pause-title {
+  font-family: 'VT323', monospace;
+  font-size: 22px;
+  letter-spacing: 3px;
+  color: var(--phosphor);
+  text-shadow: 0 0 10px var(--phosphor);
+}
+
+.pause-shift-time {
+  font-family: 'VT323', monospace;
+  font-size: 16px;
+  color: var(--phosphor-dim);
+  letter-spacing: 2px;
+}
+
+.pause-rule {
+  height: 1px;
+  background: linear-gradient(90deg, var(--phosphor-dim), transparent);
+  margin-bottom: 20px;
+}
+
+.pause-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pause-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 11px 14px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: border-color 0.12s;
+  position: relative;
+  overflow: hidden;
+}
+
+.pause-item::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 0;
+  background: var(--phosphor-glow);
+  transition: width 0.15s;
+}
+
+.pause-item:hover::before { width: 100%; }
+.pause-item:hover { border-color: var(--phosphor-dim); }
+.pause-item:hover .pause-label { color: var(--phosphor); text-shadow: 0 0 8px var(--phosphor); }
+.pause-item:hover .pause-arrow { opacity: 1; transform: translateX(0); }
+
+.pause-prefix {
+  font-family: 'VT323', monospace;
+  font-size: 18px;
+  color: var(--phosphor-dim);
+  width: 24px;
+  flex-shrink: 0;
+}
+
+.pause-label {
+  font-size: 13px;
+  letter-spacing: 3px;
+  color: #7aaa3a;
+  transition: color 0.12s, text-shadow 0.12s;
+  flex: 1;
+}
+
+.pause-label.danger { color: rgba(255, 58, 58, 0.6); }
+.pause-item:hover .pause-label.danger { color: var(--red-alert); text-shadow: 0 0 8px var(--red-alert); }
+
+.pause-arrow {
+  font-size: 12px;
+  color: var(--phosphor);
+  opacity: 0;
+  transform: translateX(-6px);
+  transition: opacity 0.15s, transform 0.15s;
+}
+
+.pause-thin-rule {
+  height: 1px;
+  background: var(--border);
+  margin: 6px 0;
+}
+
+.pause-footer {
+  margin-top: 20px;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--phosphor-dim);
+  text-align: center;
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+  opacity: 0.6;
+}
+
+/* ── Resource / gauge system additions ──────────────────────────── */
+.gauge-block { border: 1px solid transparent; transition: border-color 0.3s; }
+
+@keyframes gaugeBorderPulse {
+  0%, 100% { border-color: transparent; }
+  50%       { border-color: rgba(255,58,58,0.5); box-shadow: inset 0 0 8px rgba(255,58,58,0.05); }
+}
+
+.gauge-block.crit-active { animation: gaugeBorderPulse 0.8s ease-in-out infinite; }
+
+@keyframes gaugeValShake {
+  0%, 100% { transform: translateX(0); }
+  25%       { transform: translateX(-1px); }
+  75%       { transform: translateX(1px); }
+}
+
+.gauge-block.crit-active .val {
+  animation: blink 0.6s step-end infinite, gaugeValShake 0.08s linear infinite;
+}
+
+.resource-btn.blocked {
+  border-color: var(--red-alert);
+  color: var(--red-alert);
+  animation: btnBlockedFlash 0.4s ease-out forwards;
+}
+
+@keyframes btnBlockedFlash {
+  0%   { background: rgba(255,58,58,0.2); box-shadow: 0 0 6px rgba(255,58,58,0.5); }
+  100% { background: none; box-shadow: none; }
+}
+
+#log-entries { overflow-y: auto; scrollbar-width: none; }
+#log-entries::-webkit-scrollbar { display: none; }
+</style>
+
+<!-- ══ PAUSE OVERLAY ════════════════════════════════════════════ -->
+<div id="pause-overlay">
+  <div class="pause-panel">
+    <div class="pause-header">
+      <div class="pause-title">// VARDİYA DURAKLATILDI</div>
+      <div class="pause-shift-time">02:14</div>
+    </div>
+    <div class="pause-rule"></div>
+    <div class="pause-menu">
+
+      <div class="pause-item" id="btn-resume">
+        <span class="pause-prefix">01</span>
+        <span class="pause-label">DEVAM ET</span>
+        <span class="pause-arrow">▶</span>
+      </div>
+
+      <div class="pause-thin-rule"></div>
+
+      <div class="pause-item" id="btn-menu">
+        <span class="pause-prefix">02</span>
+        <span class="pause-label">ANA MENÜYE DÖN</span>
+        <span class="pause-arrow">▶</span>
+      </div>
+
+      <div class="pause-item" id="btn-quit">
+        <span class="pause-prefix">03</span>
+        <span class="pause-label danger">ÇIKIŞ</span>
+        <span class="pause-arrow">▶</span>
+      </div>
+
+    </div>
+    <div class="pause-footer">
+      THERMAL ENERGY FACILITY / UNIT 4 &nbsp;·&nbsp; BUILD 0.1.0 — PRE-ALPHA
+    </div>
+  </div>
+</div>
+
+<script>
+  /* ─── Pause Menu ─────────────────────────────────────────────── */
+  let isPaused = false;
+  const overlay = document.getElementById('pause-overlay');
+
+  function openPause() {
+    isPaused = true;
+    overlay.classList.add('active');
+  }
+
+  function closePause() {
+    isPaused = false;
+    overlay.classList.remove('active');
+  }
+
+  /* ESC key toggles pause */
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      isPaused ? closePause() : openPause();
+    }
+  });
+
+  /* DEVAM ET — resume */
+  document.getElementById('btn-resume').addEventListener('click', closePause);
+
+  /* ANA MENÜYE DÖN — CRT off → navigate to menu */
+  document.getElementById('btn-menu').addEventListener('click', () => {
+    overlay.classList.remove('active');
+    const terminal = document.querySelector('.terminal');
+    terminal.style.animation = 'crtOff 0.65s cubic-bezier(0.4, 0, 1, 1) forwards';
+    setTimeout(() => { window.location.href = 'menu.html'; }, 620);
+  });
+
+  /* ÇIKIŞ — close window */
+  document.getElementById('btn-quit').addEventListener('click', () => window.close());
+
+  /* ═══════════════════════════════════════════════════════════════════
+     SENSOR SYSTEM
+     ─────────────────────────────────────────────────────────────────
+     Public API (called by game loop when it exists):
+       triggerAnomaly(sensorId, valueKey, type)
+       resolveAnomaly(sensorId, valueKey)
+     ═══════════════════════════════════════════════════════════════════ */
+
+  /* ── State definition ────────────────────────────────────────────── */
+  const sensorState = {
+    A: {
+      id: 'A',
+      values: {
+        temp:  { v: 82.4,    unit: '°C',   min: 0, max: 150, warnHi: 90,   critHi: 105,  warnLo: null, critLo: null, dec: 1 },
+        flow:  { v: 4.2,     unit: ' m/s', min: 0, max: 10,  warnHi: null, critHi: null, warnLo: 2.0,  critLo: 0.5,  dec: 1 },
+        valve: { v: 'KAPALI',unit: '',     type: 'state' },
+      },
+      anomaly: null,  // { valueKey, type, fakeValue, _showFake, escalated, timers }
+    },
+    B: {
+      id: 'B',
+      values: {
+        coreTemp:  { v: 340,  unit: '°C',   min: 0, max: 800, warnHi: 500, critHi: 650, warnLo: null, critLo: null, dec: 0 },
+        radiation: { v: 0.8,  unit: ' mSv', min: 0, max: 10,  warnHi: 2.0, critHi: 5.0, warnLo: null, critLo: null, dec: 2 },
+        pressure:  { v: 0.61, unit: ' atm', min: 0, max: 2.0, warnHi: 1.4, critHi: 1.7, warnLo: null, critLo: null, dec: 2 },
+      },
+      anomaly: null,
+    }
+  }
+
+  /* ── Helpers ─────────────────────────────────────────────────────── */
+
+  /* Format a value for display. override lets glitch show the fake value. */
+  function fmtVal(vd, override) {
+    const v = (override !== undefined) ? override : vd.v
+    if (typeof v === 'string') return v
+    return Number(v).toFixed(vd.dec) + vd.unit
+  }
+
+  /* Severity of a numeric value on its own (ignoring anomalies). */
+  function valueLevel(vd) {
+    if (vd.type === 'state') return 'ok'
+    const v = vd.v
+    if ((vd.critHi !== null && v >= vd.critHi) || (vd.critLo !== null && v <= vd.critLo)) return 'crit'
+    if ((vd.warnHi !== null && v >= vd.warnHi) || (vd.warnLo !== null && v <= vd.warnLo)) return 'warn'
+    return 'ok'
+  }
+
+  /* Bar fill % for numeric values; null for state values. */
+  function barPct(vd) {
+    if (vd.type === 'state') return null
+    return Math.min(100, Math.max(0, (vd.v - vd.min) / (vd.max - vd.min) * 100))
+  }
+
+  function _nowHMS() {
+    return [new Date().getHours(), new Date().getMinutes(), new Date().getSeconds()]
+      .map(n => String(n).padStart(2, '0')).join(':')
+  }
+
+  /* ── Render ──────────────────────────────────────────────────────── */
+  function renderSensor(id) {
+    const sensor  = sensorState[id]
+    const panel   = document.getElementById(`sensor-${id}`)
+    const dotEl   = document.getElementById(`dot-${id}`)
+    const stEl    = document.getElementById(`status-${id}`)
+    const tsEl    = document.getElementById(`ts-${id}`)
+    let   worst   = 'ok'
+
+    Object.entries(sensor.values).forEach(([key, vd]) => {
+      const valEl  = document.getElementById(`val-${id}-${key}`)
+      const barEl  = document.getElementById(`bar-${id}-${key}`)
+      const warnEl = document.getElementById(`warn-${id}-${key}`)
+      if (!valEl) return
+
+      /* Glitch interval owns the text while active — don't overwrite it. */
+      if (!glitchTimers[`${id}_${key}`]) valEl.textContent = fmtVal(vd)
+
+      /* Visual level: anomaly target escalates independently of raw value. */
+      const isTarget = sensor.anomaly && sensor.anomaly.valueKey === key
+      const level    = isTarget
+        ? (sensor.anomaly.escalated ? 'crit' : 'warn')
+        : valueLevel(vd)
+
+      valEl.className  = 'sensor-row-value' + (level !== 'ok' ? ` ${level}` : '')
+
+      if (barEl) {
+        const w = barPct(vd)
+        if (w !== null) {
+          barEl.style.width = `${w.toFixed(1)}%`
+          barEl.className   = 'sensor-minibar-fill' + (level !== 'ok' ? ` ${level}` : '')
+        }
+      }
+
+      if (warnEl) {
+        if (isTarget) {
+          warnEl.textContent = sensor.anomaly.escalated ? '⚠ OKUMA KRİTİK' : '⚠ SİNYAL HATALARI'
+          warnEl.className   = 'sensor-warning-text visible' + (sensor.anomaly.escalated ? ' crit' : '')
+        } else {
+          warnEl.textContent = ''
+          warnEl.className   = 'sensor-warning-text'
+        }
+      }
+
+      if (level === 'crit')                       worst = 'crit'
+      else if (level === 'warn' && worst !== 'crit') worst = 'warn'
+    })
+
+    /* Panel-level indicator — anomaly state takes precedence over value drift. */
+    const pLevel = sensor.anomaly ? (sensor.anomaly.escalated ? 'crit' : 'warn') : worst
+    const COLOR  = { ok: 'var(--phosphor)', warn: 'var(--amber)', crit: 'var(--red-alert)' }
+    const LABEL  = { ok: 'NOMİNAL',         warn: 'ANOMALI',      crit: 'KRİTİK !'        }
+
+    dotEl.style.background = COLOR[pLevel]
+    dotEl.style.boxShadow  = `0 0 5px ${COLOR[pLevel]}`
+    dotEl.style.animation  = pLevel !== 'ok' ? 'blink 0.8s step-end infinite' : ''
+    stEl.textContent       = LABEL[pLevel]
+    stEl.style.color       = COLOR[pLevel]
+
+    panel.classList.toggle('anomaly-active', pLevel === 'warn')
+    panel.classList.toggle('crit-active',    pLevel === 'crit')
+
+    if (tsEl) tsEl.textContent = 'Son güncelleme: ' + _nowHMS()
+  }
+
+  function renderAll() { Object.keys(sensorState).forEach(renderSensor) }
+
+  /* ── Glitch: rapid alternation between real and fake reading ─────── */
+  const glitchTimers = {}
+
+  function _glitchTick(id, key) {
+    const sensor = sensorState[id]
+    /* Auto-stop if anomaly was resolved between ticks. */
+    if (!sensor.anomaly || sensor.anomaly.valueKey !== key) {
+      delete glitchTimers[`${id}_${key}`]
+      return
+    }
+    sensor.anomaly._showFake = !sensor.anomaly._showFake
+    const el = document.getElementById(`val-${id}-${key}`)
+    if (el) el.textContent = fmtVal(
+      sensor.values[key],
+      sensor.anomaly._showFake ? sensor.anomaly.fakeValue : sensor.values[key].v
+    )
+    /* Schedule next tick with 80–120 ms jitter for an organic feel. */
+    glitchTimers[`${id}_${key}`] = setTimeout(
+      () => _glitchTick(id, key),
+      80 + Math.floor(Math.random() * 40)
+    )
+  }
+
+  function _startGlitch(id, key) {
+    _stopGlitch(id, key)
+    sensorState[id].anomaly._showFake = false
+    glitchTimers[`${id}_${key}`] = setTimeout(() => _glitchTick(id, key), 80)
+  }
+
+  function _stopGlitch(id, key) {
+    clearTimeout(glitchTimers[`${id}_${key}`])
+    delete glitchTimers[`${id}_${key}`]
+  }
+
+  /* ── Normal drift: ±1-5% every 3–5 seconds ──────────────────────── */
+  function _drift() {
+    Object.values(sensorState).forEach(sensor => {
+      Object.entries(sensor.values).forEach(([key, vd]) => {
+        if (vd.type === 'state') return
+        /* Don't drift the value that an anomaly is currently glitching. */
+        if (sensor.anomaly && sensor.anomaly.valueKey === key) return
+
+        const sign  = Math.random() < 0.5 ? 1 : -1
+        const pct   = (0.01 + Math.random() * 0.04) * sign  // ±1–5 %
+        /* Stay well inside safe zone so drift never self-triggers a warning. */
+        const hiCap = vd.warnHi !== null ? vd.warnHi * 0.92 : vd.max * 0.75
+        const loCap = vd.critLo !== null ? vd.critLo * 1.6
+                    : vd.warnLo !== null ? vd.warnLo * 1.5
+                    : vd.min + (vd.max - vd.min) * 0.25
+        vd.v = Math.max(loCap, Math.min(hiCap, vd.v + vd.v * pct))
+      })
+    })
+    renderAll()
+    setTimeout(_drift, 3000 + Math.random() * 2000)
+  }
+
+  /* Keep timestamps ticking every second independently of drift cycle. */
+  setInterval(() => {
+    const hms = _nowHMS()
+    Object.keys(sensorState).forEach(id => {
+      const el = document.getElementById(`ts-${id}`)
+      if (el) el.textContent = 'Son güncelleme: ' + hms
+    })
+  }, 1000)
+
+  /* ── PUBLIC API ──────────────────────────────────────────────────── */
+
+  /**
+   * triggerAnomaly(sensorId, valueKey, type)
+   *
+   * Starts an anomaly on a specific sensor value.
+   * Any previous anomaly on that sensor is resolved first.
+   *
+   * Anomaly types:
+   *   1 — Value conflict   : sensor reads 0 / null while log says nominal
+   *   2 — State conflict   : valve shows AÇIK, log says "valf B3 kapandı"
+   *   3 — Physics conflict : reading drops with no physical reason
+   *   4 — Cross conflict   : sensor looks normal, real value is critical
+   *
+   * After 60 s unacknowledged, anomaly escalates to CRIT:
+   *   border pulses red, shake doubles speed, warning text turns red.
+   */
+  function triggerAnomaly(sensorId, valueKey, type) {
+    const sensor = sensorState[sensorId]
+    const vd     = sensor.values[valueKey]
+    if (!vd) { console.warn(`[sensor] unknown: ${sensorId}.${valueKey}`); return }
+
+    if (sensor.anomaly) resolveAnomaly(sensorId, sensor.anomaly.valueKey)
+
+    const isNum = typeof vd.v === 'number'
+    const fakeValue = {
+      1: isNum ? 0.0             : '—',
+      2: 'AÇIK',
+      3: isNum ? vd.v - vd.v * 0.30 : vd.v,
+      4: isNum ? vd.v * 0.40    : vd.v,
+    }[type] ?? (isNum ? 0.0 : 'ERR')
+
+    sensor.anomaly = {
+      valueKey,
+      type,
+      fakeValue,
+      _showFake: false,
+      escalated: false,
+      timers: {
+        escalate: setTimeout(() => {
+          if (sensor.anomaly?.valueKey === valueKey) {
+            sensor.anomaly.escalated = true
+            renderSensor(sensorId)
+          }
+        }, 60000)
+      }
+    }
+
+    _startGlitch(sensorId, valueKey)
+    renderSensor(sensorId)
+  }
+
+  /**
+   * resolveAnomaly(sensorId, valueKey)
+   *
+   * Called when the player correctly reports the anomaly.
+   * Stops glitch, clears escalation timer, panel fades back to green.
+   */
+  function resolveAnomaly(sensorId, valueKey) {
+    const sensor = sensorState[sensorId]
+    if (!sensor.anomaly || sensor.anomaly.valueKey !== valueKey) return
+
+    _stopGlitch(sensorId, valueKey)
+    Object.values(sensor.anomaly.timers).forEach(clearTimeout)
+
+    /* Snap display back to real reading immediately. */
+    const vd = sensor.values[valueKey]
+    const el = document.getElementById(`val-${sensorId}-${valueKey}`)
+    if (el) el.textContent = fmtVal(vd)
+
+    sensor.anomaly = null
+    renderSensor(sensorId)
+  }
+
+  /* ── Boot ────────────────────────────────────────────────────────── */
+  renderAll()
+  setTimeout(_drift, 3000 + Math.random() * 2000)
+
+  /* ═══════════════════════════════════════════════════════════════════
+     RESOURCE DISTRIBUTION SYSTEM
+     ═══════════════════════════════════════════════════════════════════ */
+
+  /* ── State ─────────────────────────────────────────────────────────── */
+  const gameState = {
+    resources:    { sicaklik: 4, basinc: 3, guc: 3 },
+    systemValues: { sicaklik: 72.0, basinc: 61.0, guc: 70.0 },
+    systemStatus: { sicaklik: 'ok', basinc: 'ok', guc: 'ok' },
+    critSeconds:  { sicaklik: 0, basinc: 0, guc: 0 },
+    systemFailure: false,
+  }
+
+  /* ── System physics config ─────────────────────────────────────────── */
+  const SYSTEMS = {
+    sicaklik: {
+      label: 'SICAKLIK', unit: '°C', dec: 1,
+      safe: [40, 85], warn: [35, 95], crit: [30, 105],
+      maxRate: 0.8,   // °C per second; positive = rising when under-resourced
+      gaugeMin: 0, gaugeMax: 120,
+      hintSafe: 'GÜVENLİ: 40–85°C',
+    },
+    basinc: {
+      label: 'BASINÇ', unit: '%', dec: 1,
+      safe: [40, 80], warn: [30, 88], crit: [20, 95],
+      maxRate: 0.6,
+      gaugeMin: 0, gaugeMax: 100,
+      hintSafe: 'GÜVENLİ: %40–80',
+    },
+    guc: {
+      label: 'GÜÇ', unit: '%', dec: 1,
+      safe: [30, 90], warn: [20, 95], crit: [10, 100],
+      maxRate: 0.5,
+      gaugeMin: 0, gaugeMax: 100,
+      hintSafe: 'GÜVENLİ: %30–90',
+    }
+  }
+
+  /* ── Helpers ─────────────────────────────────────────────────────── */
+  function _getStatus(val, cfg) {
+    if (val >= cfg.crit[1] || val <= cfg.crit[0]) return 'crit'
+    if (val >= cfg.warn[1] || val <= cfg.warn[0]) return 'warn'
+    return 'ok'
+  }
+
+  function _flashBtn(id) {
+    const btn = document.getElementById(id)
+    if (!btn) return
+    btn.classList.add('blocked')
+    setTimeout(() => btn.classList.remove('blocked'), 400)
+  }
+
+  /* ── addLog ──────────────────────────────────────────────────────── */
+  function addLog(msg, type) {
+    type = type || 'normal'
+    const entries = document.getElementById('log-entries')
+    if (!entries) return
+    const now = new Date()
+    const ts  = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0')
+    const div = document.createElement('div')
+    div.className = 'log-entry ' + type
+    div.innerHTML = '<span class="timestamp">' + ts + '</span>' + msg
+    // Remove the static cursor entry so it stays at bottom
+    const cursor = entries.querySelector('.log-cursor')
+    if (cursor) cursor.parentElement.remove()
+    entries.appendChild(div)
+    while (entries.children.length > 30) entries.removeChild(entries.firstChild)
+    entries.scrollTop = entries.scrollHeight
+  }
+
+  /* ── renderResources ─────────────────────────────────────────────── */
+  function renderResources() {
+    Object.keys(SYSTEMS).forEach(function(sys) {
+      const res    = gameState.resources[sys]
+      const valEl  = document.getElementById('res-val-' + sys)
+      const dotsEl = document.getElementById('res-dots-' + sys)
+      if (valEl)  valEl.textContent = res
+      if (dotsEl) {
+        dotsEl.innerHTML = Array.from({ length: 10 }, function(_, i) {
+          return '<div class="dot' + (i < res ? ' filled' : '') + '"></div>'
+        }).join('')
+      }
+    })
+  }
+
+  /* ── renderGauges ────────────────────────────────────────────────── */
+  function renderGauges() {
+    Object.keys(SYSTEMS).forEach(function(sys) {
+      const cfg     = SYSTEMS[sys]
+      const val     = gameState.systemValues[sys]
+      const status  = gameState.systemStatus[sys]
+      const pct     = Math.min(100, Math.max(0,
+        (val - cfg.gaugeMin) / (cfg.gaugeMax - cfg.gaugeMin) * 100
+      ))
+
+      const valEl   = document.getElementById('gauge-val-' + sys)
+      const barEl   = document.getElementById('gauge-bar-' + sys)
+      const hintEl  = document.getElementById('gauge-hint-' + sys)
+      const blockEl = document.getElementById('gauge-block-' + sys)
+
+      if (valEl) {
+        const arrow = status === 'ok' ? '' : (val > cfg.safe[1] ? ' ▲' : ' ▼')
+        valEl.textContent = val.toFixed(cfg.dec) + cfg.unit + arrow
+        valEl.className   = 'val ' + status
+      }
+      if (barEl) {
+        barEl.style.width = pct.toFixed(1) + '%'
+        barEl.className   = 'gauge-bar-fill ' + status
+      }
+      if (hintEl) {
+        if (status === 'crit') {
+          hintEl.textContent       = 'KRİTİK EŞİK: ' + val.toFixed(cfg.dec) + cfg.unit
+          hintEl.style.color       = 'var(--red-alert)'
+          hintEl.style.animation   = 'blink 0.6s step-end infinite'
+        } else if (status === 'warn') {
+          hintEl.textContent       = 'UYARI: ' + val.toFixed(cfg.dec) + cfg.unit
+          hintEl.style.color       = 'var(--amber)'
+          hintEl.style.animation   = ''
+        } else {
+          hintEl.textContent       = cfg.hintSafe
+          hintEl.style.color       = 'var(--phosphor-dim)'
+          hintEl.style.animation   = ''
+        }
+      }
+      if (blockEl) {
+        blockEl.classList.toggle('crit-active', status === 'crit')
+      }
+    })
+  }
+
+  /* ── systemTick — called every second ───────────────────────────── */
+  function systemTick() {
+    if (gameState.systemFailure) return
+
+    Object.keys(SYSTEMS).forEach(function(sys) {
+      const cfg  = SYSTEMS[sys]
+      const res  = gameState.resources[sys]
+      // rate: at res=5 → 0 (stable); res<5 → positive (rising); res>5 → negative (cooling)
+      const rate = (5 - res) / 5 * cfg.maxRate
+      let   val  = Math.max(cfg.gaugeMin, Math.min(cfg.gaugeMax,
+                     gameState.systemValues[sys] + rate
+                   ))
+      gameState.systemValues[sys] = val
+
+      const prev   = gameState.systemStatus[sys]
+      const next   = _getStatus(val, cfg)
+
+      if (next !== prev) {
+        if (next === 'warn')
+          addLog('⚠ ' + cfg.label + ' uyarı seviyesine ulaştı: ' + val.toFixed(cfg.dec) + cfg.unit, 'warning')
+        else if (next === 'crit')
+          addLog('⚠ ' + cfg.label + ' KRİTİK! ' + val.toFixed(cfg.dec) + cfg.unit, 'anomaly')
+        else
+          addLog(cfg.label + ' nominal seviyeye döndü.', 'normal')
+        gameState.systemStatus[sys] = next
+      }
+
+      if (next === 'crit') {
+        gameState.critSeconds[sys]++
+        if (gameState.critSeconds[sys] >= 30) {
+          gameState.systemFailure = true
+          addLog('⚠ FATAL: ' + cfg.label + ' sistemi çöktü. Müdahale başarısız.', 'anomaly')
+        }
+      } else {
+        gameState.critSeconds[sys] = 0
+      }
+    })
+
+    renderGauges()
+  }
+
+  /* ── updateResources ─────────────────────────────────────────────── */
+  function updateResources(sys, delta) {
+    if (gameState.systemFailure) return
+    const cur  = gameState.resources[sys]
+    const next = cur + delta
+    if (next < 0 || next > 10) {
+      _flashBtn('res-' + (delta > 0 ? 'plus' : 'minus') + '-' + sys)
+      return
+    }
+
+    const others = Object.keys(SYSTEMS).filter(function(s) { return s !== sys })
+
+    if (delta > 0) {
+      // Increasing sys: steal 1 from the other with most resources
+      const donor = others.reduce(function(a, b) {
+        return gameState.resources[a] >= gameState.resources[b] ? a : b
+      })
+      if (gameState.resources[donor] <= 0) { _flashBtn('res-plus-' + sys); return }
+      gameState.resources[donor]--
+      addLog(SYSTEMS[sys].label + ' +1 → ' + next + ' birim. ' + SYSTEMS[donor].label + ' azaltıldı.', 'normal')
+    } else {
+      // Decreasing sys: give 1 to the other with fewest resources
+      const recipient = others.reduce(function(a, b) {
+        return gameState.resources[a] <= gameState.resources[b] ? a : b
+      })
+      gameState.resources[recipient]++
+      addLog(SYSTEMS[sys].label + ' −1 → ' + next + ' birim. ' + SYSTEMS[recipient].label + ' artırıldı.', 'normal')
+    }
+
+    gameState.resources[sys] = next
+    renderResources()
+  }
+
+  /* ── Button wiring ───────────────────────────────────────────────── */
+  document.getElementById('res-minus-sicaklik').addEventListener('click', function() { updateResources('sicaklik', -1) })
+  document.getElementById('res-plus-sicaklik' ).addEventListener('click', function() { updateResources('sicaklik', +1) })
+  document.getElementById('res-minus-basinc'  ).addEventListener('click', function() { updateResources('basinc',   -1) })
+  document.getElementById('res-plus-basinc'   ).addEventListener('click', function() { updateResources('basinc',   +1) })
+  document.getElementById('res-minus-guc'     ).addEventListener('click', function() { updateResources('guc',      -1) })
+  document.getElementById('res-plus-guc'      ).addEventListener('click', function() { updateResources('guc',      +1) })
+
+  /* ── Resource system boot ────────────────────────────────────────── */
+  renderResources()
+  renderGauges()
+  setInterval(systemTick, 1000)
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>THERMAL — Boot Sequence</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap');
+
+  :root {
+    --phosphor: #a8ff3e;
+    --phosphor-dim: #4a7a1a;
+    --phosphor-glow: rgba(168, 255, 62, 0.12);
+    --amber: #ffb830;
+    --red-alert: #ff3a3a;
+    --bg: #080a04;
+    --panel-bg: #0b0f05;
+    --border: #1e2e0c;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+
+  body {
+    background: #000;
+    font-family: 'Share Tech Mono', monospace;
+    color: var(--phosphor);
+    height: 100vh;
+    overflow: hidden;
+    cursor: none;
+  }
+
+  /* CRT scanlines */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      rgba(0,0,0,0.18) 0px,
+      rgba(0,0,0,0.18) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+    pointer-events: none;
+    z-index: 1000;
+  }
+
+  /* CRT vignette */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 45%, rgba(0,0,0,0.92) 100%);
+    pointer-events: none;
+    z-index: 999;
+  }
+
+  /* POWER ON — screen flashes on */
+  @keyframes powerOn {
+    0% { opacity: 0; filter: brightness(0); }
+    2% { opacity: 1; filter: brightness(3); }
+    4% { opacity: 0.7; filter: brightness(0.5); }
+    6% { opacity: 1; filter: brightness(1.5); }
+    8% { opacity: 0.9; }
+    10% { opacity: 1; filter: brightness(1); }
+    100% { opacity: 1; filter: brightness(1); }
+  }
+
+  .screen {
+    width: 100vw;
+    height: 100vh;
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    padding: 48px 80px;
+    animation: powerOn 1.2s ease-out forwards;
+    position: relative;
+    transform-origin: center center;
+  }
+
+  /* CRT turn-off: flash bright → collapse to horizontal line → black */
+  @keyframes crtOff {
+    0%   { transform: scaleY(1);    filter: brightness(1); opacity: 1; }
+    8%   { transform: scaleY(1);    filter: brightness(3) saturate(0); opacity: 1; }
+    22%  { transform: scaleY(0.04); filter: brightness(8); opacity: 1; }
+    55%  { transform: scaleY(0.02); filter: brightness(3); opacity: 1; }
+    100% { transform: scaleY(0.01); filter: brightness(0); opacity: 0; }
+  }
+
+  /* Slow rolling scan line */
+  .scan-roll {
+    position: fixed;
+    left: 0; right: 0;
+    height: 100px;
+    background: linear-gradient(180deg,
+      transparent 0%,
+      rgba(168,255,62,0.025) 40%,
+      rgba(168,255,62,0.05) 50%,
+      rgba(168,255,62,0.025) 60%,
+      transparent 100%
+    );
+    animation: scanRoll 9s linear infinite;
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  @keyframes scanRoll {
+    from { top: -100px; }
+    to { top: 100vh; }
+  }
+
+  /* BIOS HEADER */
+  .bios-header {
+    margin-bottom: 32px;
+    opacity: 0;
+    animation: fadeIn 0.3s 1s forwards;
+  }
+
+  .bios-title {
+    font-family: 'VT323', monospace;
+    font-size: 20px;
+    letter-spacing: 4px;
+    color: var(--phosphor);
+    text-shadow: 0 0 8px var(--phosphor);
+    margin-bottom: 4px;
+  }
+
+  .bios-sub {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--phosphor-dim);
+  }
+
+  .bios-divider {
+    height: 1px;
+    background: linear-gradient(90deg, var(--phosphor-dim), transparent);
+    margin-top: 12px;
+  }
+
+  /* BOOT LOG */
+  .boot-log {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    overflow: hidden;
+  }
+
+  .boot-line {
+    font-size: 11px;
+    letter-spacing: 1px;
+    line-height: 1.9;
+    opacity: 0;
+    white-space: nowrap;
+    overflow: hidden;
+  }
+
+  .boot-line.ok .tag { color: var(--phosphor); }
+  .boot-line.warn .tag { color: var(--amber); }
+  .boot-line.err .tag { color: var(--red-alert); }
+  .boot-line.sys { color: var(--phosphor-dim); font-size: 10px; }
+  .boot-line.header {
+    color: var(--phosphor);
+    letter-spacing: 3px;
+    margin-top: 10px;
+    margin-bottom: 2px;
+    font-size: 10px;
+  }
+
+  .tag {
+    display: inline-block;
+    width: 52px;
+    font-family: 'VT323', monospace;
+    font-size: 14px;
+    margin-right: 12px;
+  }
+
+  .tag.ok-tag { color: var(--phosphor); }
+  .tag.warn-tag { color: var(--amber); }
+  .tag.err-tag { color: var(--red-alert); }
+  .tag.info-tag { color: var(--phosphor-dim); }
+
+  .line-text { color: #6a9a2a; }
+  .line-val {
+    color: var(--phosphor-dim);
+    margin-left: 8px;
+  }
+
+  /* Typewriter animation helper — each line fades in sequentially */
+  .boot-line:nth-child(1)  { animation: lineIn 0.05s 1.2s forwards; }
+  .boot-line:nth-child(2)  { animation: lineIn 0.05s 1.35s forwards; }
+  .boot-line:nth-child(3)  { animation: lineIn 0.05s 1.5s forwards; }
+  .boot-line:nth-child(4)  { animation: lineIn 0.05s 1.65s forwards; }
+  .boot-line:nth-child(5)  { animation: lineIn 0.05s 1.8s forwards; }
+  .boot-line:nth-child(6)  { animation: lineIn 0.05s 2.0s forwards; }
+  .boot-line:nth-child(7)  { animation: lineIn 0.05s 2.15s forwards; }
+  .boot-line:nth-child(8)  { animation: lineIn 0.05s 2.3s forwards; }
+  .boot-line:nth-child(9)  { animation: lineIn 0.05s 2.5s forwards; }
+  .boot-line:nth-child(10) { animation: lineIn 0.05s 2.65s forwards; }
+  .boot-line:nth-child(11) { animation: lineIn 0.05s 2.8s forwards; }
+  .boot-line:nth-child(12) { animation: lineIn 0.05s 3.0s forwards; }
+  .boot-line:nth-child(13) { animation: lineIn 0.05s 3.15s forwards; }
+  .boot-line:nth-child(14) { animation: lineIn 0.05s 3.3s forwards; }
+  .boot-line:nth-child(15) { animation: lineIn 0.05s 3.5s forwards; }
+  .boot-line:nth-child(16) { animation: lineIn 0.05s 3.65s forwards; }
+  .boot-line:nth-child(17) { animation: lineIn 0.05s 3.8s forwards; }
+  .boot-line:nth-child(18) { animation: lineIn 0.05s 4.0s forwards; }
+  .boot-line:nth-child(19) { animation: lineIn 0.05s 4.2s forwards; }
+  .boot-line:nth-child(20) { animation: lineIn 0.05s 4.4s forwards; }
+  .boot-line:nth-child(21) { animation: lineIn 0.05s 4.6s forwards; }
+  .boot-line:nth-child(22) { animation: lineIn 0.05s 4.8s forwards; }
+  .boot-line:nth-child(23) { animation: lineIn 0.05s 5.0s forwards; }
+  .boot-line:nth-child(24) { animation: lineIn 0.05s 5.2s forwards; }
+  .boot-line:nth-child(25) { animation: lineIn 0.05s 5.5s forwards; }
+  .boot-line:nth-child(26) { animation: lineIn 0.05s 5.8s forwards; }
+
+  @keyframes lineIn {
+    to { opacity: 1; }
+  }
+
+  @keyframes fadeIn {
+    to { opacity: 1; }
+  }
+
+  /* WARNING BLOCK */
+  .warn-block {
+    border: 1px solid rgba(255,184,48,0.3);
+    padding: 8px 14px;
+    background: rgba(255,184,48,0.04);
+    margin-top: 4px;
+    opacity: 0;
+    animation: lineIn 0.05s 5.9s forwards;
+  }
+
+  .warn-block-text {
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: rgba(255,184,48,0.7);
+    line-height: 1.8;
+  }
+
+  /* PROGRESS BAR SECTION */
+  .progress-section {
+    margin-top: 28px;
+    opacity: 0;
+    animation: fadeIn 0.4s 6.1s forwards;
+  }
+
+  .progress-label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--phosphor-dim);
+    margin-bottom: 8px;
+  }
+
+  .progress-label .pct {
+    font-family: 'VT323', monospace;
+    font-size: 16px;
+    color: var(--phosphor);
+    animation: countUp 3.5s 6.1s steps(100) forwards;
+  }
+
+  @keyframes countUp {
+    from { --n: 0; }
+    to { --n: 100; }
+  }
+
+  .progress-outer {
+    height: 14px;
+    border: 1px solid var(--border);
+    background: #060805;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .progress-inner {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #2a5a08, var(--phosphor));
+    box-shadow: 0 0 8px var(--phosphor);
+    animation: fillBar 3.5s 6.1s cubic-bezier(0.1, 0, 0.9, 1) forwards;
+    position: relative;
+  }
+
+  /* Segmented look */
+  .progress-inner::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: repeating-linear-gradient(
+      90deg,
+      transparent 0px,
+      transparent 18px,
+      rgba(0,0,0,0.35) 18px,
+      rgba(0,0,0,0.35) 20px
+    );
+  }
+
+  @keyframes fillBar {
+    0%   { width: 0%; }
+    15%  { width: 18%; }
+    30%  { width: 31%; }
+    45%  { width: 52%; }
+    55%  { width: 57%; }
+    70%  { width: 74%; }
+    85%  { width: 89%; }
+    100% { width: 100%; }
+  }
+
+  .progress-tasks {
+    margin-top: 8px;
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: var(--phosphor-dim);
+    height: 16px;
+    overflow: hidden;
+  }
+
+  .task-item {
+    opacity: 0;
+    position: absolute;
+    animation: taskShow 0.4s forwards, taskHide 0.3s forwards;
+  }
+
+  /* Individual task labels cycling */
+  .task-1 { animation: taskShow 0.3s 6.3s forwards; }
+  .task-2 { animation: taskShow 0.3s 7.0s forwards; }
+  .task-3 { animation: taskShow 0.3s 7.8s forwards; }
+  .task-4 { animation: taskShow 0.3s 8.5s forwards; }
+  .task-5 { animation: taskShow 0.3s 9.0s forwards; }
+
+  @keyframes taskShow { to { opacity: 1; } }
+
+  /* BOTTOM */
+  .boot-bottom {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-end;
+    margin-top: 16px;
+    opacity: 0;
+    animation: fadeIn 0.4s 9.4s forwards;
+  }
+
+  .boot-bottom-left {
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--phosphor-dim);
+    line-height: 1.8;
+  }
+
+  .ready-text {
+    font-family: 'VT323', monospace;
+    font-size: 22px;
+    letter-spacing: 4px;
+    color: var(--phosphor);
+    text-shadow: 0 0 10px var(--phosphor);
+    animation: blink 1s 9.4s step-end infinite;
+    opacity: 0;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  /* Cursor */
+  .cursor {
+    display: inline-block;
+    width: 8px; height: 13px;
+    background: var(--phosphor);
+    animation: blink 0.85s step-end infinite;
+    vertical-align: middle;
+    margin-left: 3px;
+  }
+
+  /* percentage counter hack */
+  .pct-counter {
+    font-family: 'VT323', monospace;
+    font-size: 16px;
+    color: var(--phosphor);
+  }
+
+  /* PRESS TO CONTINUE PROMPT */
+  #press-prompt {
+    text-align: center;
+    font-family: 'VT323', monospace;
+    font-size: 18px;
+    letter-spacing: 3px;
+    color: var(--phosphor);
+    text-shadow: 0 0 10px var(--phosphor);
+    opacity: 0;
+    margin-top: 14px;
+    animation: blink 1s 9.8s step-end infinite;
+  }
+</style>
+</head>
+<body>
+
+<div class="scan-roll"></div>
+
+<div class="screen">
+
+  <!-- BIOS HEADER -->
+  <div class="bios-header">
+    <div class="bios-title">THERMAL ENERGY SYSTEMS — UNIT 4 OPERATOR TERMINAL</div>
+    <div class="bios-sub">TES-4 BIOS v2.4.1 &nbsp;|&nbsp; SOĞUTMA SİSTEMİ REV.7 &nbsp;|&nbsp; COPYRIGHT 1987 THERMAL SYSTEMS INT.</div>
+    <div class="bios-divider"></div>
+  </div>
+
+  <!-- BOOT LOG -->
+  <div class="boot-log">
+
+    <div class="boot-line header">// DONANIM TANIMLAMASI</div>
+
+    <div class="boot-line ok">
+      <span class="tag ok-tag">[ OK ]</span>
+      <span class="line-text">CPU: TES-Z80 @ 4MHz tespit edildi</span>
+      <span class="line-val">— 64KB RAM</span>
+    </div>
+
+    <div class="boot-line ok">
+      <span class="tag ok-tag">[ OK ]</span>
+      <span class="line-text">Terminal ekranı başlatıldı</span>
+      <span class="line-val">— CRT-14 fosfor P31</span>
+    </div>
+
+    <div class="boot-line ok">
+      <span class="tag ok-tag">[ OK ]</span>
+      <span class="line-text">Seri port bağlantısı kuruldu</span>
+      <span class="line-val">— COM1: 9600 baud</span>
+    </div>
+
+    <div class="boot-line ok">
+      <span class="tag ok-tag">[ OK ]</span>
+      <span class="line-text">Saat senkronizasyonu</span>
+      <span class="line-val">— 22:00:00</span>
+    </div>
+
+    <div class="boot-line header">// SİSTEM KONTROLLERİ</div>
+
+    <div class="boot-line ok">
+      <span class="tag ok-tag">[ OK ]</span>
+      <span class="line-text">Reaktör izleme modülü</span>
+      <span class="line-val">— AKTİF</span>
+    </div>
+
+    <div class="boot-line ok">
+      <span class="tag ok-tag">[ OK ]</span>
+      <span class="line-text">Sıcaklık sensörleri</span>
+      <span class="line-val">— 12/12 çevrimiçi</span>
+    </div>
+
+    <div class="boot-line warn">
+      <span class="tag warn-tag">[ !! ]</span>
+      <span class="line-text">Basınç sensörü B3</span>
+      <span class="line-val" style="color:var(--amber)">— KALIBRASYON GEREKLİ</span>
+    </div>
+
+    <div class="boot-line ok">
+      <span class="tag ok-tag">[ OK ]</span>
+      <span class="line-text">Güç dağıtım paneli</span>
+      <span class="line-val">— NOMİNAL</span>
+    </div>
+
+    <div class="boot-line header">// KAMERA SİSTEMİ</div>
+
+    <div class="boot-line ok">
+      <span class="tag ok-tag">[ OK ]</span>
+      <span class="line-text">Kamera 1 — Soğutma odası</span>
+      <span class="line-val">— GÖRÜNTÜ NORMAL</span>
+    </div>
+
+    <div class="boot-line warn">
+      <span class="tag warn-tag">[ !! ]</span>
+      <span class="line-text">Kamera 2 — Valf odası</span>
+      <span class="line-val" style="color:var(--amber)">— SİNYAL ZAYIF</span>
+    </div>
+
+    <div class="boot-line header">// KAYIT SİSTEMİ</div>
+
+    <div class="boot-line ok">
+      <span class="tag ok-tag">[ OK ]</span>
+      <span class="line-text">Log arşivi yüklendi</span>
+      <span class="line-val">— 847 kayıt</span>
+    </div>
+
+    <div class="boot-line ok">
+      <span class="tag ok-tag">[ OK ]</span>
+      <span class="line-text">Operatör profili</span>
+      <span class="line-val">— OP-18 / YENİ OPERATÖR</span>
+    </div>
+
+    <div class="boot-line sys">
+      <span class="tag info-tag">[ -- ]</span>
+      <span class="line-text" style="color:var(--phosphor-dim)">Önceki operatör kaydı: OP-17 — [SİLİNDİ]</span>
+    </div>
+
+    <div class="boot-line header">// PROTOKOLler</div>
+
+    <div class="boot-line ok">
+      <span class="tag ok-tag">[ OK ]</span>
+      <span class="line-text">Protokol veri tabanı</span>
+      <span class="line-val">— 24 protokol yüklendi</span>
+    </div>
+
+    <div class="boot-line err">
+      <span class="tag err-tag">[ ER ]</span>
+      <span class="line-text">Protokol 7 — son kullanım</span>
+      <span class="line-val" style="color:var(--red-alert)">— LOG TUTARSIZLIĞI</span>
+    </div>
+
+    <div class="boot-line sys">
+      <span class="tag info-tag">[ -- ]</span>
+      <span class="line-text" style="color:var(--phosphor-dim)">Tutarsızlık görmezden gelindi. Devam ediliyor.</span>
+    </div>
+
+    <!-- Warning block -->
+    <div class="warn-block">
+      <div class="warn-block-text">
+        ⚠ &nbsp;UYARI: Bu terminal yetkili personel içindir.<br>
+        Tüm operatör eylemleri kayıt altına alınmaktadır.<br>
+        Vardiya boyunca sistemi terk etmeyiniz.
+      </div>
+    </div>
+
+  </div>
+
+  <!-- PROGRESS BAR -->
+  <div class="progress-section">
+    <div class="progress-label">
+      <span>// SİSTEM BAŞLATILIYOR</span>
+      <span class="pct-counter" id="pct">0%</span>
+    </div>
+    <div class="progress-outer">
+      <div class="progress-inner" id="bar"></div>
+    </div>
+    <div class="progress-tasks" style="position:relative; height:18px;">
+      <span class="task-item task-1" style="font-size:9px; letter-spacing:1px; color:var(--phosphor-dim);">Reaktör izleme modülü bağlanıyor...</span>
+      <span class="task-item task-2" style="font-size:9px; letter-spacing:1px; color:var(--phosphor-dim); margin-left:0;">Sensör kalibrasyonu yapılıyor...</span>
+      <span class="task-item task-3" style="font-size:9px; letter-spacing:1px; color:var(--phosphor-dim);">Log arşivi yükleniyor...</span>
+      <span class="task-item task-4" style="font-size:9px; letter-spacing:1px; color:var(--phosphor-dim);">Kamera akışları test ediliyor...</span>
+      <span class="task-item task-5" style="font-size:9px; letter-spacing:1px; color:var(--phosphor-dim);">Terminal hazır.<span class="cursor"></span></span>
+    </div>
+  </div>
+
+  <!-- BOTTOM -->
+  <div class="boot-bottom">
+    <div class="boot-bottom-left">
+      THERMAL ENERGY FACILITY &nbsp;/&nbsp; UNIT 4<br>
+      BUILD 0.1.0 — PRE-ALPHA &nbsp;/&nbsp; TÜM HAKLAR SAKLIDIR
+    </div>
+  </div>
+  <div id="press-prompt">SİSTEMA HAZIR — DEVAM ETMEK İÇİN BİR TUŞA BASIN</div>
+
+</div>
+
+<script>
+  // Percentage counter
+  const pct = document.getElementById('pct');
+  let start = null;
+  const duration = 3500;
+  const delay = 6100;
+
+  // Stagger values matching fillBar keyframes
+  const curve = [0,18,31,52,57,74,89,100];
+  const times =  [0, 0.15, 0.30, 0.45, 0.55, 0.70, 0.85, 1.0];
+
+  function lerp(a, b, t) { return a + (b - a) * t; }
+
+  function getVal(progress) {
+    for (let i = 1; i < times.length; i++) {
+      if (progress <= times[i]) {
+        const t = (progress - times[i-1]) / (times[i] - times[i-1]);
+        return Math.round(lerp(curve[i-1], curve[i], t));
+      }
+    }
+    return 100;
+  }
+
+  setTimeout(() => {
+    function tick(ts) {
+      if (!start) start = ts;
+      const progress = Math.min((ts - start) / duration, 1);
+      pct.textContent = getVal(progress) + '%';
+      if (progress < 1) requestAnimationFrame(tick);
+      else pct.textContent = '100%';
+    }
+    requestAnimationFrame(tick);
+  }, delay);
+
+  // After boot completes at ~9.8s, any keypress triggers CRT-off → menu.
+  let bootComplete = false;
+  setTimeout(() => { bootComplete = true; }, 9800);
+
+  function handleBootKey() {
+    if (!bootComplete) return;
+    document.removeEventListener('keydown', handleBootKey);
+    const screen = document.querySelector('.screen');
+    screen.style.animation = 'crtOff 0.65s cubic-bezier(0.4, 0, 1, 1) forwards';
+    setTimeout(() => { window.location.href = 'menu.html'; }, 620);
+  }
+
+  document.addEventListener('keydown', handleBootKey);
+</script>
+
+</body>
+</html>

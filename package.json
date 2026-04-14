@@ -1,0 +1,12 @@
+{
+  "name": "thermal",
+  "version": "0.1.0",
+  "description": "THERMAL - Night Shift Operator Terminal",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "devDependencies": {
+    "electron": "^latest"
+  }
+}
