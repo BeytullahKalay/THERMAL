@@ -75,7 +75,7 @@
 
   .terminal {
     display: grid;
-    grid-template-rows: 36px 1fr 52px;
+    grid-template-rows: 36px 1fr 180px 52px;
     grid-template-columns: 1fr;
     height: 100vh;
     padding: 8px;
@@ -125,7 +125,7 @@
   /* MAIN CONTENT */
   .main {
     display: grid;
-    grid-template-columns: 280px 1fr 260px;
+    grid-template-columns: 280px 1fr 280px;
     gap: 6px;
   }
 
@@ -229,9 +229,12 @@
   }
 
   .resource-name {
-    font-size: 10px;
-    letter-spacing: 1px;
-    width: 52px;
+    font-size: 9px;
+    letter-spacing: 0;
+    min-width: 64px;
+    flex-shrink: 0;
+    overflow: hidden;
+    white-space: nowrap;
     color: var(--phosphor-dim);
   }
 
@@ -268,7 +271,7 @@
   .resource-dots {
     flex: 1;
     display: flex;
-    gap: 2px;
+    gap: 1px;
   }
 
   .dot {
@@ -319,10 +322,10 @@
 
   .log-entries {
     flex: 1;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-    gap: 2px;
+    overflow-y: scroll;
+    scrollbar-width: thin;
+    scrollbar-color: #2a3a10 #080a04;
+    min-height: 0;
   }
 
   .log-entry {
@@ -331,6 +334,7 @@
     letter-spacing: 0.5px;
     opacity: 0;
     animation: fadeIn 0.3s forwards;
+    margin-bottom: 2px;
   }
 
   @keyframes fadeIn {
@@ -717,10 +721,12 @@
         <div class="log-indicator"></div>
       </div>
       <div class="log-entries" id="log-entries"></div>
+      <div id="log-new-entries">▼ NEW ENTRIES</div>
     </div>
 
     <!-- RIGHT: SENSOR PANELS -->
     <div class="sensor-column">
+
       <div class="sensor-col-title">// SENSOR PANELS</div>
 
       <!-- ── SENSOR A: COOLING ROOM ────────────────────────────── -->
@@ -812,6 +818,45 @@
         <div class="sensor-timestamp" id="ts-B">Last update: —:—:—</div>
       </div>
 
+    </div>
+
+  </div>
+
+  <!-- BOTTOM BAR -->
+  <div id="bottom-bar">
+
+    <!-- LEFT: FREQUENCY MONITOR -->
+    <div id="freq-monitor">
+      <div class="fm-header">
+        <span class="fm-title" id="fm-title">// FREQUENCY MONITOR</span>
+        <span class="fc-timer" id="fc-timer" style="display:none"></span>
+      </div>
+      <canvas id="fc-canvas"></canvas>
+      <div class="fm-controls">
+        <div class="fc-control-row">
+          <span class="fc-label">FREQ</span>
+          <button class="fc-btn" id="fc-freq-minus">◀</button>
+          <span class="fc-val" id="fc-freq-val">2.4 Hz</span>
+          <button class="fc-btn" id="fc-freq-plus">▶</button>
+        </div>
+        <div class="fc-control-row">
+          <span class="fc-label">AMP</span>
+          <button class="fc-btn" id="fc-amp-minus">◀</button>
+          <span class="fc-val" id="fc-amp-val">0.8 V</span>
+          <button class="fc-btn" id="fc-amp-plus">▶</button>
+        </div>
+        <div class="fc-match-bar fc-match-good" id="fc-match-bar">
+          <span id="fc-match-label">SYNC: 100%</span>
+        </div>
+      </div>
+      <button class="fc-confirm" id="fc-confirm" disabled>[ CONFIRM CALIBRATION ]</button>
+    </div>
+
+    <!-- RIGHT: DEBUG PANEL -->
+    <div id="debug-panel">
+      <div class="dbg-title">// DEBUG</div>
+      <div id="dbg-entries"></div>
+      <div class="dbg-footer">// DEVELOPER ONLY — REMOVE BEFORE RELEASE</div>
     </div>
 
   </div>
@@ -1029,8 +1074,9 @@
   100% { background: none; box-shadow: none; }
 }
 
-#log-entries { overflow-y: auto; scrollbar-width: none; }
-#log-entries::-webkit-scrollbar { display: none; }
+#log-entries::-webkit-scrollbar { width: 4px; }
+#log-entries::-webkit-scrollbar-track { background: #080a04; }
+#log-entries::-webkit-scrollbar-thumb { background: #2a3a10; }
 
 /* Log category: critical (red glow, distinct from anomaly) */
 .log-entry.critical {
@@ -1064,6 +1110,232 @@
   100% { background: none;                  box-shadow: none; }
 }
 .action-btn.btn-flash { animation: btnFlash 0.22s ease-out forwards; }
+
+/* ══ LOG: NEW ENTRIES INDICATOR ════════════════════════════════════ */
+#log-new-entries {
+  display:        none;
+  text-align:     center;
+  padding:        3px 0;
+  border-top:     1px solid var(--amber);
+  background:     rgba(8,10,4,0.93);
+  color:          var(--amber);
+  font-size:      9px;
+  letter-spacing: 2px;
+  cursor:         pointer;
+  animation:      blink 0.9s step-end infinite;
+  flex-shrink:    0;
+}
+#log-new-entries.visible { display: block; }
+
+/* ══ BOTTOM BAR ═════════════════════════════════════════════════════ */
+#bottom-bar {
+  border:     1px solid var(--border);
+  border-top: 1px solid #1e2e0c;
+  background: #0b0f05;
+  display:    flex;
+  overflow:   hidden;
+  min-height: 0;
+}
+
+/* ── LEFT: FREQUENCY MONITOR (flex:3 ≈ 60%) ─────────────────────── */
+#freq-monitor {
+  flex:           3;
+  border-right:   1px solid #1e2e0c;
+  padding:        8px 12px;
+  display:        flex;
+  flex-direction: column;
+  gap:            4px;
+  min-width:      0;
+  transition:     border-color 0.3s;
+}
+
+.fm-header {
+  display:         flex;
+  justify-content: space-between;
+  align-items:     center;
+  border-bottom:   1px solid var(--border);
+  padding-bottom:  5px;
+  flex-shrink:     0;
+}
+
+.fm-title {
+  font-family:    'VT323', monospace;
+  font-size:      14px;
+  letter-spacing: 2px;
+  color:          var(--phosphor-dim);
+}
+
+.fc-timer {
+  font-family:    'Share Tech Mono', monospace;
+  font-size:      11px;
+  color:          var(--phosphor);
+  letter-spacing: 0.1em;
+}
+.fc-timer.fc-timer-warn { color: var(--amber); }
+.fc-timer.fc-timer-crit {
+  color:     var(--red-alert);
+  animation: sensorShake 0.18s infinite;
+}
+
+@keyframes fmBorderPulse {
+  0%, 100% { border-color: #1e2e0c; }
+  50%       { border-color: var(--amber); box-shadow: inset 0 0 12px rgba(255,184,48,0.04); }
+}
+#freq-monitor.fm-active { animation: fmBorderPulse 1.2s ease-in-out infinite; }
+
+@keyframes fmFlashGreen {
+  0%   { box-shadow: inset 0 0 0 2px var(--phosphor), 0 0 20px var(--phosphor); }
+  100% { box-shadow: none; }
+}
+@keyframes fmFlashRed {
+  0%   { box-shadow: inset 0 0 0 2px var(--red-alert), 0 0 20px var(--red-alert); }
+  100% { box-shadow: none; }
+}
+#freq-monitor.fm-flash-green { animation: fmFlashGreen 0.7s ease-out forwards !important; }
+#freq-monitor.fm-flash-red   { animation: fmFlashRed   0.7s ease-out forwards !important; }
+
+#fc-canvas {
+  flex:       1;
+  min-height: 36px;
+  width:      100%;
+  background: #000308;
+  border:     1px solid var(--border);
+  display:    block;
+}
+
+.fm-controls {
+  display:        flex;
+  flex-direction: column;
+  gap:            3px;
+  flex-shrink:    0;
+}
+
+.fc-control-row {
+  display:     flex;
+  align-items: center;
+  gap:         7px;
+}
+
+.fc-label {
+  font-family: 'Share Tech Mono', monospace;
+  font-size:   10px;
+  color:       var(--phosphor-dim);
+  width:       34px;
+  flex-shrink: 0;
+  letter-spacing: 1px;
+}
+
+.fc-btn {
+  background:  none;
+  border:      1px solid var(--border);
+  color:       var(--phosphor);
+  font-family: 'VT323', monospace;
+  font-size:   14px;
+  width:       24px;
+  height:      20px;
+  cursor:      pointer;
+  line-height: 1;
+  padding:     0;
+  flex-shrink: 0;
+  transition:  background 0.1s;
+}
+.fc-btn:hover  { background: rgba(168,255,62,0.12); }
+.fc-btn:active { background: rgba(168,255,62,0.28); }
+
+.fc-val {
+  font-family: 'Share Tech Mono', monospace;
+  font-size:   11px;
+  color:       var(--phosphor);
+  min-width:   52px;
+  text-align:  center;
+}
+
+.fc-match-bar {
+  border:      1px solid var(--border);
+  padding:     2px 8px;
+  text-align:  center;
+  font-family: 'Share Tech Mono', monospace;
+  font-size:   10px;
+  color:       var(--phosphor-dim);
+  transition:  color 0.3s, border-color 0.3s, box-shadow 0.3s;
+  flex-shrink: 0;
+}
+.fc-match-bad  { color: var(--red-alert);  border-color: var(--red-alert); }
+.fc-match-warn { color: var(--amber);      border-color: var(--amber); }
+.fc-match-good {
+  color:        var(--phosphor);
+  border-color: var(--phosphor);
+  animation:    fcMatchPulse 1s ease-in-out infinite alternate;
+}
+@keyframes fcMatchPulse {
+  from { box-shadow: none; }
+  to   { box-shadow: 0 0 8px var(--phosphor); }
+}
+
+.fc-confirm {
+  display:        none;           /* shown only in active mode */
+  background:     none;
+  border:         1px solid var(--border);
+  color:          var(--phosphor-dim);
+  font-family:    'VT323', monospace;
+  font-size:      13px;
+  letter-spacing: 0.1em;
+  padding:        3px 0;
+  cursor:         not-allowed;
+  opacity:        0.35;
+  transition:     all 0.2s;
+  flex-shrink:    0;
+  width:          100%;
+}
+.fc-confirm.fc-confirm-ready {
+  border-color: var(--phosphor);
+  color:        var(--phosphor);
+  cursor:       pointer;
+  opacity:      1;
+  text-shadow:  0 0 8px var(--phosphor);
+}
+.fc-confirm.fc-confirm-ready:hover { background: rgba(168,255,62,0.10); }
+
+/* ── RIGHT: DEBUG PANEL (flex:2 ≈ 40%) ──────────────────────────── */
+#debug-panel {
+  flex:           2;
+  border-left:    1px solid #1e2e0c;
+  padding:        8px 12px;
+  display:        none;
+  flex-direction: column;
+  gap:            3px;
+  overflow:       hidden;
+  min-width:      0;
+}
+#debug-panel.dbg-visible { display: flex; }
+
+.dbg-title {
+  font-family:    'VT323', monospace;
+  font-size:      13px;
+  letter-spacing: 2px;
+  color:          #ff3a3a;
+  border-bottom:  1px solid #2a0000;
+  padding-bottom: 4px;
+  flex-shrink:    0;
+}
+
+#dbg-entries {
+  flex:        1;
+  overflow:    hidden;
+  font-size:   9px;
+  color:       #5a8a2a;
+  line-height: 1.55;
+  letter-spacing: 0.3px;
+}
+
+.dbg-footer {
+  font-size:      8px;
+  color:          #2a2a2a;
+  letter-spacing: 1px;
+  border-top:     1px solid #1a1a1a;
+  padding-top:    3px;
+  flex-shrink:    0;
+}
 </style>
 
 <!-- ══ PAUSE OVERLAY ════════════════════════════════════════════ -->
@@ -1435,6 +1707,7 @@
     systemStatus:     { sicaklik: 'ok', basinc: 'ok', guc: 'ok' },
     critSeconds:      { sicaklik: 0, basinc: 0, guc: 0 },
     systemFailure:    false,
+    freqBonus:        true,   // true when SYNC ≥ 90%; reduces TEMP deterioration 10%
     correctDecisions: 0,
     wrongDecisions:   0,
     missedAnomalies:  0,
@@ -1444,24 +1717,33 @@
   const SYSTEMS = {
     sicaklik: {
       label: 'TEMPERATURE', unit: '°C', dec: 1,
-      safe: [40, 85], warn: [35, 95], crit: [30, 105],
-      maxRate: 0.8,   // °C per second; positive = rising when under-resourced
+      //  safe [40–85]  warn [35–90]  crit [30–100]
+      //  @ res=4, +0.16 °C/s  →  175 s to crit from 72 °C  (≈ 2.9 min)
+      //  @ res=10, −0.80 °C/s →  19 s recovery 100→85 °C
+      safe: [40, 85], warn: [35, 90], crit: [30, 100],
+      maxRate: 0.8,
       gaugeMin: 0, gaugeMax: 120,
       hintSafe: 'SAFE: 40–85°C',
     },
     basinc: {
       label: 'PRESSURE', unit: '%', dec: 1,
-      safe: [40, 80], warn: [30, 88], crit: [20, 95],
+      //  safe [40–80]  warn [30–87]  crit [20–94]
+      //  @ res=3, +0.24 %/s   →  138 s to crit from 61 %   (≈ 2.3 min)
+      //  @ res=10, −0.60 %/s  →  23 s recovery 94→80 %
+      safe: [40, 80], warn: [30, 87], crit: [20, 94],
       maxRate: 0.6,
       gaugeMin: 0, gaugeMax: 100,
       hintSafe: 'SAFE: 40–80%',
     },
     guc: {
       label: 'POWER', unit: '%', dec: 1,
-      safe: [30, 90], warn: [20, 95], crit: [10, 100],
+      //  safe [30–88]  warn [20–94]  crit [10–100]
+      //  @ res=3, +0.20 %/s   →  150 s to crit from 70 %   (≈ 2.5 min)
+      //  @ res=10, −0.50 %/s  →  24 s recovery 100→88 %
+      safe: [30, 88], warn: [20, 94], crit: [10, 100],
       maxRate: 0.5,
       gaugeMin: 0, gaugeMax: 100,
-      hintSafe: 'SAFE: 30–90%',
+      hintSafe: 'SAFE: 30–88%',
     }
   }
 
@@ -1552,7 +1834,15 @@
       const cfg  = SYSTEMS[sys]
       const res  = gameState.resources[sys]
       // rate: at res=5 → 0 (stable); res<5 → positive (rising); res>5 → negative (cooling)
-      const rate = (5 - res) / 5 * cfg.maxRate
+      // _diffScale only amplifies deterioration (rawRate > 0); recovery speed stays constant.
+      const rawRate = (5 - res) / 5 * cfg.maxRate
+      var   rate    = rawRate > 0 ? rawRate * _diffScale : rawRate
+      /* Frequency monitor modifiers — TEMPERATURE only, deterioration only */
+      if (sys === 'sicaklik' && rate > 0) {
+        if (gameState.freqBonus)  rate *= 0.90   // SYNC ≥ 90 %: −10 %
+        if (_fcPenaltyLevel >= 1) rate *= 1.20   // SYNC < 50 % for 30 s+: +20 %
+        if (_fcPermDebuff)        rate *= 1.15   // permanent level-3 debuff: +15 %
+      }
       let   val  = Math.max(cfg.gaugeMin, Math.min(cfg.gaugeMax,
                      gameState.systemValues[sys] + rate
                    ))
@@ -1562,20 +1852,35 @@
       const next   = _getStatus(val, cfg)
 
       if (next !== prev) {
-        if (next === 'warn')
-          addLog('⚠ ' + cfg.label + ' reached warning level: ' + val.toFixed(cfg.dec) + cfg.unit, 'warning')
-        else if (next === 'crit')
-          addLog('⚠ ' + cfg.label + ' CRITICAL! ' + val.toFixed(cfg.dec) + cfg.unit, 'anomaly')
-        else
-          addLog(cfg.label + ' returned to nominal.', 'normal')
+        var _wMsg, _cMsg, _nMsg
+        if (sys === 'sicaklik') {
+          _wMsg = '⚠ TEMP deviation: ' + val.toFixed(1) + '°C — coolant flow adjustment required.'
+          _cMsg = '⚠ CRITICAL TEMP: ' + val.toFixed(1) + '°C — emergency coolant activation required.'
+          _nMsg = 'Core temperature stabilized. Coolant equilibrium restored.'
+        } else if (sys === 'basinc') {
+          _wMsg = '⚠ PRIMARY PRESSURE trending: ' + val.toFixed(1) + '% — verify valve V-114 position.'
+          _cMsg = '⚠ CRITICAL PRESSURE: ' + val.toFixed(1) + '% — primary circuit integrity at risk.'
+          _nMsg = 'Primary circuit pressure normalized. No structural impact recorded.'
+        } else {
+          _wMsg = '⚠ REACTOR POWER drift: ' + val.toFixed(1) + '% — control rod position check required.'
+          _cMsg = '⚠ CRITICAL POWER: ' + val.toFixed(1) + '% — SCRAM threshold approached. Reduce load.'
+          _nMsg = 'Reactor power within authorized band. Monitoring resumed.'
+        }
+        if      (next === 'warn') addLog(_wMsg, 'warning')
+        else if (next === 'crit') addLog(_cMsg, 'anomaly')
+        else                      addLog(_nMsg, 'normal')
         gameState.systemStatus[sys] = next
       }
 
       if (next === 'crit') {
         gameState.critSeconds[sys]++
-        if (gameState.critSeconds[sys] >= 30) {
+        if (gameState.critSeconds[sys] >= 90) {
           gameState.systemFailure = true
-          addLog('⚠ FATAL: ' + cfg.label + ' system failure. Intervention unsuccessful.', 'anomaly')
+          var _fMsg
+          if      (sys === 'sicaklik') _fMsg = '⚠ FATAL: Thermal ceiling exceeded — fuel assembly damage probable. Shift terminated.'
+          else if (sys === 'basinc')   _fMsg = '⚠ FATAL: Primary circuit failure — containment boundary compromised. Shift terminated.'
+          else                         _fMsg = '⚠ FATAL: Uncontrolled power excursion — SCRAM engaged. Shift terminated.'
+          addLog(_fMsg, 'anomaly')
         }
       } else {
         gameState.critSeconds[sys] = 0
@@ -1587,7 +1892,6 @@
 
   /* ── updateResources ─────────────────────────────────────────────── */
   function updateResources(sys, delta) {
-    if (gameState.systemFailure) return
     const cur  = gameState.resources[sys]
     const next = cur + delta
     if (next < 0 || next > 10) {
@@ -1641,6 +1945,11 @@
   var _gcDuration = 8  * 60   // 480  — shift ends at 06:00
   var _gcInterval
 
+  /* Difficulty scale — applied to deterioration rate only (recovery unaffected).
+     Increases by 5 % every 30 game-minutes; capped at 2×.
+     Timeline:  22:00 → 1.0×   00:00 → 1.2×   03:00 → 1.5×   06:00 → 1.8× */
+  var _diffScale  = 1.0
+
   /* Hoisted function declarations — safe to call from anywhere. */
   function _gcTime() {
     var total = (_gcStart + _gcElapsed) % 1440
@@ -1681,6 +1990,18 @@
   function _gcTick() {
     _gcElapsed++
     _gcPaint()
+
+    /* Difficulty ramp: +5 % every 30 game-minutes, capped at 2× */
+    if (_gcElapsed % 30 === 0) {
+      _diffScale = Math.min(2.0, 1.0 + (_gcElapsed / 30) * 0.05)
+
+      /* Phase-transition log messages */
+      if (_gcElapsed === 120)       // 00:00
+        _lsAdd('00:00 — Night phase transition. Thermal baseline climbing. Increased vigilance required.', 'system')
+      else if (_gcElapsed === 300)  // 03:00
+        _lsAdd('⚠ 03:00 — High-load phase active. All parameters trend adverse. Intervention threshold reduced.', 'warning')
+    }
+
     if (_gcElapsed >= _gcDuration) clearInterval(_gcInterval)
   }
 
@@ -1696,18 +2017,46 @@
      addLogEntry(msg, cat)   — global alias for external callers
      ═══════════════════════════════════════════════════════════════════ */
 
-  var _lsEl  = document.getElementById('log-entries')
-  var _lsMax = 50
+  var _lsEl          = document.getElementById('log-entries')
+  var _lsMax         = 80
+  var _lsAutoScroll  = true
+  var _lsNewBadge    = document.getElementById('log-new-entries')
+
+  function _lsAtBottom() {
+    return _lsEl.scrollTop >= _lsEl.scrollHeight - _lsEl.clientHeight - 20
+  }
 
   function _lsAdd(msg, category) {
     if (!_lsEl) return
-    var ts  = _gcTime()                               // direct call — no object indirection
+    var ts  = _gcTime()
     var div = document.createElement('div')
     div.className = 'log-entry ' + (category || 'normal')
     div.innerHTML = '<span class="timestamp">' + ts + '</span> — ' + msg
     _lsEl.appendChild(div)
     while (_lsEl.children.length > _lsMax) _lsEl.removeChild(_lsEl.firstChild)
-    _lsEl.scrollTop = _lsEl.scrollHeight
+    if (_lsAutoScroll) {
+      _lsEl.scrollTop = _lsEl.scrollHeight
+    } else {
+      if (_lsNewBadge) _lsNewBadge.classList.add('visible')
+    }
+  }
+
+  /* Smart auto-scroll: pause when player scrolls up, resume at bottom. */
+  _lsEl.addEventListener('scroll', function() {
+    if (_lsAtBottom()) {
+      _lsAutoScroll = true
+      if (_lsNewBadge) _lsNewBadge.classList.remove('visible')
+    } else {
+      _lsAutoScroll = false
+    }
+  })
+
+  if (_lsNewBadge) {
+    _lsNewBadge.addEventListener('click', function() {
+      _lsAutoScroll = true
+      _lsEl.scrollTop = _lsEl.scrollHeight
+      _lsNewBadge.classList.remove('visible')
+    })
   }
 
   var logSystem = { addEntry: _lsAdd }
@@ -1715,27 +2064,26 @@
   function addLogEntry(msg, category) { _lsAdd(msg, category) }
 
   /* ── Shift-start entries ─────────────────────────────────────────── */
-  _lsAdd('Shift handover complete. Operator active.', 'system')
-  _lsAdd('All systems nominal. Cooling lines active.', 'normal')
+  _lsAdd('Shift 3 handover accepted. Previous operator departed 21:58.', 'system')
+  _lsAdd('Unit 4 parameters within operating envelope. Night-shift monitoring commenced.', 'normal')
+
+  /* ── Previous operator note — fires once between 22:30–23:30 game time ── */
+  setTimeout(function() {
+    _lsAdd('[PREV.OP. LOG — 21:47] Noticed vibration in pump room near CP-3. Reported to foreman Ivanov. Told: normal. I do not think it is normal. — V. Morozov', 'system')
+  }, 30000 + Math.floor(Math.random() * 60000))
 
   /* ── Routine NORMAL log: one random entry every 60–90 seconds ─────── */
   var ROUTINE_POOL = [
-    'Cooling line 1: nominal.',
-    'Cooling line 2: nominal.',
-    'Pressure valve checked. Normal.',
-    'Power consumption stable.',
-    'Reactor core nominal.',
-    'Periodic system scan complete.',
-    'Thermal sensor calibration verified.',
-    'Generator output within normal range.',
-    'Emergency cooling system on standby.',
-    'Auxiliary power circuit nominal.',
-    'Reactor neutron flux: stable.',
-    'Primary cooling circuit pressure normal.',
-    'Secondary circuit temperature nominal.',
-    'Control rod positions verified.',
-    'Valve system overall status: normal.',
-    'System log backed up. Record nominal.',
+    'Coolant pump CP-3 flow verified: 4.1 m/s. No deviation.',
+    'Control rod bank D: inserted 94 cm. Position confirmed.',
+    'Primary circuit pressure: 157.3 bar. Within tolerance.',
+    'Steam generator SG-2 level stable at 72 %. No deviation.',
+    'Reactor neutron flux ch.12: 3.41 ×10¹³ n/cm²·s. Nominal.',
+    'Emergency feedwater valve EFV-07: closed, sealed. Standby confirmed.',
+    'Valve V-114 cycle test complete. Actuation time: 1.2 s.',
+    'Boric acid concentration: 780 mg/kg. Record logged.',
+    'Radiation area monitor RAM-6: 0.22 mSv/h. Below threshold.',
+    'Turbine hall temperature: 34°C. Ventilation circuits normal.',
   ]
 
   function _scheduleRoutine() {
@@ -1786,27 +2134,27 @@
   var ANOM_TYPES = [
     {
       sensorId: 'A', valueKey: 'flow', type: 1,
-      logMsg: '⚠ CONFLICT: Flow rate log→4.2 m/s — sensor reads 0.0 m/s.',
+      logMsg: '⚠ CONFLICT: Line 2 flow log: 4.2 m/s — SEN.A reads 0.0 m/s. Total discrepancy.',
     },
     {
       sensorId: 'A', valueKey: 'valve', type: 2,
-      logMsg: '⚠ CONFLICT: Valve B3 closed (log) ↔ sensor reads OPEN.',
+      logMsg: '⚠ CONFLICT: Valve V-114 log: CLOSED — SEN.A contact reads: OPEN.',
     },
     {
       sensorId: 'B', valueKey: 'coreTemp', type: 3,
-      logMsg: '⚠ CONFLICT: Core temp dropping — no cooling activation detected.',
+      logMsg: '⚠ CONFLICT: Core temperature declining — no coolant activation registered. SEN.B unresponsive.',
     },
     {
       sensorId: 'A', valueKey: 'temp', type: 4,
-      logMsg: '⚠ CONFLICT: All sensors nominal — system load values inconsistent.',
+      logMsg: '⚠ CONFLICT: SEN.A reads nominal — operator log parameters inconsistent. Source unknown.',
     },
   ]
 
   /* ── False-alarm messages ────────────────────────────────────────── */
   var FAKE_MSGS = [
-    '⚠ CONFLICT: Sensor A data inconsistency detected — verification required.',
-    '⚠ CONFLICT: Reactor heat threshold log — system data contradictory.',
-    '⚠ CONFLICT: Cooling line 2 pressure anomaly — contradicts log data.',
+    '⚠ CONFLICT: SEN.A read cycle delayed 14 s — transmission desynchronized. Verify.',
+    '⚠ CONFLICT: Reactor outlet log: 308°C. Historical trend: 311°C. Delta 3°C — investigate.',
+    '⚠ CONFLICT: Line 2 pressure transducer bouncing. Log shows stable. Manual check required.',
   ]
 
   /* ── _anomSpawn ──────────────────────────────────────────────────── */
@@ -1841,7 +2189,7 @@
 
     if (stage === 1) {
       gameState.missedAnomalies++
-      _lsAdd('⚠ WARNING: Anomaly response time exceeded. Situation escalating.', 'warning')
+      _lsAdd('⚠ OVERDUE: No operator response within 90 s. Situation advancing. Supervisor on standby.', 'warning')
       /* Force visual escalation on the sensor if not already done */
       if (!_anom.isFake && _anom.sensorId) {
         var snsr = sensorState[_anom.sensorId]
@@ -1851,7 +2199,7 @@
       _anom.escTimer = setTimeout(function() { _anomEscalate(2) }, 60000)
 
     } else if (stage === 2) {
-      _lsAdd('⚠ FATAL: Anomaly intervention failed. Safety protocol engaged.', 'anomaly')
+      _lsAdd('⚠ FATAL: Anomaly unresolved. Automatic protocol initiated. Operator incident filed.', 'anomaly')
       _anomClear()
       setTimeout(_scheduleNextAnomaly, 5000)
     }
@@ -1891,11 +2239,17 @@
     if (correct) {
       gameState.correctDecisions++
       if (!_anom.isFake && _anom.sensorId) resolveAnomaly(_anom.sensorId, _anom.valueKey)
-      _lsAdd('✓ Decision correct. ' + (isReport ? 'Anomaly reported and resolved.' : 'Status confirmed normal.'), 'system')
+      _lsAdd(isReport
+        ? '✓ Anomaly logged and resolved. Supervisory system notified. Record updated.'
+        : '✓ False alarm confirmed. Sensor transient only — no active anomaly. Log cleared.',
+        'system')
     } else {
       gameState.wrongDecisions++
       if (!_anom.isFake && _anom.sensorId) resolveAnomaly(_anom.sensorId, _anom.valueKey)
-      _lsAdd('✗ Incorrect decision. ' + (isReport ? 'Unnecessary report submitted.' : 'Anomaly missed.'), 'warning')
+      _lsAdd(isReport
+        ? '✗ Report filed — post-review: no anomaly confirmed. Protocol deviation noted.'
+        : '✗ Status cleared — anomaly was active. Escalation unmanned. Supervisor alerted.',
+        'warning')
     }
 
     _anom.active   = false
@@ -1924,6 +2278,400 @@
 
   /* ── First anomaly: 180–300 s after shift start ──────────────────── */
   setTimeout(_anomSpawn, 180000 + Math.floor(Math.random() * 120000))
+
+  /* ═══════════════════════════════════════════════════════════════════
+     FREQUENCY MONITOR — always-on bottom bar (idle / active modes)
+     ─────────────────────────────────────────────────────────────────
+     IDLE   : waves always draw; target drifts continuously toward a
+              destination that changes every 20-30 s.
+              SYNC ≥ 90 % → gameState.freqBonus (-10 % TEMP rate).
+     ACTIVE : 60 s countdown + confirm btn.
+     PENALTY: tracked by _fcPenaltyTick every second.
+              L1 @30 s <50%: +20 % TEMP rate.
+              L2 @90 s <50%: triggerAnomaly('A','flow',1).
+              L3 @120s <50%: permanent +15 % TEMP rate (_fcPermDebuff).
+              L1/L2 reset when sync recovers; L3 never resets.
+     DRIFT SPEED (Hz/s):  22-00 → 0.02  |  00-03 → 0.05  |  03-06 → 0.09
+     ═══════════════════════════════════════════════════════════════════ */
+
+  /* ── State ───────────────────────────────────────────────────────── */
+  var _fcMode        = 'idle'
+  var _fcTargetFreq  = 2.4   // current drawn target (moves toward dest)
+  var _fcTargetAmp   = 0.8
+  var _fcDestFreq    = 2.4   // drift destination (chosen every 20-30 s)
+  var _fcDestAmp     = 0.8
+  var _fcPlayerFreq  = 2.4   // player starts in sync
+  var _fcPlayerAmp   = 0.8
+  var _fcSecondsLeft = 60
+  var _fcTimerInt    = null
+  var _fcRafId       = null
+  var _fcAnimStart   = null
+  var _fcLastTs      = null  // previous RAF timestamp for dt
+  var _fcDriftTimer  = null
+
+  /* Penalty state */
+  var _fcLowSyncSecs  = 0     // seconds below 50 % (resets on recovery)
+  var _fcPenaltyLevel = 0     // 0-3; levels 1-2 reset on recovery
+  var _fcPermDebuff   = false // set to true by level 3; never resets
+
+  /* ── Element refs ────────────────────────────────────────────────── */
+  var _fmTitleEl  = document.getElementById('fm-title')
+  var _fcCanvas   = document.getElementById('fc-canvas')
+  var _fcTimerEl  = document.getElementById('fc-timer')
+  var _fcFreqVal  = document.getElementById('fc-freq-val')
+  var _fcAmpVal   = document.getElementById('fc-amp-val')
+  var _fcMatchBar = document.getElementById('fc-match-bar')
+  var _fcMatchLbl = document.getElementById('fc-match-label')
+  var _fcConfirm  = document.getElementById('fc-confirm')
+  var _fcMonitor  = document.getElementById('freq-monitor')
+
+  /* ── Sync canvas pixel dimensions ───────────────────────────────── */
+  function _fcSyncCanvas() {
+    var w = _fcCanvas.offsetWidth  || 400
+    var h = _fcCanvas.offsetHeight || 48
+    if (_fcCanvas.width  !== w) _fcCanvas.width  = w
+    if (_fcCanvas.height !== h) _fcCanvas.height = h
+  }
+
+  /* ── Match score 0–100 ───────────────────────────────────────────── */
+  function _fcMatch() {
+    var fDiff = Math.abs(_fcPlayerFreq - _fcTargetFreq)
+    var aDiff = Math.abs(_fcPlayerAmp  - _fcTargetAmp)
+    var score = 100 - (fDiff / 4.5 * 50 + aDiff / 1.9 * 50)
+    return Math.max(0, Math.min(100, score))
+  }
+
+  /* ── Refresh freq-monitor UI (called on button press + 1 s tick) ── */
+  function _fcRefresh() {
+    var match = _fcMatch()
+    _fcFreqVal.textContent  = _fcPlayerFreq.toFixed(1) + ' Hz'
+    _fcAmpVal.textContent   = _fcPlayerAmp.toFixed(1)  + ' V'
+    _fcMatchLbl.textContent = 'SYNC: ' + Math.round(match) + '%'
+
+    _fcMatchBar.className = 'fc-match-bar'
+    if      (match >= 90) _fcMatchBar.classList.add('fc-match-good')
+    else if (match >= 50) _fcMatchBar.classList.add('fc-match-warn')
+    else                  _fcMatchBar.classList.add('fc-match-bad')
+
+    gameState.freqBonus = (match >= 90)
+
+    if (_fcMode === 'active') {
+      var ready = match >= 90
+      _fcConfirm.disabled = !ready
+      _fcConfirm.classList.toggle('fc-confirm-ready', ready)
+    }
+  }
+
+  /* ── Drift speed: Hz/s based on game-clock phase ────────────────── */
+  function _fcDriftSpeed() {
+    if      (_gcElapsed >= 300) return 0.09  // 03:00–06:00
+    else if (_gcElapsed >= 120) return 0.05  // 00:00–03:00
+    else                        return 0.02  // 22:00–00:00
+  }
+
+  /* ── Per-frame target movement toward destination ────────────────── */
+  function _fcDriftStep(dt) {
+    if (dt <= 0 || dt > 0.5) return   // skip huge gaps (tab switch, etc.)
+    var fSpd = _fcDriftSpeed()
+    var aSpd = fSpd * 0.60            // amp drifts at 60 % of freq speed
+
+    var fDiff = _fcDestFreq - _fcTargetFreq
+    if (Math.abs(fDiff) > 0.001)
+      _fcTargetFreq += Math.min(Math.abs(fDiff), fSpd * dt) * (fDiff > 0 ? 1 : -1)
+
+    var aDiff = _fcDestAmp - _fcTargetAmp
+    if (Math.abs(aDiff) > 0.001)
+      _fcTargetAmp  += Math.min(Math.abs(aDiff), aSpd * dt) * (aDiff > 0 ? 1 : -1)
+  }
+
+  /* ── Always-running oscilloscope RAF ────────────────────────────── */
+  function _fcDraw(ts) {
+    /* dt — capped to avoid huge jumps after tab-switches */
+    var dt = (_fcLastTs !== null) ? (ts - _fcLastTs) / 1000 : 0
+    _fcLastTs = ts
+    if (!_fcAnimStart) _fcAnimStart = ts
+    var elapsed = (ts - _fcAnimStart) / 1000
+
+    /* Advance target toward its drift destination */
+    _fcDriftStep(dt)
+
+    /* Recompute freqBonus every frame — cheap, no DOM */
+    gameState.freqBonus = (_fcMatch() >= 90)
+
+    _fcSyncCanvas()
+    var ctx = _fcCanvas.getContext('2d')
+    var W   = _fcCanvas.width
+    var H   = _fcCanvas.height
+    var mid = H / 2
+
+    ctx.clearRect(0, 0, W, H)
+
+    /* Target wave — dim grey */
+    ctx.beginPath()
+    ctx.strokeStyle = 'rgba(160,160,160,0.38)'
+    ctx.lineWidth   = 1.5
+    for (var x = 0; x <= W; x++) {
+      var tx = (x / W) * 2.0 + elapsed * 0.5
+      var ty = mid - (_fcTargetAmp * (H * 0.36)) * Math.sin(2 * Math.PI * _fcTargetFreq * tx)
+      if (x === 0) ctx.moveTo(x, ty); else ctx.lineTo(x, ty)
+    }
+    ctx.stroke()
+
+    /* Player wave — phosphor green with glow pass */
+    for (var pass = 0; pass < 2; pass++) {
+      ctx.beginPath()
+      if (pass === 0) {
+        ctx.strokeStyle = 'rgba(168,255,62,0.20)'
+        ctx.lineWidth   = 6
+        ctx.filter      = 'blur(3px)'
+      } else {
+        ctx.strokeStyle = '#a8ff3e'
+        ctx.lineWidth   = 2
+        ctx.filter      = 'none'
+      }
+      for (var x2 = 0; x2 <= W; x2++) {
+        var px = (x2 / W) * 2.0 + elapsed * 0.5
+        var py = mid - (_fcPlayerAmp * (H * 0.36)) * Math.sin(2 * Math.PI * _fcPlayerFreq * px)
+        if (x2 === 0) ctx.moveTo(x2, py); else ctx.lineTo(x2, py)
+      }
+      ctx.stroke()
+      ctx.filter = 'none'
+    }
+
+    _fcRafId = requestAnimationFrame(_fcDraw)
+  }
+
+  /* ── Active mode: countdown tick ─────────────────────────────────── */
+  function _fcTimerTick() {
+    _fcSecondsLeft--
+    var m = Math.floor(_fcSecondsLeft / 60)
+    var s = _fcSecondsLeft % 60
+    _fcTimerEl.textContent = String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0')
+    _fcTimerEl.className = 'fc-timer'
+    if      (_fcSecondsLeft <= 10) _fcTimerEl.classList.add('fc-timer-crit')
+    else if (_fcSecondsLeft <= 30) _fcTimerEl.classList.add('fc-timer-warn')
+    if (_fcSecondsLeft <= 0) _fcFail()
+  }
+
+  /* ── Visual flash on freq-monitor panel ─────────────────────────── */
+  function _fcFlash(cls) {
+    _fcMonitor.classList.remove('fm-active', 'fm-flash-green', 'fm-flash-red')
+    void _fcMonitor.offsetWidth
+    _fcMonitor.classList.add(cls)
+    setTimeout(function() { _fcMonitor.classList.remove(cls) }, 750)
+  }
+
+  /* ── Return to idle ──────────────────────────────────────────────── */
+  function _fcReturnToIdle() {
+    clearInterval(_fcTimerInt)
+    _fcTimerInt    = null
+    _fcMode        = 'idle'
+    _fcTimerEl.style.display = 'none'
+    _fcConfirm.style.display = 'none'
+    _fcConfirm.disabled      = true
+    _fcConfirm.classList.remove('fc-confirm-ready')
+    _fcMonitor.classList.remove('fm-active')
+    _fmTitleEl.textContent   = '// FREQUENCY MONITOR'
+    _fmTitleEl.style.color   = ''
+  }
+
+  /* ── Success ─────────────────────────────────────────────────────── */
+  function _fcSuccess() {
+    _fcReturnToIdle()
+    _fcFlash('fm-flash-green')
+    _lsAdd('Calibration confirmed. Line 2 signal locked. Thermal coupling restored.', 'system')
+    setTimeout(_scheduleNextFreqCal, 3000)
+  }
+
+  /* ── Failure ─────────────────────────────────────────────────────── */
+  function _fcFail() {
+    _fcReturnToIdle()
+    _fcFlash('fm-flash-red')
+    _lsAdd('⚠ Calibration timeout — Line 2 signal lost. Coolant damping compromised.', 'anomaly')
+    if (!_anom.active && !gameState.systemFailure) triggerAnomaly('A', 'flow', 1)
+    setTimeout(_scheduleNextFreqCal, 5000)
+  }
+
+  /* ── Switch to ACTIVE mode ───────────────────────────────────────── */
+  function triggerFreqCalibration() {
+    if (_fcMode === 'active' || _anom.active || gameState.systemFailure) return
+
+    _fcMode = 'active'
+
+    /* New target; also update dest so drift starts from here */
+    _fcTargetFreq = parseFloat((1.0 + Math.random() * 3.0).toFixed(1))
+    _fcTargetAmp  = parseFloat((0.3 + Math.random() * 1.2).toFixed(1))
+    _fcDestFreq   = _fcTargetFreq
+    _fcDestAmp    = _fcTargetAmp
+
+    _fcSecondsLeft         = 60
+    _fcTimerEl.textContent = '01:00'
+    _fcTimerEl.className   = 'fc-timer'
+    _fcTimerEl.style.display = ''
+
+    _fcConfirm.disabled = true
+    _fcConfirm.classList.remove('fc-confirm-ready')
+    _fcConfirm.style.display = 'block'
+
+    _fmTitleEl.textContent = '// CALIBRATION REQUIRED !'
+    _fmTitleEl.style.color = 'var(--amber)'
+    _fcMonitor.classList.add('fm-active')
+
+    _fcTimerInt = setInterval(_fcTimerTick, 1000)
+    _fcRefresh()
+
+    _lsAdd('⚠ Line 2 carrier signal deviation: target lock lost. Manual calibration window open — 60 s.', 'warning')
+  }
+
+  /* ── Pick new drift destination every 20–30 s ───────────────────── */
+  function _fcScheduleDrift() {
+    _fcDriftTimer = setTimeout(function() {
+      /* Pick a new destination within valid range */
+      _fcDestFreq = parseFloat((0.8 + Math.random() * 3.7).toFixed(1))  // 0.8–4.5
+      _fcDestAmp  = parseFloat((0.2 + Math.random() * 1.6).toFixed(1))  // 0.2–1.8
+      _fcScheduleDrift()
+    }, 20000 + Math.floor(Math.random() * 10000))
+  }
+
+  /* ── Sync penalty tracker — runs every real second ───────────────── */
+  function _fcPenaltyTick() {
+    var match = _fcMatch()
+
+    if (match < 50) {
+      _fcLowSyncSecs++
+
+      /* Level 3 — permanent debuff (fires once, never again) */
+      if (_fcLowSyncSecs >= 120 && !_fcPermDebuff) {
+        _fcPenaltyLevel = 3
+        _fcPermDebuff   = true
+        _lsAdd('⚠ CRITICAL: Line 2 sustained signal loss for 120 s. Thermal coupling permanently degraded — shift penalty active.', 'anomaly')
+      }
+      /* Level 2 — trigger anomaly */
+      else if (_fcLowSyncSecs >= 90 && _fcPenaltyLevel < 2) {
+        _fcPenaltyLevel = 2
+        _lsAdd('⚠ WARNING: Line 2 signal degraded for 90 s. Sensor reliability compromised. Anomaly probability elevated.', 'warning')
+        if (!_anom.active && !gameState.systemFailure) triggerAnomaly('A', 'flow', 1)
+      }
+      /* Level 1 — deterioration penalty */
+      else if (_fcLowSyncSecs >= 30 && _fcPenaltyLevel < 1) {
+        _fcPenaltyLevel = 1
+        _lsAdd('⚠ Frequency hold below 50 % sustained 30 s. Coolant flow rate fluctuating.', 'warning')
+      }
+
+    } else {
+      /* Sync recovered above 50 % — reset transient level.
+         _fcPermDebuff is permanent and tracked independently. */
+      if (_fcPenaltyLevel > 0) _fcPenaltyLevel = 0
+      _fcLowSyncSecs = 0
+    }
+
+    /* Update SYNC display once per second */
+    _fcRefresh()
+  }
+
+  /* ── Hold-to-repeat helper ───────────────────────────────────────── */
+  function _fcHold(btn, action) {
+    var _ht = null, _hi = null
+    btn.addEventListener('mousedown', function() {
+      action()
+      _ht = setTimeout(function() { _hi = setInterval(action, 80) }, 380)
+    })
+    function _rel() { clearTimeout(_ht); clearInterval(_hi) }
+    btn.addEventListener('mouseup',    _rel)
+    btn.addEventListener('mouseleave', _rel)
+  }
+
+  /* ── Freq / Amp buttons — always interactive (both modes) ────────── */
+  _fcHold(document.getElementById('fc-freq-minus'), function() {
+    _fcPlayerFreq = parseFloat(Math.max(0.5, _fcPlayerFreq - 0.1).toFixed(1))
+    _fcRefresh()
+  })
+  _fcHold(document.getElementById('fc-freq-plus'), function() {
+    _fcPlayerFreq = parseFloat(Math.min(5.0, _fcPlayerFreq + 0.1).toFixed(1))
+    _fcRefresh()
+  })
+  _fcHold(document.getElementById('fc-amp-minus'), function() {
+    _fcPlayerAmp = parseFloat(Math.max(0.1, _fcPlayerAmp - 0.1).toFixed(1))
+    _fcRefresh()
+  })
+  _fcHold(document.getElementById('fc-amp-plus'), function() {
+    _fcPlayerAmp = parseFloat(Math.min(2.0, _fcPlayerAmp + 0.1).toFixed(1))
+    _fcRefresh()
+  })
+
+  /* ── Confirm button ──────────────────────────────────────────────── */
+  _fcConfirm.addEventListener('click', function() {
+    if (_fcMode !== 'active' || _fcConfirm.disabled) return
+    _fcSuccess()
+  })
+
+  /* ── Adaptive re-scheduling ──────────────────────────────────────── */
+  function _scheduleNextFreqCal() {
+    if (gameState.systemFailure) return
+    setTimeout(triggerFreqCalibration, 240000 + Math.floor(Math.random() * 240000))
+  }
+
+  /* ── Boot ────────────────────────────────────────────────────────── */
+  _fcRefresh()
+  _fcRafId = requestAnimationFrame(_fcDraw)
+  _fcScheduleDrift()
+  setInterval(_fcPenaltyTick, 1000)
+  setTimeout(triggerFreqCalibration, 240000 + Math.floor(Math.random() * 120000))
+
+  /* ═══════════════════════════════════════════════════════════════════
+     DEBUG PANEL  (F1 to toggle)
+     ═══════════════════════════════════════════════════════════════════ */
+
+  var _dbgVisible = false
+  var _dbgEl      = document.getElementById('dbg-entries')
+  var _dbgPanel   = document.getElementById('debug-panel')
+
+  function _dbgUpdate() {
+    if (!_dbgVisible || !_dbgEl) return
+    var lines = []
+    var sign  = function(n) { return n >= 0 ? '+' : '' }
+
+    Object.keys(SYSTEMS).forEach(function(sys) {
+      var res  = gameState.resources[sys]
+      var raw  = (5 - res) / 5 * SYSTEMS[sys].maxRate
+      var rate = raw > 0 ? raw * _diffScale : raw
+      if (sys === 'sicaklik' && rate > 0) {
+        if (gameState.freqBonus)  rate *= 0.90
+        if (_fcPenaltyLevel >= 1) rate *= 1.20
+        if (_fcPermDebuff)        rate *= 1.15
+      }
+      var cfg = SYSTEMS[sys]
+      lines.push(cfg.label + ': ' + gameState.systemValues[sys].toFixed(1) + cfg.unit +
+                 '  [rate: ' + sign(rate) + rate.toFixed(2) + '/s]')
+    })
+
+    var penLabel = ['NONE', 'L1 +20%', 'L2 ANOM', 'L3 PERM'][_fcPenaltyLevel] || '?'
+    _dbgEl.innerHTML = [
+      'GAME TIME: '    + _gcTime(),
+      lines[0],
+      lines[1],
+      lines[2],
+      'RADIATION: '    + sensorState.B.values.radiation.v.toFixed(2) + ' mSv',
+      'RESOURCES: T:[' + gameState.resources.sicaklik + '] P:[' + gameState.resources.basinc + '] W:[' + gameState.resources.guc + ']',
+      'ANOMALY: '      + (_anom.active ? 'active' : 'none'),
+      'FREQ MODE: '    + _fcMode + '  SYNC: ' + Math.round(_fcMatch()) + '%',
+      'FREQ BONUS: '   + gameState.freqBonus + '  LOW-SYNC: ' + _fcLowSyncSecs + 's',
+      'PENALTY: '      + penLabel + '  PERM: ' + _fcPermDebuff,
+      'DIFFICULTY: '   + _diffScale.toFixed(2) + 'x',
+      'CORRECT: '      + gameState.correctDecisions + '  WRONG: ' + gameState.wrongDecisions + '  MISSED: ' + gameState.missedAnomalies,
+    ].map(function(l) { return '<div>' + l + '</div>' }).join('')
+  }
+
+  setInterval(_dbgUpdate, 1000)
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'F1') {
+      e.preventDefault()
+      _dbgVisible = !_dbgVisible
+      if (_dbgPanel) _dbgPanel.classList.toggle('dbg-visible', _dbgVisible)
+      _dbgUpdate()
+    }
+  })
 
 </script>
 
