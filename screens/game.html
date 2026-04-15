@@ -615,7 +615,7 @@
     <div class="header-status">
       <span class="status-ok">● REACTOR ONLINE</span>
       <span class="status-warn">▲ SOĞUTMA HAT 2</span>
-      <span class="status-time">02:14</span>
+      <span class="status-time" id="header-clock">22:00</span>
     </div>
   </div>
 
@@ -716,21 +716,7 @@
         <span class="log-title">// SİSTEM KAYITLARI</span>
         <div class="log-indicator"></div>
       </div>
-      <div class="log-entries" id="log-entries">
-        <div class="log-entry system" style="animation-delay:0s"><span class="timestamp">22:00</span>Vardiya devri tamamlandı. Operatör aktif.</div>
-        <div class="log-entry normal" style="animation-delay:0.1s"><span class="timestamp">22:01</span>Tüm sistemler nominal. Soğutma hatları aktif.</div>
-        <div class="log-entry normal" style="animation-delay:0.2s"><span class="timestamp">22:14</span>Soğutma hattı 2 verim düşüşü. Takviye önerilir.</div>
-        <div class="log-entry normal" style="animation-delay:0.3s"><span class="timestamp">22:31</span>Kaynak dağıtımı güncellendi. Sicaklik: 4 birim.</div>
-        <div class="log-entry normal" style="animation-delay:0.4s"><span class="timestamp">23:02</span>Basınç valfi B3 otomatik devreye girdi.</div>
-        <div class="log-entry conflict" style="animation-delay:0.5s"><span class="timestamp">23:02</span>⚠ NOT: Kamera 2 — valf B3 kapalı görünüyor.</div>
-        <div class="log-entry normal" style="animation-delay:0.6s"><span class="timestamp">23:15</span>Güç tüketimi artışı tespit edildi. İzleniyor.</div>
-        <div class="log-entry warning" style="animation-delay:0.7s"><span class="timestamp">01:08</span>Protokol 7 aktif. Harici müdahale tespit edildi.</div>
-        <div class="log-entry system" style="animation-delay:0.8s"><span class="timestamp">01:15</span>Protokol 7 sonlandırıldı. Sebep: harici faktör.</div>
-        <div class="log-entry warning" style="animation-delay:0.9s"><span class="timestamp">01:44</span>Güç tüketimi kritik eşiğe yaklaşıyor. %94.</div>
-        <div class="log-entry conflict" style="animation-delay:1.0s"><span class="timestamp">02:01</span>⚠ Kamera 1 — soğutma odası kapısı açık görünüyor.</div>
-        <div class="log-entry normal" style="animation-delay:1.1s"><span class="timestamp">02:01</span>Kapı durumu: KİLİTLİ. Sensör okuması normal.</div>
-        <div class="log-entry system" style="animation-delay:1.2s"><span class="timestamp">02:14</span>Operatör müdahalesi bekleniyor.<span class="log-cursor"></span></div>
-      </div>
+      <div class="log-entries" id="log-entries"></div>
     </div>
 
     <!-- RIGHT: SENSOR PANELS -->
@@ -834,17 +820,17 @@
   <div class="action-bar">
     <div class="action-left">
       VARDİYA İLERLEMESİ<br>
-      <span style="font-family:'VT323',monospace; font-size:14px; color: var(--phosphor);">▓▓▓▒░░░░░░░░░░░ 35%</span>
+      <span id="shift-bar" style="font-family:'VT323',monospace; font-size:14px; color: var(--phosphor);">░░░░░░░░░░░░░░░ 0%</span>
     </div>
 
     <div class="action-buttons">
-      <button class="action-btn btn-report">▲ ANOMALİ RAPORU</button>
-      <button class="action-btn btn-normal">✓ DURUM NORMAL</button>
+      <button class="action-btn btn-report btn-disabled" id="btn-anomaly-report" disabled>▲ ANOMALİ RAPORU</button>
+      <button class="action-btn btn-normal btn-disabled" id="btn-status-normal"  disabled>✓ DURUM NORMAL</button>
     </div>
 
     <div class="action-right">
-      SAAT 02:14<br>
-      <span>06:00'A 3 SA. 46 DK.</span>
+      SAAT <span id="action-clock" class="action-clock-val">22:00</span><br>
+      <span id="action-remaining">06:00'A 8 SA. 00 DK.</span>
     </div>
   </div>
 
@@ -1045,6 +1031,39 @@
 
 #log-entries { overflow-y: auto; scrollbar-width: none; }
 #log-entries::-webkit-scrollbar { display: none; }
+
+/* Log category: critical (red glow, distinct from anomaly) */
+.log-entry.critical {
+  color: var(--red-alert);
+  letter-spacing: 1px;
+  text-shadow: 0 0 8px rgba(255, 58, 58, 0.35);
+}
+
+/* Action bar inline clock — resets .action-right span defaults */
+.action-clock-val {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 10px;
+  color: var(--phosphor-dim);
+  display: inline;
+  letter-spacing: 1px;
+}
+
+/* ── Action button: disabled state ─────────────────────────────── */
+.action-btn:disabled,
+.action-btn.btn-disabled {
+  opacity: 0.28;
+  cursor: not-allowed;
+  pointer-events: none;
+  box-shadow: none !important;
+  background: none !important;
+}
+
+/* ── Action button: white flash on confirm click ────────────────── */
+@keyframes btnFlash {
+  0%   { background: rgba(255,255,255,0.25); box-shadow: 0 0 14px rgba(255,255,255,0.4); }
+  100% { background: none;                  box-shadow: none; }
+}
+.action-btn.btn-flash { animation: btnFlash 0.22s ease-out forwards; }
 </style>
 
 <!-- ══ PAUSE OVERLAY ════════════════════════════════════════════ -->
@@ -1143,7 +1162,7 @@
       id: 'B',
       values: {
         coreTemp:  { v: 340,  unit: '°C',   min: 0, max: 800, warnHi: 500, critHi: 650, warnLo: null, critLo: null, dec: 0 },
-        radiation: { v: 0.8,  unit: ' mSv', min: 0, max: 10,  warnHi: 2.0, critHi: 5.0, warnLo: null, critLo: null, dec: 2 },
+        radiation: { v: 0.8,  unit: ' mSv', min: 0, max: 10,  warnHi: null, critHi: null, warnLo: null, critLo: null, dec: 2, noDrift: true },
         pressure:  { v: 0.61, unit: ' atm', min: 0, max: 2.0, warnHi: 1.4, critHi: 1.7, warnLo: null, critLo: null, dec: 2 },
       },
       anomaly: null,
@@ -1211,6 +1230,14 @@
           barEl.style.width = `${w.toFixed(1)}%`
           barEl.className   = 'sensor-minibar-fill' + (level !== 'ok' ? ` ${level}` : '')
         }
+      }
+
+      /* Radiation: silent colour-only progression, bypasses anomaly/warning system. */
+      if (id === 'B' && key === 'radiation') {
+        const rv = vd.v
+        const rl = rv >= 3.0 ? 'crit' : rv >= 2.0 ? 'warn' : 'ok'
+        valEl.className = 'sensor-row-value' + (rl !== 'ok' ? ` ${rl}` : '')
+        if (barEl) barEl.className = 'sensor-minibar-fill' + (rl !== 'ok' ? ` ${rl}` : '')
       }
 
       if (warnEl) {
@@ -1285,6 +1312,7 @@
     Object.values(sensorState).forEach(sensor => {
       Object.entries(sensor.values).forEach(([key, vd]) => {
         if (vd.type === 'state') return
+        if (vd.noDrift) return
         /* Don't drift the value that an anomaly is currently glitching. */
         if (sensor.anomaly && sensor.anomaly.valueKey === key) return
 
@@ -1389,17 +1417,27 @@
   renderAll()
   setTimeout(_drift, 3000 + Math.random() * 2000)
 
+  /* Radiation: +0.02 mSv every 30 s — no player control, no explanation. */
+  setInterval(function() {
+    const vd = sensorState.B.values.radiation
+    vd.v = Math.min(vd.max, parseFloat((vd.v + 0.02).toFixed(2)))
+    renderSensor('B')
+  }, 30000)
+
   /* ═══════════════════════════════════════════════════════════════════
      RESOURCE DISTRIBUTION SYSTEM
      ═══════════════════════════════════════════════════════════════════ */
 
   /* ── State ─────────────────────────────────────────────────────────── */
   const gameState = {
-    resources:    { sicaklik: 4, basinc: 3, guc: 3 },
-    systemValues: { sicaklik: 72.0, basinc: 61.0, guc: 70.0 },
-    systemStatus: { sicaklik: 'ok', basinc: 'ok', guc: 'ok' },
-    critSeconds:  { sicaklik: 0, basinc: 0, guc: 0 },
-    systemFailure: false,
+    resources:        { sicaklik: 4, basinc: 3, guc: 3 },
+    systemValues:     { sicaklik: 72.0, basinc: 61.0, guc: 70.0 },
+    systemStatus:     { sicaklik: 'ok', basinc: 'ok', guc: 'ok' },
+    critSeconds:      { sicaklik: 0, basinc: 0, guc: 0 },
+    systemFailure:    false,
+    correctDecisions: 0,
+    wrongDecisions:   0,
+    missedAnomalies:  0,
   }
 
   /* ── System physics config ─────────────────────────────────────────── */
@@ -1441,22 +1479,9 @@
     setTimeout(() => btn.classList.remove('blocked'), 400)
   }
 
-  /* ── addLog ──────────────────────────────────────────────────────── */
+  /* ── addLog — delegates to _lsAdd (hoisted function declaration) ───── */
   function addLog(msg, type) {
-    type = type || 'normal'
-    const entries = document.getElementById('log-entries')
-    if (!entries) return
-    const now = new Date()
-    const ts  = String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0')
-    const div = document.createElement('div')
-    div.className = 'log-entry ' + type
-    div.innerHTML = '<span class="timestamp">' + ts + '</span>' + msg
-    // Remove the static cursor entry so it stays at bottom
-    const cursor = entries.querySelector('.log-cursor')
-    if (cursor) cursor.parentElement.remove()
-    entries.appendChild(div)
-    while (entries.children.length > 30) entries.removeChild(entries.firstChild)
-    entries.scrollTop = entries.scrollHeight
+    _lsAdd(msg, type || 'normal')
   }
 
   /* ── renderResources ─────────────────────────────────────────────── */
@@ -1605,6 +1630,300 @@
   renderResources()
   renderGauges()
   setInterval(systemTick, 1000)
+
+  /* ═══════════════════════════════════════════════════════════════════
+     GAME CLOCK — flat declarations (no IIFE)
+     1 real second = 1 game minute.  Shift: 22:00 → 06:00 (480 min).
+     ═══════════════════════════════════════════════════════════════════ */
+
+  var _gcElapsed  = 0
+  var _gcStart    = 22 * 60   // 1320 — shift begins at 22:00
+  var _gcDuration = 8  * 60   // 480  — shift ends at 06:00
+  var _gcInterval
+
+  /* Hoisted function declarations — safe to call from anywhere. */
+  function _gcTime() {
+    var total = (_gcStart + _gcElapsed) % 1440
+    var h = Math.floor(total / 60)
+    var m = total % 60
+    return String(h).padStart(2, '0') + ':' + String(m).padStart(2, '0')
+  }
+
+  function _gcBar() {
+    var pct    = Math.min(100, Math.floor(_gcElapsed / _gcDuration * 100))
+    var filled = Math.floor(pct / 100 * 15)
+    var bar    = ''
+    for (var i = 0; i < 15; i++) {
+      bar += (i < filled - 1 ? '▓' : i === filled - 1 ? '▒' : '░')
+    }
+    return bar + ' ' + pct + '%'
+  }
+
+  function _gcRemain() {
+    var rem = _gcDuration - _gcElapsed
+    if (rem <= 0) return 'VARDİYA SONA ERDİ'
+    var h = Math.floor(rem / 60)
+    var m = rem % 60
+    if (h > 0) return "06:00'A " + h + ' SA. ' + String(m).padStart(2, '0') + ' DK.'
+    return "06:00'A " + m + ' DK.'
+  }
+
+  function _gcPaint() {
+    var t = _gcTime()
+    var e
+    e = document.getElementById('header-clock');     if (e) e.textContent = t
+    e = document.getElementById('action-clock');     if (e) e.textContent = t
+    e = document.getElementById('action-remaining'); if (e) e.textContent = _gcRemain()
+    e = document.getElementById('shift-bar');        if (e) e.textContent = _gcBar()
+    e = document.querySelector('.pause-shift-time'); if (e) e.textContent = t
+  }
+
+  function _gcTick() {
+    _gcElapsed++
+    _gcPaint()
+    if (_gcElapsed >= _gcDuration) clearInterval(_gcInterval)
+  }
+
+  /* Public API — getCurrentTime() used by _lsAdd and external callers. */
+  var gameClock = { getCurrentTime: _gcTime }
+
+  _gcPaint()                                          // set display to 22:00 immediately
+  _gcInterval = setInterval(_gcTick, 1000)            // advance one game-minute per second
+
+  /* ═══════════════════════════════════════════════════════════════════
+     LOG SYSTEM — flat declarations (no IIFE)
+     _lsAdd(msg, category)   — internal + used by addLog wrapper above
+     addLogEntry(msg, cat)   — global alias for external callers
+     ═══════════════════════════════════════════════════════════════════ */
+
+  var _lsEl  = document.getElementById('log-entries')
+  var _lsMax = 50
+
+  function _lsAdd(msg, category) {
+    if (!_lsEl) return
+    var ts  = _gcTime()                               // direct call — no object indirection
+    var div = document.createElement('div')
+    div.className = 'log-entry ' + (category || 'normal')
+    div.innerHTML = '<span class="timestamp">' + ts + '</span> — ' + msg
+    _lsEl.appendChild(div)
+    while (_lsEl.children.length > _lsMax) _lsEl.removeChild(_lsEl.firstChild)
+    _lsEl.scrollTop = _lsEl.scrollHeight
+  }
+
+  var logSystem = { addEntry: _lsAdd }
+
+  function addLogEntry(msg, category) { _lsAdd(msg, category) }
+
+  /* ── Shift-start entries ─────────────────────────────────────────── */
+  _lsAdd('Vardiya devri tamamlandı. Operatör aktif.', 'system')
+  _lsAdd('Tüm sistemler nominal. Soğutma hatları aktif.', 'normal')
+
+  /* ── Routine NORMAL log: one random entry every 60–90 seconds ─────── */
+  var ROUTINE_POOL = [
+    'Soğutma hattı 1: nominal.',
+    'Soğutma hattı 2: nominal.',
+    'Basınç valfi kontrol edildi. Normal.',
+    'Güç tüketimi stabil.',
+    'Reaktör çekirdeği nominal.',
+    'Periyodik sistem taraması tamamlandı.',
+    'Termal sensör kalibrasyonu doğrulandı.',
+    'Jeneratör çıkışı normal aralıkta.',
+    'Acil soğutma sistemi bekleme modunda.',
+    'Yardımcı güç devresi nominal.',
+    'Reaktör nötron akısı: stabil.',
+    'Birincil soğutma devresi basıncı normal.',
+    'İkincil devre sıcaklığı nominal aralıkta.',
+    'Kontrol çubukları konumu doğrulandı.',
+    'Valf sistemi genel durumu: normal.',
+    'Sistem logu yedeklendi. Kayıt nominal.',
+  ]
+
+  function _scheduleRoutine() {
+    setTimeout(function() {
+      _lsAdd(ROUTINE_POOL[Math.floor(Math.random() * ROUTINE_POOL.length)], 'normal')
+      _scheduleRoutine()
+    }, 15000 + Math.floor(Math.random() * 10000))
+  }
+
+  _scheduleRoutine()
+
+  /* ═══════════════════════════════════════════════════════════════════
+     ANOMALİ SİSTEMİ
+     ─────────────────────────────────────────────────────────────────
+     Lifecycle
+       _anomSpawn()       picks a type (30 % chance false alarm),
+                          calls triggerAnomaly(), logs a CONFLICT entry,
+                          enables the two action buttons, starts 90 s timer.
+       _anomDecide(bool)  player presses a button (true = report).
+       _anomEscalate(n)   missed deadline → intensify (stage 1, 90 s)
+                          then auto-fail  (stage 2, +60 s).
+     ═══════════════════════════════════════════════════════════════════ */
+
+  /* ── Active anomaly tracking ─────────────────────────────────────── */
+  var _anom = {
+    active:      false,
+    isFake:      false,
+    sensorId:    null,
+    valueKey:    null,
+    decideTimer: null,   // 90 s decision deadline
+    escTimer:    null,   // 60 s stage-2 timer
+    stage:       0,
+  }
+
+  /* ── Button refs ─────────────────────────────────────────────────── */
+  var _btnReport = document.getElementById('btn-anomaly-report')
+  var _btnNormal = document.getElementById('btn-status-normal')
+
+  /* ── Button enable / disable ─────────────────────────────────────── */
+  function _anomSetButtons(enabled) {
+    _btnReport.disabled = !enabled
+    _btnNormal.disabled = !enabled
+    _btnReport.classList.toggle('btn-disabled', !enabled)
+    _btnNormal.classList.toggle('btn-disabled', !enabled)
+  }
+
+  /* ── Real-anomaly templates ──────────────────────────────────────── */
+  var ANOM_TYPES = [
+    {
+      sensorId: 'A', valueKey: 'flow', type: 1,
+      logMsg: '⚠ ÇATIŞMA: Akış hızı log→4.2 m/s — sensör→0.0 m/s okuyor.',
+    },
+    {
+      sensorId: 'A', valueKey: 'valve', type: 2,
+      logMsg: '⚠ ÇATIŞMA: Valf B3 kapatıldı (log) ↔ sensör AÇIK okuyor.',
+    },
+    {
+      sensorId: 'B', valueKey: 'coreTemp', type: 3,
+      logMsg: '⚠ ÇATIŞMA: Çekirdek ısısı düşüyor — soğutma aktivasyonu yok.',
+    },
+    {
+      sensorId: 'A', valueKey: 'temp', type: 4,
+      logMsg: '⚠ ÇATIŞMA: Tüm sensörler nominal — sistem yük değerleri uyumsuz.',
+    },
+  ]
+
+  /* ── False-alarm messages ────────────────────────────────────────── */
+  var FAKE_MSGS = [
+    '⚠ ÇATIŞMA: Sensör A veri tutarsızlığı algılandı — doğrulama gerekiyor.',
+    '⚠ ÇATIŞMA: Reaktör ısı eşiği logu — sistem verisi çelişkili.',
+    '⚠ ÇATIŞMA: Soğutma hattı 2 basınç anomalisi — log ile çelişiyor.',
+  ]
+
+  /* ── _anomSpawn ──────────────────────────────────────────────────── */
+  function _anomSpawn() {
+    if (_anom.active || gameState.systemFailure) return
+    _anom.active = true
+    _anom.stage  = 0
+    _anom.isFake = Math.random() < 0.30
+
+    if (_anom.isFake) {
+      _anom.sensorId = null
+      _anom.valueKey = null
+      _lsAdd(FAKE_MSGS[Math.floor(Math.random() * FAKE_MSGS.length)], 'conflict')
+    } else {
+      var tpl = ANOM_TYPES[Math.floor(Math.random() * ANOM_TYPES.length)]
+      _anom.sensorId = tpl.sensorId
+      _anom.valueKey = tpl.valueKey
+      triggerAnomaly(tpl.sensorId, tpl.valueKey, tpl.type)
+      _lsAdd(tpl.logMsg, 'conflict')
+    }
+
+    _anomSetButtons(true)
+
+    /* 90 s decision window */
+    _anom.decideTimer = setTimeout(function() { _anomEscalate(1) }, 90000)
+  }
+
+  /* ── _anomEscalate ───────────────────────────────────────────────── */
+  function _anomEscalate(stage) {
+    if (!_anom.active) return
+    _anom.stage = stage
+
+    if (stage === 1) {
+      gameState.missedAnomalies++
+      _lsAdd('⚠ UYARI: Anomali yanıt süresi aşıldı. Durum kritikleşiyor.', 'warning')
+      /* Force visual escalation on the sensor if not already done */
+      if (!_anom.isFake && _anom.sensorId) {
+        var snsr = sensorState[_anom.sensorId]
+        if (snsr.anomaly) { snsr.anomaly.escalated = true; renderSensor(_anom.sensorId) }
+      }
+      /* Stage 2 after another 60 s */
+      _anom.escTimer = setTimeout(function() { _anomEscalate(2) }, 60000)
+
+    } else if (stage === 2) {
+      _lsAdd('⚠ FATAL: Anomali müdahalesi başarısız. Güvenlik protokolü devrede.', 'anomaly')
+      _anomClear()
+      setTimeout(_scheduleNextAnomaly, 5000)
+    }
+  }
+
+  /* ── _anomClear — wipe state, no scheduling ──────────────────────── */
+  function _anomClear() {
+    clearTimeout(_anom.decideTimer)
+    clearTimeout(_anom.escTimer)
+    if (!_anom.isFake && _anom.sensorId) {
+      resolveAnomaly(_anom.sensorId, _anom.valueKey)
+    }
+    _anom.active   = false
+    _anom.isFake   = false
+    _anom.sensorId = null
+    _anom.valueKey = null
+    _anom.stage    = 0
+    _anomSetButtons(false)
+  }
+
+  /* ── _anomDecide — player presses a button ───────────────────────── */
+  function _anomDecide(isReport) {
+    if (!_anom.active) return
+
+    /* White flash on the pressed button */
+    var btn = isReport ? _btnReport : _btnNormal
+    btn.classList.add('btn-flash')
+    setTimeout(function() { btn.classList.remove('btn-flash') }, 220)
+
+    _anomSetButtons(false)
+    clearTimeout(_anom.decideTimer)
+    clearTimeout(_anom.escTimer)
+
+    /* Correct = report on real anomaly / normal on false alarm */
+    var correct = _anom.isFake ? !isReport : isReport
+
+    if (correct) {
+      gameState.correctDecisions++
+      if (!_anom.isFake && _anom.sensorId) resolveAnomaly(_anom.sensorId, _anom.valueKey)
+      _lsAdd('✓ Karar doğru. ' + (isReport ? 'Anomali raporlandı ve giderildi.' : 'Durum normal onaylandı.'), 'system')
+    } else {
+      gameState.wrongDecisions++
+      if (!_anom.isFake && _anom.sensorId) resolveAnomaly(_anom.sensorId, _anom.valueKey)
+      _lsAdd('✗ Hatalı karar. ' + (isReport ? 'Gereksiz rapor gönderildi.' : 'Anomali gözden kaçırıldı.'), 'warning')
+    }
+
+    _anom.active   = false
+    _anom.isFake   = false
+    _anom.sensorId = null
+    _anom.valueKey = null
+    _anom.stage    = 0
+
+    /* 3 s cooldown before next spawn */
+    setTimeout(_scheduleNextAnomaly, 3000)
+  }
+
+  /* ── Adaptive spawn scheduling ───────────────────────────────────── */
+  function _scheduleNextAnomaly() {
+    if (gameState.systemFailure) return
+    var delay
+    if      (_gcElapsed >= 240) delay = 60000  + Math.floor(Math.random() * 120000)  // 04:00+ → 1–3 min
+    else if (_gcElapsed >= 120) delay = 120000 + Math.floor(Math.random() * 120000)  // 02:00+ → 2–4 min
+    else                        delay = 240000 + Math.floor(Math.random() * 180000)  // early  → 4–7 min
+    setTimeout(_anomSpawn, delay)
+  }
+
+  /* ── Button listeners ────────────────────────────────────────────── */
+  _btnReport.addEventListener('click', function() { if (_anom.active) _anomDecide(true)  })
+  _btnNormal.addEventListener('click', function() { if (_anom.active) _anomDecide(false) })
+
+  /* ── First anomaly: 180–300 s after shift start ──────────────────── */
+  setTimeout(_anomSpawn, 180000 + Math.floor(Math.random() * 120000))
 
 </script>
 
