@@ -614,7 +614,7 @@
     <div class="header-title glow">THERMAL — UNIT 4 / OPERATOR TERMINAL</div>
     <div class="header-status">
       <span class="status-ok">● REACTOR ONLINE</span>
-      <span class="status-warn">▲ SOĞUTMA HAT 2</span>
+      <span class="status-warn">▲ COOLANT LINE 2</span>
       <span class="status-time" id="header-clock">22:00</span>
     </div>
   </div>
@@ -624,50 +624,50 @@
 
     <!-- LEFT: CONTROL PANEL -->
     <div class="panel">
-      <div class="panel-title">// KONTROL PANELİ</div>
+      <div class="panel-title">// CONTROL PANEL</div>
 
       <!-- TEMP gauge -->
       <div class="gauge-block" id="gauge-block-sicaklik">
         <div class="gauge-label">
-          <span>SICAKLIK</span>
+          <span>TEMPERATURE</span>
           <span class="val ok" id="gauge-val-sicaklik">72.0°C</span>
         </div>
         <div class="gauge-bar-bg">
           <div class="gauge-bar-fill ok" id="gauge-bar-sicaklik" style="width: 60%"></div>
         </div>
-        <div id="gauge-hint-sicaklik" style="font-size:9px; color: var(--phosphor-dim); letter-spacing:1px;">GÜVENLİ: 40–85°C</div>
+        <div id="gauge-hint-sicaklik" style="font-size:9px; color: var(--phosphor-dim); letter-spacing:1px;">SAFE: 40–85°C</div>
       </div>
 
       <!-- PRESSURE gauge -->
       <div class="gauge-block" id="gauge-block-basinc">
         <div class="gauge-label">
-          <span>BASINÇ</span>
+          <span>PRESSURE</span>
           <span class="val ok" id="gauge-val-basinc">61.0%</span>
         </div>
         <div class="gauge-bar-bg">
           <div class="gauge-bar-fill ok" id="gauge-bar-basinc" style="width: 61%"></div>
         </div>
-        <div id="gauge-hint-basinc" style="font-size:9px; color: var(--phosphor-dim); letter-spacing:1px;">GÜVENLİ: %40–80</div>
+        <div id="gauge-hint-basinc" style="font-size:9px; color: var(--phosphor-dim); letter-spacing:1px;">SAFE: 40–80%</div>
       </div>
 
       <!-- POWER gauge -->
       <div class="gauge-block" id="gauge-block-guc">
         <div class="gauge-label">
-          <span>GÜÇ</span>
+          <span>POWER</span>
           <span class="val ok" id="gauge-val-guc">70.0%</span>
         </div>
         <div class="gauge-bar-bg">
           <div class="gauge-bar-fill ok" id="gauge-bar-guc" style="width: 70%"></div>
         </div>
-        <div id="gauge-hint-guc" style="font-size:9px; color: var(--phosphor-dim); letter-spacing:1px;">GÜVENLİ: %30–90</div>
+        <div id="gauge-hint-guc" style="font-size:9px; color: var(--phosphor-dim); letter-spacing:1px;">SAFE: 30–90%</div>
       </div>
 
       <!-- RESOURCE DISTRIBUTION -->
       <div class="resource-section">
-        <div class="resource-title">// KAYNAK DAĞITIMI [TOPLAM: 10]</div>
+        <div class="resource-title">// RESOURCE DISTRIBUTION [TOTAL: 10]</div>
 
         <div class="resource-row">
-          <span class="resource-name">SICAKLIK</span>
+          <span class="resource-name">TEMPERATURE</span>
           <button class="resource-btn" id="res-minus-sicaklik">−</button>
           <span class="resource-val" id="res-val-sicaklik">4</span>
           <button class="resource-btn" id="res-plus-sicaklik">+</button>
@@ -681,7 +681,7 @@
         </div>
 
         <div class="resource-row">
-          <span class="resource-name">BASINÇ</span>
+          <span class="resource-name">PRESSURE</span>
           <button class="resource-btn" id="res-minus-basinc">−</button>
           <span class="resource-val" id="res-val-basinc">3</span>
           <button class="resource-btn" id="res-plus-basinc">+</button>
@@ -695,7 +695,7 @@
         </div>
 
         <div class="resource-row">
-          <span class="resource-name">GÜÇ</span>
+          <span class="resource-name">POWER</span>
           <button class="resource-btn" id="res-minus-guc">−</button>
           <span class="resource-val" id="res-val-guc">3</span>
           <button class="resource-btn" id="res-plus-guc">+</button>
@@ -713,7 +713,7 @@
     <!-- CENTER: LOG FEED -->
     <div class="log-feed">
       <div class="log-header">
-        <span class="log-title">// SİSTEM KAYITLARI</span>
+        <span class="log-title">// SYSTEM LOG</span>
         <div class="log-indicator"></div>
       </div>
       <div class="log-entries" id="log-entries"></div>
@@ -721,21 +721,21 @@
 
     <!-- RIGHT: SENSOR PANELS -->
     <div class="sensor-column">
-      <div class="sensor-col-title">// SENSÖR PANELLERİ</div>
+      <div class="sensor-col-title">// SENSOR PANELS</div>
 
-      <!-- ── SENSOR A: SOĞUTMA ODASI ───────────────────────────── -->
+      <!-- ── SENSOR A: COOLING ROOM ────────────────────────────── -->
       <div class="sensor-panel" id="sensor-A">
         <div class="sensor-panel-header">
-          <span class="sensor-panel-name">SEN.A — SOĞUTMA ODASI</span>
+          <span class="sensor-panel-name">SEN.A — COOLING ROOM</span>
           <div class="sensor-status-group">
             <div class="sensor-dot" id="dot-A"></div>
-            <span class="sensor-status-text" id="status-A">NOMİNAL</span>
+            <span class="sensor-status-text" id="status-A">NOMINAL</span>
           </div>
         </div>
 
         <div class="sensor-row" id="row-A-temp">
           <div class="sensor-row-top">
-            <span class="sensor-row-label">SICAKLIK</span>
+            <span class="sensor-row-label">TEMPERATURE</span>
             <span class="sensor-row-value" id="val-A-temp">82.4°C</span>
           </div>
           <div class="sensor-minibar-bg">
@@ -746,7 +746,7 @@
 
         <div class="sensor-row" id="row-A-flow">
           <div class="sensor-row-top">
-            <span class="sensor-row-label">AKIŞ HIZI</span>
+            <span class="sensor-row-label">FLOW RATE</span>
             <span class="sensor-row-value" id="val-A-flow">4.2 m/s</span>
           </div>
           <div class="sensor-minibar-bg">
@@ -757,28 +757,28 @@
 
         <div class="sensor-row" id="row-A-valve">
           <div class="sensor-row-top">
-            <span class="sensor-row-label">VALF DURUMU</span>
-            <span class="sensor-row-value" id="val-A-valve">KAPALI</span>
+            <span class="sensor-row-label">VALVE STATUS</span>
+            <span class="sensor-row-value" id="val-A-valve">CLOSED</span>
           </div>
           <div class="sensor-warning-text" id="warn-A-valve"></div>
         </div>
 
-        <div class="sensor-timestamp" id="ts-A">Son güncelleme: —:—:—</div>
+        <div class="sensor-timestamp" id="ts-A">Last update: —:—:—</div>
       </div>
 
-      <!-- ── SENSOR B: REAKTÖR ODASI ───────────────────────────── -->
+      <!-- ── SENSOR B: REACTOR ROOM ─────────────────────────────── -->
       <div class="sensor-panel" id="sensor-B">
         <div class="sensor-panel-header">
-          <span class="sensor-panel-name">SEN.B — REAKTÖR ODASI</span>
+          <span class="sensor-panel-name">SEN.B — REACTOR ROOM</span>
           <div class="sensor-status-group">
             <div class="sensor-dot" id="dot-B"></div>
-            <span class="sensor-status-text" id="status-B">NOMİNAL</span>
+            <span class="sensor-status-text" id="status-B">NOMINAL</span>
           </div>
         </div>
 
         <div class="sensor-row" id="row-B-coreTemp">
           <div class="sensor-row-top">
-            <span class="sensor-row-label">ÇEKİRDEK ISISI</span>
+            <span class="sensor-row-label">CORE TEMP</span>
             <span class="sensor-row-value" id="val-B-coreTemp">340°C</span>
           </div>
           <div class="sensor-minibar-bg">
@@ -789,7 +789,7 @@
 
         <div class="sensor-row" id="row-B-radiation">
           <div class="sensor-row-top">
-            <span class="sensor-row-label">RADYASYON</span>
+            <span class="sensor-row-label">RADIATION</span>
             <span class="sensor-row-value" id="val-B-radiation">0.80 mSv</span>
           </div>
           <div class="sensor-minibar-bg">
@@ -800,7 +800,7 @@
 
         <div class="sensor-row" id="row-B-pressure">
           <div class="sensor-row-top">
-            <span class="sensor-row-label">BASINÇ</span>
+            <span class="sensor-row-label">PRESSURE</span>
             <span class="sensor-row-value" id="val-B-pressure">0.61 atm</span>
           </div>
           <div class="sensor-minibar-bg">
@@ -809,7 +809,7 @@
           <div class="sensor-warning-text" id="warn-B-pressure"></div>
         </div>
 
-        <div class="sensor-timestamp" id="ts-B">Son güncelleme: —:—:—</div>
+        <div class="sensor-timestamp" id="ts-B">Last update: —:—:—</div>
       </div>
 
     </div>
@@ -819,18 +819,18 @@
   <!-- ACTION BAR -->
   <div class="action-bar">
     <div class="action-left">
-      VARDİYA İLERLEMESİ<br>
+      SHIFT PROGRESS<br>
       <span id="shift-bar" style="font-family:'VT323',monospace; font-size:14px; color: var(--phosphor);">░░░░░░░░░░░░░░░ 0%</span>
     </div>
 
     <div class="action-buttons">
-      <button class="action-btn btn-report btn-disabled" id="btn-anomaly-report" disabled>▲ ANOMALİ RAPORU</button>
-      <button class="action-btn btn-normal btn-disabled" id="btn-status-normal"  disabled>✓ DURUM NORMAL</button>
+      <button class="action-btn btn-report btn-disabled" id="btn-anomaly-report" disabled>▲ ANOMALY REPORT</button>
+      <button class="action-btn btn-normal btn-disabled" id="btn-status-normal"  disabled>✓ STATUS NORMAL</button>
     </div>
 
     <div class="action-right">
-      SAAT <span id="action-clock" class="action-clock-val">22:00</span><br>
-      <span id="action-remaining">06:00'A 8 SA. 00 DK.</span>
+      TIME <span id="action-clock" class="action-clock-val">22:00</span><br>
+      <span id="action-remaining">8 HR. 00 MIN. TO 06:00</span>
     </div>
   </div>
 
@@ -1070,7 +1070,7 @@
 <div id="pause-overlay">
   <div class="pause-panel">
     <div class="pause-header">
-      <div class="pause-title">// VARDİYA DURAKLATILDI</div>
+      <div class="pause-title">// SHIFT PAUSED</div>
       <div class="pause-shift-time">02:14</div>
     </div>
     <div class="pause-rule"></div>
@@ -1078,7 +1078,7 @@
 
       <div class="pause-item" id="btn-resume">
         <span class="pause-prefix">01</span>
-        <span class="pause-label">DEVAM ET</span>
+        <span class="pause-label">RESUME</span>
         <span class="pause-arrow">▶</span>
       </div>
 
@@ -1086,13 +1086,13 @@
 
       <div class="pause-item" id="btn-menu">
         <span class="pause-prefix">02</span>
-        <span class="pause-label">ANA MENÜYE DÖN</span>
+        <span class="pause-label">RETURN TO MAIN MENU</span>
         <span class="pause-arrow">▶</span>
       </div>
 
       <div class="pause-item" id="btn-quit">
         <span class="pause-prefix">03</span>
-        <span class="pause-label danger">ÇIKIŞ</span>
+        <span class="pause-label danger">EXIT</span>
         <span class="pause-arrow">▶</span>
       </div>
 
@@ -1154,7 +1154,7 @@
       values: {
         temp:  { v: 82.4,    unit: '°C',   min: 0, max: 150, warnHi: 90,   critHi: 105,  warnLo: null, critLo: null, dec: 1 },
         flow:  { v: 4.2,     unit: ' m/s', min: 0, max: 10,  warnHi: null, critHi: null, warnLo: 2.0,  critLo: 0.5,  dec: 1 },
-        valve: { v: 'KAPALI',unit: '',     type: 'state' },
+        valve: { v: 'CLOSED', unit: '',    type: 'state' },
       },
       anomaly: null,  // { valueKey, type, fakeValue, _showFake, escalated, timers }
     },
@@ -1242,7 +1242,7 @@
 
       if (warnEl) {
         if (isTarget) {
-          warnEl.textContent = sensor.anomaly.escalated ? '⚠ OKUMA KRİTİK' : '⚠ SİNYAL HATALARI'
+          warnEl.textContent = sensor.anomaly.escalated ? '⚠ READING CRITICAL' : '⚠ SIGNAL ERRORS'
           warnEl.className   = 'sensor-warning-text visible' + (sensor.anomaly.escalated ? ' crit' : '')
         } else {
           warnEl.textContent = ''
@@ -1257,7 +1257,7 @@
     /* Panel-level indicator — anomaly state takes precedence over value drift. */
     const pLevel = sensor.anomaly ? (sensor.anomaly.escalated ? 'crit' : 'warn') : worst
     const COLOR  = { ok: 'var(--phosphor)', warn: 'var(--amber)', crit: 'var(--red-alert)' }
-    const LABEL  = { ok: 'NOMİNAL',         warn: 'ANOMALI',      crit: 'KRİTİK !'        }
+    const LABEL  = { ok: 'NOMINAL',           warn: 'ANOMALY',      crit: 'CRITICAL !'      }
 
     dotEl.style.background = COLOR[pLevel]
     dotEl.style.boxShadow  = `0 0 5px ${COLOR[pLevel]}`
@@ -1268,7 +1268,7 @@
     panel.classList.toggle('anomaly-active', pLevel === 'warn')
     panel.classList.toggle('crit-active',    pLevel === 'crit')
 
-    if (tsEl) tsEl.textContent = 'Son güncelleme: ' + _nowHMS()
+    if (tsEl) tsEl.textContent = 'Last update: ' + _nowHMS()
   }
 
   function renderAll() { Object.keys(sensorState).forEach(renderSensor) }
@@ -1335,7 +1335,7 @@
     const hms = _nowHMS()
     Object.keys(sensorState).forEach(id => {
       const el = document.getElementById(`ts-${id}`)
-      if (el) el.textContent = 'Son güncelleme: ' + hms
+      if (el) el.textContent = 'Last update: ' + hms
     })
   }, 1000)
 
@@ -1366,7 +1366,7 @@
     const isNum = typeof vd.v === 'number'
     const fakeValue = {
       1: isNum ? 0.0             : '—',
-      2: 'AÇIK',
+      2: 'OPEN',
       3: isNum ? vd.v - vd.v * 0.30 : vd.v,
       4: isNum ? vd.v * 0.40    : vd.v,
     }[type] ?? (isNum ? 0.0 : 'ERR')
@@ -1443,25 +1443,25 @@
   /* ── System physics config ─────────────────────────────────────────── */
   const SYSTEMS = {
     sicaklik: {
-      label: 'SICAKLIK', unit: '°C', dec: 1,
+      label: 'TEMPERATURE', unit: '°C', dec: 1,
       safe: [40, 85], warn: [35, 95], crit: [30, 105],
       maxRate: 0.8,   // °C per second; positive = rising when under-resourced
       gaugeMin: 0, gaugeMax: 120,
-      hintSafe: 'GÜVENLİ: 40–85°C',
+      hintSafe: 'SAFE: 40–85°C',
     },
     basinc: {
-      label: 'BASINÇ', unit: '%', dec: 1,
+      label: 'PRESSURE', unit: '%', dec: 1,
       safe: [40, 80], warn: [30, 88], crit: [20, 95],
       maxRate: 0.6,
       gaugeMin: 0, gaugeMax: 100,
-      hintSafe: 'GÜVENLİ: %40–80',
+      hintSafe: 'SAFE: 40–80%',
     },
     guc: {
-      label: 'GÜÇ', unit: '%', dec: 1,
+      label: 'POWER', unit: '%', dec: 1,
       safe: [30, 90], warn: [20, 95], crit: [10, 100],
       maxRate: 0.5,
       gaugeMin: 0, gaugeMax: 100,
-      hintSafe: 'GÜVENLİ: %30–90',
+      hintSafe: 'SAFE: 30–90%',
     }
   }
 
@@ -1525,11 +1525,11 @@
       }
       if (hintEl) {
         if (status === 'crit') {
-          hintEl.textContent       = 'KRİTİK EŞİK: ' + val.toFixed(cfg.dec) + cfg.unit
+          hintEl.textContent       = 'CRITICAL THRESHOLD: ' + val.toFixed(cfg.dec) + cfg.unit
           hintEl.style.color       = 'var(--red-alert)'
           hintEl.style.animation   = 'blink 0.6s step-end infinite'
         } else if (status === 'warn') {
-          hintEl.textContent       = 'UYARI: ' + val.toFixed(cfg.dec) + cfg.unit
+          hintEl.textContent       = 'WARNING: ' + val.toFixed(cfg.dec) + cfg.unit
           hintEl.style.color       = 'var(--amber)'
           hintEl.style.animation   = ''
         } else {
@@ -1563,11 +1563,11 @@
 
       if (next !== prev) {
         if (next === 'warn')
-          addLog('⚠ ' + cfg.label + ' uyarı seviyesine ulaştı: ' + val.toFixed(cfg.dec) + cfg.unit, 'warning')
+          addLog('⚠ ' + cfg.label + ' reached warning level: ' + val.toFixed(cfg.dec) + cfg.unit, 'warning')
         else if (next === 'crit')
-          addLog('⚠ ' + cfg.label + ' KRİTİK! ' + val.toFixed(cfg.dec) + cfg.unit, 'anomaly')
+          addLog('⚠ ' + cfg.label + ' CRITICAL! ' + val.toFixed(cfg.dec) + cfg.unit, 'anomaly')
         else
-          addLog(cfg.label + ' nominal seviyeye döndü.', 'normal')
+          addLog(cfg.label + ' returned to nominal.', 'normal')
         gameState.systemStatus[sys] = next
       }
 
@@ -1575,7 +1575,7 @@
         gameState.critSeconds[sys]++
         if (gameState.critSeconds[sys] >= 30) {
           gameState.systemFailure = true
-          addLog('⚠ FATAL: ' + cfg.label + ' sistemi çöktü. Müdahale başarısız.', 'anomaly')
+          addLog('⚠ FATAL: ' + cfg.label + ' system failure. Intervention unsuccessful.', 'anomaly')
         }
       } else {
         gameState.critSeconds[sys] = 0
@@ -1604,14 +1604,14 @@
       })
       if (gameState.resources[donor] <= 0) { _flashBtn('res-plus-' + sys); return }
       gameState.resources[donor]--
-      addLog(SYSTEMS[sys].label + ' +1 → ' + next + ' birim. ' + SYSTEMS[donor].label + ' azaltıldı.', 'normal')
+      addLog(SYSTEMS[sys].label + ' +1 → ' + next + ' units. ' + SYSTEMS[donor].label + ' reduced.', 'normal')
     } else {
       // Decreasing sys: give 1 to the other with fewest resources
       const recipient = others.reduce(function(a, b) {
         return gameState.resources[a] <= gameState.resources[b] ? a : b
       })
       gameState.resources[recipient]++
-      addLog(SYSTEMS[sys].label + ' −1 → ' + next + ' birim. ' + SYSTEMS[recipient].label + ' artırıldı.', 'normal')
+      addLog(SYSTEMS[sys].label + ' −1 → ' + next + ' units. ' + SYSTEMS[recipient].label + ' increased.', 'normal')
     }
 
     gameState.resources[sys] = next
@@ -1661,11 +1661,11 @@
 
   function _gcRemain() {
     var rem = _gcDuration - _gcElapsed
-    if (rem <= 0) return 'VARDİYA SONA ERDİ'
+    if (rem <= 0) return 'SHIFT ENDED'
     var h = Math.floor(rem / 60)
     var m = rem % 60
-    if (h > 0) return "06:00'A " + h + ' SA. ' + String(m).padStart(2, '0') + ' DK.'
-    return "06:00'A " + m + ' DK.'
+    if (h > 0) return h + ' HR. ' + String(m).padStart(2, '0') + ' MIN. TO 06:00'
+    return m + ' MIN. TO 06:00'
   }
 
   function _gcPaint() {
@@ -1715,27 +1715,27 @@
   function addLogEntry(msg, category) { _lsAdd(msg, category) }
 
   /* ── Shift-start entries ─────────────────────────────────────────── */
-  _lsAdd('Vardiya devri tamamlandı. Operatör aktif.', 'system')
-  _lsAdd('Tüm sistemler nominal. Soğutma hatları aktif.', 'normal')
+  _lsAdd('Shift handover complete. Operator active.', 'system')
+  _lsAdd('All systems nominal. Cooling lines active.', 'normal')
 
   /* ── Routine NORMAL log: one random entry every 60–90 seconds ─────── */
   var ROUTINE_POOL = [
-    'Soğutma hattı 1: nominal.',
-    'Soğutma hattı 2: nominal.',
-    'Basınç valfi kontrol edildi. Normal.',
-    'Güç tüketimi stabil.',
-    'Reaktör çekirdeği nominal.',
-    'Periyodik sistem taraması tamamlandı.',
-    'Termal sensör kalibrasyonu doğrulandı.',
-    'Jeneratör çıkışı normal aralıkta.',
-    'Acil soğutma sistemi bekleme modunda.',
-    'Yardımcı güç devresi nominal.',
-    'Reaktör nötron akısı: stabil.',
-    'Birincil soğutma devresi basıncı normal.',
-    'İkincil devre sıcaklığı nominal aralıkta.',
-    'Kontrol çubukları konumu doğrulandı.',
-    'Valf sistemi genel durumu: normal.',
-    'Sistem logu yedeklendi. Kayıt nominal.',
+    'Cooling line 1: nominal.',
+    'Cooling line 2: nominal.',
+    'Pressure valve checked. Normal.',
+    'Power consumption stable.',
+    'Reactor core nominal.',
+    'Periodic system scan complete.',
+    'Thermal sensor calibration verified.',
+    'Generator output within normal range.',
+    'Emergency cooling system on standby.',
+    'Auxiliary power circuit nominal.',
+    'Reactor neutron flux: stable.',
+    'Primary cooling circuit pressure normal.',
+    'Secondary circuit temperature nominal.',
+    'Control rod positions verified.',
+    'Valve system overall status: normal.',
+    'System log backed up. Record nominal.',
   ]
 
   function _scheduleRoutine() {
@@ -1748,7 +1748,7 @@
   _scheduleRoutine()
 
   /* ═══════════════════════════════════════════════════════════════════
-     ANOMALİ SİSTEMİ
+     ANOMALY SYSTEM
      ─────────────────────────────────────────────────────────────────
      Lifecycle
        _anomSpawn()       picks a type (30 % chance false alarm),
@@ -1786,27 +1786,27 @@
   var ANOM_TYPES = [
     {
       sensorId: 'A', valueKey: 'flow', type: 1,
-      logMsg: '⚠ ÇATIŞMA: Akış hızı log→4.2 m/s — sensör→0.0 m/s okuyor.',
+      logMsg: '⚠ CONFLICT: Flow rate log→4.2 m/s — sensor reads 0.0 m/s.',
     },
     {
       sensorId: 'A', valueKey: 'valve', type: 2,
-      logMsg: '⚠ ÇATIŞMA: Valf B3 kapatıldı (log) ↔ sensör AÇIK okuyor.',
+      logMsg: '⚠ CONFLICT: Valve B3 closed (log) ↔ sensor reads OPEN.',
     },
     {
       sensorId: 'B', valueKey: 'coreTemp', type: 3,
-      logMsg: '⚠ ÇATIŞMA: Çekirdek ısısı düşüyor — soğutma aktivasyonu yok.',
+      logMsg: '⚠ CONFLICT: Core temp dropping — no cooling activation detected.',
     },
     {
       sensorId: 'A', valueKey: 'temp', type: 4,
-      logMsg: '⚠ ÇATIŞMA: Tüm sensörler nominal — sistem yük değerleri uyumsuz.',
+      logMsg: '⚠ CONFLICT: All sensors nominal — system load values inconsistent.',
     },
   ]
 
   /* ── False-alarm messages ────────────────────────────────────────── */
   var FAKE_MSGS = [
-    '⚠ ÇATIŞMA: Sensör A veri tutarsızlığı algılandı — doğrulama gerekiyor.',
-    '⚠ ÇATIŞMA: Reaktör ısı eşiği logu — sistem verisi çelişkili.',
-    '⚠ ÇATIŞMA: Soğutma hattı 2 basınç anomalisi — log ile çelişiyor.',
+    '⚠ CONFLICT: Sensor A data inconsistency detected — verification required.',
+    '⚠ CONFLICT: Reactor heat threshold log — system data contradictory.',
+    '⚠ CONFLICT: Cooling line 2 pressure anomaly — contradicts log data.',
   ]
 
   /* ── _anomSpawn ──────────────────────────────────────────────────── */
@@ -1841,7 +1841,7 @@
 
     if (stage === 1) {
       gameState.missedAnomalies++
-      _lsAdd('⚠ UYARI: Anomali yanıt süresi aşıldı. Durum kritikleşiyor.', 'warning')
+      _lsAdd('⚠ WARNING: Anomaly response time exceeded. Situation escalating.', 'warning')
       /* Force visual escalation on the sensor if not already done */
       if (!_anom.isFake && _anom.sensorId) {
         var snsr = sensorState[_anom.sensorId]
@@ -1851,7 +1851,7 @@
       _anom.escTimer = setTimeout(function() { _anomEscalate(2) }, 60000)
 
     } else if (stage === 2) {
-      _lsAdd('⚠ FATAL: Anomali müdahalesi başarısız. Güvenlik protokolü devrede.', 'anomaly')
+      _lsAdd('⚠ FATAL: Anomaly intervention failed. Safety protocol engaged.', 'anomaly')
       _anomClear()
       setTimeout(_scheduleNextAnomaly, 5000)
     }
@@ -1891,11 +1891,11 @@
     if (correct) {
       gameState.correctDecisions++
       if (!_anom.isFake && _anom.sensorId) resolveAnomaly(_anom.sensorId, _anom.valueKey)
-      _lsAdd('✓ Karar doğru. ' + (isReport ? 'Anomali raporlandı ve giderildi.' : 'Durum normal onaylandı.'), 'system')
+      _lsAdd('✓ Decision correct. ' + (isReport ? 'Anomaly reported and resolved.' : 'Status confirmed normal.'), 'system')
     } else {
       gameState.wrongDecisions++
       if (!_anom.isFake && _anom.sensorId) resolveAnomaly(_anom.sensorId, _anom.valueKey)
-      _lsAdd('✗ Hatalı karar. ' + (isReport ? 'Gereksiz rapor gönderildi.' : 'Anomali gözden kaçırıldı.'), 'warning')
+      _lsAdd('✗ Incorrect decision. ' + (isReport ? 'Unnecessary report submitted.' : 'Anomaly missed.'), 'warning')
     }
 
     _anom.active   = false

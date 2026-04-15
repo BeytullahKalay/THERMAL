@@ -660,11 +660,11 @@
 <div class="top-bar">
   <div class="top-bar-left">
     <span><span class="top-dot dot-green"></span>UNIT 4 ONLINE</span>
-    <span><span class="top-dot dot-amber"></span>SOĞUTMA HAT 2</span>
+    <span><span class="top-dot dot-amber"></span>COOLANT LINE 2</span>
   </div>
   <div class="top-bar-right">
-    <span>TERMİNAL v2.4.1</span>
-    <span>SİSTEM: NOMİNAL</span>
+    <span>TERMINAL v2.4.1</span>
+    <span>SYSTEM: NOMINAL</span>
   </div>
 </div>
 
@@ -673,13 +673,13 @@
   <!-- LEFT SIDE — ambient log -->
   <div class="side-panel" style="grid-column:1; grid-row:1/4; align-items:flex-end;">
     <div class="side-log">
-      <div><span class="ts">18:02</span>Vardiya devri.</div>
-      <div><span class="ts">18:15</span>Soğutma nominal.</div>
-      <div><span class="ts">19:44</span>Basınç stabil.</div>
-      <div><span class="ts">20:11</span>Güç %71.</div>
-      <div><span class="ts">21:03</span>Hat 2 düşüş.</div>
-      <div><span class="ts">21:58</span>Protokol aktif.</div>
-      <div><span class="ts">22:00</span>Vardiya başlıyor.</div>
+      <div><span class="ts">18:02</span>Shift handover.</div>
+      <div><span class="ts">18:15</span>Cooling nominal.</div>
+      <div><span class="ts">19:44</span>Pressure stable.</div>
+      <div><span class="ts">20:11</span>Power 71%.</div>
+      <div><span class="ts">21:03</span>Line 2 drop.</div>
+      <div><span class="ts">21:58</span>Protocol active.</div>
+      <div><span class="ts">22:00</span>Shift starting.</div>
     </div>
   </div>
 
@@ -688,28 +688,28 @@
 
     <!-- Logo -->
     <div class="logo-block">
-      <div class="logo-eyebrow">NÜKLEER TESİS — ÜNİTE 4</div>
+      <div class="logo-eyebrow">NUCLEAR FACILITY — UNIT 4</div>
       <div class="logo-main">THERMAL</div>
-      <div class="logo-sub">GECE VARDİYASI OPERATÖR TERMİNALİ</div>
+      <div class="logo-sub">NIGHT SHIFT OPERATOR TERMINAL</div>
       <div class="logo-divider"></div>
     </div>
 
     <!-- Status snapshot -->
     <div class="status-snapshot">
-      <div class="snapshot-title">// SON VARDİYA DURUMU</div>
+      <div class="snapshot-title">// LAST SHIFT STATUS</div>
       <div class="snapshot-rows">
         <div class="snapshot-row">
-          <span class="snap-label">SICAKLIK</span>
+          <span class="snap-label">TEMPERATURE</span>
           <div class="snap-bar"><div class="snap-fill warn" style="width:87%"></div></div>
           <span class="snap-val snap-warn">87°C</span>
         </div>
         <div class="snapshot-row">
-          <span class="snap-label">BASINÇ</span>
+          <span class="snap-label">PRESSURE</span>
           <div class="snap-bar"><div class="snap-fill" style="width:61%"></div></div>
           <span class="snap-val snap-ok">61%</span>
         </div>
         <div class="snapshot-row">
-          <span class="snap-label">GÜÇ</span>
+          <span class="snap-label">POWER</span>
           <div class="snap-bar"><div class="snap-fill" style="width:71%"></div></div>
           <span class="snap-val snap-ok">71%</span>
         </div>
@@ -721,13 +721,13 @@
 
       <div class="menu-item">
         <span class="menu-prefix">01</span>
-        <span class="menu-label">VARDİYAYA BAŞLA</span>
+        <span class="menu-label">START SHIFT</span>
         <span class="menu-arrow">▶</span>
       </div>
 
       <div class="menu-item">
         <span class="menu-prefix">02</span>
-        <span class="menu-label">DEVAM ET</span>
+        <span class="menu-label">CONTINUE</span>
         <span class="menu-arrow">▶</span>
       </div>
 
@@ -735,27 +735,27 @@
 
       <div class="menu-item">
         <span class="menu-prefix">03</span>
-        <span class="menu-label locked">KAYITLAR</span>
-        <span class="menu-lock">// 3. VARDİYADA AÇILIR</span>
+        <span class="menu-label locked">RECORDS</span>
+        <span class="menu-lock">// UNLOCKS AT SHIFT 3</span>
       </div>
 
       <div class="menu-item">
         <span class="menu-prefix">04</span>
-        <span class="menu-label locked">OPERATÖR DOSYASI</span>
-        <span class="menu-lock">// KİLİTLİ</span>
+        <span class="menu-label locked">OPERATOR FILE</span>
+        <span class="menu-lock">// LOCKED</span>
       </div>
 
       <div class="menu-divider"></div>
 
       <div class="menu-item">
         <span class="menu-prefix">05</span>
-        <span class="menu-label">AYARLAR</span>
+        <span class="menu-label">SETTINGS</span>
         <span class="menu-arrow">▶</span>
       </div>
 
       <div class="menu-item">
         <span class="menu-prefix">06</span>
-        <span class="menu-label danger">ÇIKIŞ</span>
+        <span class="menu-label danger">EXIT</span>
         <span class="menu-arrow">▶</span>
       </div>
 
@@ -763,11 +763,11 @@
 
     <!-- Last shift excerpt -->
     <div class="last-shift">
-      <div class="last-shift-title">// SON KAYIT</div>
+      <div class="last-shift-title">// LAST ENTRY</div>
       <div class="last-shift-entry">
-        <span class="ts">02:14</span>Operatör müdahalesi bekleniyor.<br>
-        <span class="ts">02:15</span><span class="conflict">⚠ Kamera 1 log ile çelişiyor.</span><br>
-        <span class="ts">02:31</span>Vardiya hasarlı kapandı.<span class="cursor"></span>
+        <span class="ts">02:14</span>Awaiting operator intervention.<br>
+        <span class="ts">02:15</span><span class="conflict">⚠ Camera 1 conflicts with log.</span><br>
+        <span class="ts">02:31</span>Shift closed with errors.<span class="cursor"></span>
       </div>
     </div>
 
@@ -776,9 +776,9 @@
   <!-- RIGHT SIDE — ambient schematic -->
   <div class="side-panel" style="grid-column:3; grid-row:1/4; align-items:flex-start;">
     <div class="side-log">
-      <div><span class="ts">OP.14</span>Kowalski — 31. vardiya</div>
-      <div><span class="ts">OP.15</span>Reznov — 47. vardiya</div>
-      <div><span class="ts">OP.16</span>[SİLİNDİ]</div>
+      <div><span class="ts">OP.14</span>Kowalski — shift 31</div>
+      <div><span class="ts">OP.15</span>Reznov — shift 47</div>
+      <div><span class="ts">OP.16</span>[DELETED]</div>
       <div><span class="ts">OP.17</span>— — —</div>
       <div><span class="ts">OP.18</span>Sen</div>
     </div>
@@ -798,38 +798,38 @@
   <div class="settings-panel">
 
     <div class="settings-header">
-      <div class="settings-title">// SİSTEM AYARLARI</div>
-      <div class="settings-close" id="settings-close">[ KAPAT ]</div>
+      <div class="settings-title">// SYSTEM SETTINGS</div>
+      <div class="settings-close" id="settings-close">[ CLOSE ]</div>
     </div>
     <div class="settings-rule"></div>
 
-    <!-- PENCERE MODU -->
+    <!-- WINDOW MODE -->
     <div class="settings-section">
-      <div class="settings-section-title">PENCERE MODU</div>
+      <div class="settings-section-title">WINDOW MODE</div>
       <div class="settings-options" id="mode-list">
         <div class="settings-option selected" data-mode="windowed">
           <span class="opt-selector">▶</span>
-          <span class="opt-label">PENCERE</span>
+          <span class="opt-label">WINDOWED</span>
         </div>
         <div class="settings-option" data-mode="fullscreen">
           <span class="opt-selector"> </span>
-          <span class="opt-label">TAM EKRAN</span>
+          <span class="opt-label">FULLSCREEN</span>
         </div>
       </div>
     </div>
 
     <div class="settings-thin-rule"></div>
 
-    <!-- ÇÖZÜNÜRLÜK -->
+    <!-- RESOLUTION -->
     <div class="settings-section" id="res-section">
-      <div class="settings-section-title">EKRAN ÇÖZÜNÜRLÜĞÜ</div>
+      <div class="settings-section-title">DISPLAY RESOLUTION</div>
       <div class="settings-options" id="res-list">
-        <!-- JS tarafından doldurulur -->
+        <!-- populated by JS -->
       </div>
     </div>
 
     <div class="settings-footer">
-      <div class="settings-apply-btn" id="settings-apply">▶ UYGULA</div>
+      <div class="settings-apply-btn" id="settings-apply">▶ APPLY</div>
     </div>
 
   </div>
@@ -923,7 +923,7 @@
       el.innerHTML =
         `<span class="opt-selector">${isSelected ? '▶' : ' '}</span>` +
         `<span class="opt-label">${res.w} × ${res.h}</span>` +
-        (isNative ? `<span class="opt-tag">// NATİF</span>` : '')
+        (isNative ? `<span class="opt-tag">// NATIVE</span>` : '')
 
       el.addEventListener('click', () => {
         selectedRes = { w: res.w, h: res.h }
