@@ -842,31 +842,101 @@
   <!-- BOTTOM BAR -->
   <div id="bottom-bar">
 
-    <!-- LEFT: FREQUENCY MONITOR -->
+    <!-- LEFT: FREQUENCY MONITOR — oscilloscope instrument -->
     <div id="freq-monitor">
+
+      <!-- Title + countdown timer -->
       <div class="fm-header">
         <span class="fm-title" id="fm-title">// FREQUENCY MONITOR</span>
         <span class="fc-timer" id="fc-timer" style="display:none"></span>
       </div>
-      <canvas id="fc-canvas"></canvas>
-      <div class="fm-controls">
-        <div class="fc-control-row">
-          <span class="fc-label">FREQ</span>
-          <button class="fc-btn" id="fc-freq-minus">◀</button>
-          <span class="fc-val" id="fc-freq-val">2.4 Hz</span>
-          <button class="fc-btn" id="fc-freq-plus">▶</button>
+
+      <!-- Instrument row: [FREQ knob] [oscilloscope] [AMP knob] -->
+      <div class="fm-instrument-row">
+
+        <!-- FREQ rotary knob -->
+        <div class="fm-knob-col">
+          <svg class="fm-knob" id="fm-knob-freq" viewBox="0 0 44 44" width="44" height="44">
+            <circle cx="22" cy="22" r="20" fill="#0a0f04" stroke="#2a4a10" stroke-width="2"/>
+            <!-- Range tick marks at -135° and +135° -->
+            <g transform="rotate(-135 22 22)">
+              <line x1="22" y1="4" x2="22" y2="9" stroke="#2a4a10" stroke-width="1.5" stroke-linecap="round"/>
+            </g>
+            <g transform="rotate(135 22 22)">
+              <line x1="22" y1="4" x2="22" y2="9" stroke="#2a4a10" stroke-width="1.5" stroke-linecap="round"/>
+            </g>
+            <!-- Indicator (group rotated by JS) -->
+            <g id="fm-knob-freq-g" transform="rotate(-21 22 22)">
+              <line x1="22" y1="22" x2="22" y2="7" stroke="#a8ff3e" stroke-width="2" stroke-linecap="round"/>
+              <circle cx="22" cy="7" r="1.8" fill="#a8ff3e"/>
+            </g>
+            <!-- Center cap -->
+            <circle cx="22" cy="22" r="3.5" fill="#1a2a08" stroke="#2a4a10" stroke-width="1"/>
+          </svg>
+          <span class="fm-knob-label">FREQ</span>
+          <span class="fm-knob-val" id="fc-freq-val">2.4 Hz</span>
         </div>
-        <div class="fc-control-row">
-          <span class="fc-label">AMP</span>
-          <button class="fc-btn" id="fc-amp-minus">◀</button>
-          <span class="fc-val" id="fc-amp-val">0.8 V</span>
-          <button class="fc-btn" id="fc-amp-plus">▶</button>
+
+        <!-- Oscilloscope circle with sync arc -->
+        <div class="fm-scope-col">
+          <div class="fm-scope-outer">
+            <!-- Sync progress ring -->
+            <svg class="fm-sync-svg" viewBox="0 0 110 110">
+              <!-- Track -->
+              <circle cx="55" cy="55" r="52" fill="none" stroke="#1a2a08" stroke-width="5"/>
+              <!-- Progress arc (JS sets dashoffset + stroke color) -->
+              <circle cx="55" cy="55" r="52" fill="none" stroke="#a8ff3e" stroke-width="5"
+                stroke-linecap="round"
+                stroke-dasharray="326.7" stroke-dashoffset="0"
+                transform="rotate(-90 55 55)"
+                id="fm-sync-arc"/>
+            </svg>
+            <!-- Oscilloscope screen -->
+            <div class="fm-scope-circle">
+              <canvas id="fc-canvas"></canvas>
+              <div class="fm-scope-scan"></div>
+            </div>
+          </div>
+          <!-- Sync percentage (written by existing _fcRefresh via fc-match-label) -->
+          <div class="fm-sync-pct" id="fm-sync-pct">
+            <span id="fc-match-label">SYNC: 100%</span>
+          </div>
         </div>
-        <div class="fc-match-bar fc-match-good" id="fc-match-bar">
-          <span id="fc-match-label">SYNC: 100%</span>
+
+        <!-- AMP rotary knob -->
+        <div class="fm-knob-col">
+          <svg class="fm-knob" id="fm-knob-amp" viewBox="0 0 44 44" width="44" height="44">
+            <circle cx="22" cy="22" r="20" fill="#0a0f04" stroke="#2a4a10" stroke-width="2"/>
+            <g transform="rotate(-135 22 22)">
+              <line x1="22" y1="4" x2="22" y2="9" stroke="#2a4a10" stroke-width="1.5" stroke-linecap="round"/>
+            </g>
+            <g transform="rotate(135 22 22)">
+              <line x1="22" y1="4" x2="22" y2="9" stroke="#2a4a10" stroke-width="1.5" stroke-linecap="round"/>
+            </g>
+            <g id="fm-knob-amp-g" transform="rotate(-79 22 22)">
+              <line x1="22" y1="22" x2="22" y2="7" stroke="#a8ff3e" stroke-width="2" stroke-linecap="round"/>
+              <circle cx="22" cy="7" r="1.8" fill="#a8ff3e"/>
+            </g>
+            <circle cx="22" cy="22" r="3.5" fill="#1a2a08" stroke="#2a4a10" stroke-width="1"/>
+          </svg>
+          <span class="fm-knob-label">AMP</span>
+          <span class="fm-knob-val" id="fc-amp-val">0.8 V</span>
         </div>
+
       </div>
+
+      <!-- Confirm button (shown in active mode by existing JS) -->
       <button class="fc-confirm" id="fc-confirm" disabled>[ CONFIRM CALIBRATION ]</button>
+
+      <!-- Legacy elements kept hidden for existing JS compatibility -->
+      <div id="fc-match-bar" style="position:absolute;visibility:hidden;pointer-events:none"></div>
+      <div style="display:none">
+        <button id="fc-freq-minus"></button>
+        <button id="fc-freq-plus"></button>
+        <button id="fc-amp-minus"></button>
+        <button id="fc-amp-plus"></button>
+      </div>
+
     </div>
 
     <!-- RIGHT: DEBUG PANEL -->
@@ -1212,84 +1282,128 @@
 #freq-monitor.fm-flash-green { animation: fmFlashGreen 0.7s ease-out forwards !important; }
 #freq-monitor.fm-flash-red   { animation: fmFlashRed   0.7s ease-out forwards !important; }
 
-#fc-canvas {
-  flex:       1;
-  min-height: 36px;
-  width:      100%;
-  background: #000308;
-  border:     1px solid var(--border);
-  display:    block;
+/* ── Oscilloscope instrument row ─────────────────────────────────── */
+.fm-instrument-row {
+  flex:            1;
+  display:         flex;
+  align-items:     center;
+  justify-content: center;
+  gap:             10px;
+  min-height:      0;
 }
 
-.fm-controls {
+/* Knob column: SVG + label + value */
+.fm-knob-col {
   display:        flex;
   flex-direction: column;
+  align-items:    center;
   gap:            3px;
   flex-shrink:    0;
 }
 
-.fc-control-row {
-  display:     flex;
-  align-items: center;
-  gap:         7px;
-}
-
-.fc-label {
-  font-family: 'Share Tech Mono', monospace;
-  font-size:   10px;
-  color:       var(--phosphor-dim);
-  width:       34px;
+.fm-knob {
+  display:     block;
   flex-shrink: 0;
-  letter-spacing: 1px;
+  filter:      drop-shadow(0 0 4px rgba(168,255,62,0.18));
+  cursor:      ns-resize;
+  transition:  filter 0.15s;
+}
+.fm-knob:hover { filter: drop-shadow(0 0 8px rgba(168,255,62,0.40)); }
+
+.fm-knob-label {
+  font-family:    'Share Tech Mono', monospace;
+  font-size:      9px;
+  color:          var(--phosphor-dim);
+  letter-spacing: 1.5px;
 }
 
-.fc-btn {
-  background:  none;
-  border:      1px solid var(--border);
-  color:       var(--phosphor);
-  font-family: 'VT323', monospace;
-  font-size:   14px;
-  width:       24px;
-  height:      20px;
-  cursor:      pointer;
-  line-height: 1;
-  padding:     0;
-  flex-shrink: 0;
-  transition:  background 0.1s;
-}
-.fc-btn:hover  { background: rgba(168,255,62,0.12); }
-.fc-btn:active { background: rgba(168,255,62,0.28); }
-
-.fc-val {
-  font-family: 'Share Tech Mono', monospace;
-  font-size:   11px;
-  color:       var(--phosphor);
-  min-width:   52px;
-  text-align:  center;
+.fm-knob-val {
+  font-family:    'VT323', monospace;
+  font-size:      14px;
+  color:          var(--phosphor);
+  letter-spacing: 0.5px;
+  text-shadow:    0 0 4px var(--phosphor);
 }
 
-.fc-match-bar {
-  border:      1px solid var(--border);
-  padding:     2px 8px;
-  text-align:  center;
-  font-family: 'Share Tech Mono', monospace;
-  font-size:   10px;
-  color:       var(--phosphor-dim);
-  transition:  color 0.3s, border-color 0.3s, box-shadow 0.3s;
+/* Scope column: ring + circle + sync text */
+.fm-scope-col {
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  gap:            4px;
+  flex-shrink:    0;
+}
+
+/* Outer wrapper — positions the SVG ring and the scope circle */
+.fm-scope-outer {
+  position:    relative;
+  width:       110px;
+  height:      110px;
   flex-shrink: 0;
 }
-.fc-match-bad  { color: var(--red-alert);  border-color: var(--red-alert); }
-.fc-match-warn { color: var(--amber);      border-color: var(--amber); }
-.fc-match-good {
-  color:        var(--phosphor);
-  border-color: var(--phosphor);
-  animation:    fcMatchPulse 1s ease-in-out infinite alternate;
-}
-@keyframes fcMatchPulse {
-  from { box-shadow: none; }
-  to   { box-shadow: 0 0 8px var(--phosphor); }
+
+/* Sync-ring SVG: overlaid on top, pointer-events off */
+.fm-sync-svg {
+  position:       absolute;
+  top: 0; left: 0;
+  width:          110px;
+  height:         110px;
+  pointer-events: none;
 }
 
+/* Oscilloscope screen circle */
+.fm-scope-circle {
+  position:      absolute;
+  top: 9px; left: 9px;
+  width:         92px;
+  height:        92px;
+  border-radius: 50%;
+  border:        3px solid #2a4a10;
+  background:    #000308;
+  overflow:      hidden;
+  box-shadow:    0 0 6px rgba(168,255,62,0.15), inset 0 0 16px rgba(0,0,0,0.85);
+  transition:    border-color 0.3s, box-shadow 0.3s;
+}
+#freq-monitor.fm-active .fm-scope-circle {
+  border-color: var(--amber);
+  box-shadow:   0 0 12px rgba(255,184,48,0.35), inset 0 0 16px rgba(0,0,0,0.85);
+}
+
+/* Canvas fills scope circle */
+#fc-canvas {
+  width:      100%;
+  height:     100%;
+  display:    block;
+  background: transparent;
+}
+
+/* Scanline overlay inside scope circle */
+.fm-scope-scan {
+  position:      absolute;
+  inset:         0;
+  background:    repeating-linear-gradient(
+    0deg,
+    rgba(0,0,0,0.22) 0px,
+    rgba(0,0,0,0.22) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+/* SYNC percentage text */
+.fm-sync-pct {
+  font-family:    'Share Tech Mono', monospace;
+  font-size:      9px;
+  letter-spacing: 2px;
+  color:          var(--phosphor);
+  text-align:     center;
+  flex-shrink:    0;
+  transition:     color 0.4s;
+}
+
+/* Confirm button */
 .fc-confirm {
   display:        none;           /* shown only in active mode */
   background:     none;
@@ -1304,6 +1418,7 @@
   transition:     all 0.2s;
   flex-shrink:    0;
   width:          100%;
+  margin-top:     2px;
 }
 .fc-confirm.fc-confirm-ready {
   border-color: var(--phosphor);
@@ -2791,6 +2906,99 @@
     terminal.style.animation = 'crtOff 0.65s cubic-bezier(0.4, 0, 1, 1) forwards'
     setTimeout(function() { window.location.href = 'shift-end.html' }, 620)
   }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     KNOB VISUALS — purely presentational, no game-logic changes.
+     Updates SVG knob rotation + sync arc from existing _fcPlayerFreq,
+     _fcPlayerAmp, and _fcMatch() values.
+     ═══════════════════════════════════════════════════════════════════ */
+  ;(function() {
+    var _kvFreqG  = document.getElementById('fm-knob-freq-g')
+    var _kvAmpG   = document.getElementById('fm-knob-amp-g')
+    var _kvArc    = document.getElementById('fm-sync-arc')
+    var _kvPct    = document.getElementById('fm-sync-pct')
+
+    var FC_CIRC   = 326.7   // 2π × 52  — matches SVG arc radius
+
+    /* Map value in [min,max] to rotation in [−135°, +135°] */
+    function _kvAngle(v, min, max) {
+      return -135 + (v - min) / (max - min) * 270
+    }
+
+    /* Push knob + arc state to DOM */
+    function _kvUpdate() {
+      /* Knob indicators */
+      var fa = _kvAngle(_fcPlayerFreq, 0.5, 5.0)
+      var aa = _kvAngle(_fcPlayerAmp,  0.1, 2.0)
+      if (_kvFreqG) _kvFreqG.setAttribute('transform', 'rotate(' + fa.toFixed(1) + ' 22 22)')
+      if (_kvAmpG)  _kvAmpG.setAttribute('transform',  'rotate(' + aa.toFixed(1) + ' 22 22)')
+
+      /* Sync arc */
+      var match  = _fcMatch()
+      if (_kvArc) {
+        var offset = FC_CIRC - (match / 100 * FC_CIRC)
+        _kvArc.setAttribute('stroke-dashoffset', offset.toFixed(1))
+        _kvArc.setAttribute('stroke',
+          match >= 90 ? '#a8ff3e' : match >= 50 ? '#ffb830' : '#ff3a3a')
+      }
+
+      /* Sync text colour */
+      if (_kvPct) {
+        _kvPct.style.color = match >= 90
+          ? 'var(--phosphor)'
+          : match >= 50 ? 'var(--amber)' : 'var(--red-alert)'
+      }
+    }
+
+    /* Drag-to-turn knob interaction */
+    function _kvSetupDrag(svgEl, getVal, setVal, min, max) {
+      if (!svgEl) return
+      var _drag = false, _startY = 0, _startV = 0
+
+      svgEl.addEventListener('mousedown', function(e) {
+        _drag = true; _startY = e.clientY; _startV = getVal()
+        e.preventDefault()
+      })
+
+      document.addEventListener('mousemove', function(e) {
+        if (!_drag) return
+        var dy    = _startY - e.clientY                  // up → positive
+        var delta = dy * (max - min) / 110               // 110 px = full sweep
+        setVal(parseFloat(Math.max(min, Math.min(max, _startV + delta)).toFixed(1)))
+        _fcRefresh()
+        _kvUpdate()
+      })
+
+      document.addEventListener('mouseup', function() { _drag = false })
+
+      /* Scroll-wheel fine control */
+      svgEl.addEventListener('wheel', function(e) {
+        e.preventDefault()
+        setVal(parseFloat(
+          Math.max(min, Math.min(max, getVal() - Math.sign(e.deltaY) * 0.1)).toFixed(1)
+        ))
+        _fcRefresh()
+        _kvUpdate()
+      }, { passive: false })
+    }
+
+    _kvSetupDrag(
+      document.getElementById('fm-knob-freq'),
+      function()  { return _fcPlayerFreq },
+      function(v) { _fcPlayerFreq = v },
+      0.5, 5.0
+    )
+    _kvSetupDrag(
+      document.getElementById('fm-knob-amp'),
+      function()  { return _fcPlayerAmp },
+      function(v) { _fcPlayerAmp = v },
+      0.1, 2.0
+    )
+
+    /* Keep visuals in sync with the RAF/penalty loop */
+    setInterval(_kvUpdate, 80)
+    _kvUpdate()
+  })()
 
 </script>
 
