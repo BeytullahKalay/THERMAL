@@ -21,6 +21,11 @@
 
   * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
 
+  html {
+    height: 100%;
+    overflow: hidden;
+  }
+
   body {
     background: var(--bg);
     font-family: 'Share Tech Mono', monospace;
@@ -127,6 +132,8 @@
     display: grid;
     grid-template-columns: 280px 1fr 280px;
     gap: 6px;
+    min-height: 0;
+    overflow: hidden;
   }
 
   /* PANEL: LEFT */
@@ -137,6 +144,8 @@
     display: flex;
     flex-direction: column;
     gap: 10px;
+    min-height: 0;
+    overflow: hidden;
   }
 
   .panel-title {
@@ -215,23 +224,26 @@
   }
 
   .resource-title {
-    font-size: 10px;
-    letter-spacing: 2px;
+    font-size: 9px;
+    letter-spacing: 1px;
     color: var(--phosphor-dim);
     margin-bottom: 10px;
+    white-space: nowrap;
+    overflow: hidden;
   }
 
   .resource-row {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
     margin-bottom: 8px;
+    flex-wrap: nowrap;
   }
 
   .resource-name {
     font-size: 9px;
     letter-spacing: 0;
-    min-width: 64px;
+    width: 64px;
     flex-shrink: 0;
     overflow: hidden;
     white-space: nowrap;
@@ -246,6 +258,7 @@
     font-size: 13px;
     width: 20px;
     height: 20px;
+    flex-shrink: 0;
     cursor: pointer;
     display: flex;
     align-items: center;
@@ -263,6 +276,7 @@
     font-family: 'VT323', monospace;
     font-size: 18px;
     width: 24px;
+    flex-shrink: 0;
     text-align: center;
     color: var(--phosphor);
     text-shadow: 0 0 4px var(--phosphor);
@@ -275,8 +289,9 @@
   }
 
   .dot {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
+    flex-shrink: 0;
     border: 1px solid var(--border);
     background: #111805;
   }
@@ -294,6 +309,7 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    min-height: 0;
   }
 
   .log-header {
@@ -376,6 +392,7 @@
     flex-direction: column;
     gap: 8px;
     overflow: hidden;
+    min-height: 0;
   }
 
   .sensor-col-title {
@@ -634,10 +651,10 @@
       <div class="gauge-block" id="gauge-block-sicaklik">
         <div class="gauge-label">
           <span>TEMPERATURE</span>
-          <span class="val ok" id="gauge-val-sicaklik">72.0°C</span>
+          <span class="val ok" id="gauge-val-sicaklik">65.0°C</span>
         </div>
         <div class="gauge-bar-bg">
-          <div class="gauge-bar-fill ok" id="gauge-bar-sicaklik" style="width: 60%"></div>
+          <div class="gauge-bar-fill ok" id="gauge-bar-sicaklik" style="width: 54%"></div>
         </div>
         <div id="gauge-hint-sicaklik" style="font-size:9px; color: var(--phosphor-dim); letter-spacing:1px;">SAFE: 40–85°C</div>
       </div>
@@ -646,10 +663,10 @@
       <div class="gauge-block" id="gauge-block-basinc">
         <div class="gauge-label">
           <span>PRESSURE</span>
-          <span class="val ok" id="gauge-val-basinc">61.0%</span>
+          <span class="val ok" id="gauge-val-basinc">52.0%</span>
         </div>
         <div class="gauge-bar-bg">
-          <div class="gauge-bar-fill ok" id="gauge-bar-basinc" style="width: 61%"></div>
+          <div class="gauge-bar-fill ok" id="gauge-bar-basinc" style="width: 52%"></div>
         </div>
         <div id="gauge-hint-basinc" style="font-size:9px; color: var(--phosphor-dim); letter-spacing:1px;">SAFE: 40–80%</div>
       </div>
@@ -658,12 +675,12 @@
       <div class="gauge-block" id="gauge-block-guc">
         <div class="gauge-label">
           <span>POWER</span>
-          <span class="val ok" id="gauge-val-guc">70.0%</span>
+          <span class="val ok" id="gauge-val-guc">72.0%</span>
         </div>
         <div class="gauge-bar-bg">
-          <div class="gauge-bar-fill ok" id="gauge-bar-guc" style="width: 70%"></div>
+          <div class="gauge-bar-fill ok" id="gauge-bar-guc" style="width: 72%"></div>
         </div>
-        <div id="gauge-hint-guc" style="font-size:9px; color: var(--phosphor-dim); letter-spacing:1px;">SAFE: 30–90%</div>
+        <div id="gauge-hint-guc" style="font-size:9px; color: var(--phosphor-dim); letter-spacing:1px;">SAFE: 50–90%</div>
       </div>
 
       <!-- RESOURCE DISTRIBUTION -->
@@ -856,6 +873,7 @@
     <div id="debug-panel">
       <div class="dbg-title">// DEBUG</div>
       <div id="dbg-entries"></div>
+      <button id="dbg-skip">[ SKIP TO 05:58 ]</button>
       <div class="dbg-footer">// DEVELOPER ONLY — REMOVE BEFORE RELEASE</div>
     </div>
 
@@ -1336,6 +1354,21 @@
   padding-top:    3px;
   flex-shrink:    0;
 }
+
+#dbg-skip {
+  background:     none;
+  border:         1px solid #2a0000;
+  color:          #ff3a3a;
+  font-family:    'Share Tech Mono', monospace;
+  font-size:      9px;
+  letter-spacing: 1px;
+  padding:        2px 6px;
+  cursor:         pointer;
+  flex-shrink:    0;
+  margin-top:     2px;
+  transition:     background 0.1s;
+}
+#dbg-skip:hover { background: rgba(255,58,58,0.1); }
 </style>
 
 <!-- ══ PAUSE OVERLAY ════════════════════════════════════════════ -->
@@ -1703,7 +1736,7 @@
   /* ── State ─────────────────────────────────────────────────────────── */
   const gameState = {
     resources:        { sicaklik: 4, basinc: 3, guc: 3 },
-    systemValues:     { sicaklik: 72.0, basinc: 61.0, guc: 70.0 },
+    systemValues:     { sicaklik: 65.0, basinc: 52.0, guc: 72.0 },
     systemStatus:     { sicaklik: 'ok', basinc: 'ok', guc: 'ok' },
     critSeconds:      { sicaklik: 0, basinc: 0, guc: 0 },
     systemFailure:    false,
@@ -1711,39 +1744,43 @@
     correctDecisions: 0,
     wrongDecisions:   0,
     missedAnomalies:  0,
+    totalCritSeconds: 0,
+    freqCalSuccess:   0,
+    freqCalFail:      0,
+    meltdownOccurred: false,
   }
 
   /* ── System physics config ─────────────────────────────────────────── */
+  /*  Physics formula (per second):
+      res ≤ 3 : mag = lerp(deterRate, 0.05, res/3)   [deterRate at res=0, 0.05 at res=3]
+      res > 3 : mag = 0.05 − (res−3) × 0.06          [negative = improvement]
+      rate    = (mag > 0 ? mag × diffScale : mag) × direction
+      direction: +1 = value rises when deteriorating (TEMP, PRESSURE)
+                 −1 = value falls when deteriorating (POWER)            */
   const SYSTEMS = {
     sicaklik: {
       label: 'TEMPERATURE', unit: '°C', dec: 1,
-      //  safe [40–85]  warn [35–90]  crit [30–100]
-      //  @ res=4, +0.16 °C/s  →  175 s to crit from 72 °C  (≈ 2.9 min)
-      //  @ res=10, −0.80 °C/s →  19 s recovery 100→85 °C
-      safe: [40, 85], warn: [35, 90], crit: [30, 100],
-      maxRate: 0.8,
+      //  res=0 → +0.20/s   res=3 → +0.05/s   res=4 → −0.01/s   res=10 → −0.37/s
+      safe: [40, 85], warn: [37, 88], crit: [34, 92],
+      deterRate: 0.20, direction: +1,
       gaugeMin: 0, gaugeMax: 120,
       hintSafe: 'SAFE: 40–85°C',
     },
     basinc: {
       label: 'PRESSURE', unit: '%', dec: 1,
-      //  safe [40–80]  warn [30–87]  crit [20–94]
-      //  @ res=3, +0.24 %/s   →  138 s to crit from 61 %   (≈ 2.3 min)
-      //  @ res=10, −0.60 %/s  →  23 s recovery 94→80 %
-      safe: [40, 80], warn: [30, 87], crit: [20, 94],
-      maxRate: 0.6,
+      //  res=0 → +0.15/s   res=3 → +0.05/s   res=4 → −0.01/s   res=10 → −0.37/s
+      safe: [40, 80], warn: [36, 84], crit: [32, 88],
+      deterRate: 0.15, direction: +1,
       gaugeMin: 0, gaugeMax: 100,
       hintSafe: 'SAFE: 40–80%',
     },
     guc: {
       label: 'POWER', unit: '%', dec: 1,
-      //  safe [30–88]  warn [20–94]  crit [10–100]
-      //  @ res=3, +0.20 %/s   →  150 s to crit from 70 %   (≈ 2.5 min)
-      //  @ res=10, −0.50 %/s  →  24 s recovery 100→88 %
-      safe: [30, 88], warn: [20, 94], crit: [10, 100],
-      maxRate: 0.5,
+      //  res=0 → −0.10/s   res=3 → −0.05/s   res=4 → +0.01/s   res=10 → +0.37/s
+      safe: [50, 90], warn: [42, 93], crit: [35, 95],
+      deterRate: 0.10, direction: -1,
       gaugeMin: 0, gaugeMax: 100,
-      hintSafe: 'SAFE: 30–88%',
+      hintSafe: 'SAFE: 50–90%',
     }
   }
 
@@ -1833,10 +1870,17 @@
     Object.keys(SYSTEMS).forEach(function(sys) {
       const cfg  = SYSTEMS[sys]
       const res  = gameState.resources[sys]
-      // rate: at res=5 → 0 (stable); res<5 → positive (rising); res>5 → negative (cooling)
-      // _diffScale only amplifies deterioration (rawRate > 0); recovery speed stays constant.
-      const rawRate = (5 - res) / 5 * cfg.maxRate
-      var   rate    = rawRate > 0 ? rawRate * _diffScale : rawRate
+      /* Deterioration magnitude (always expressed as a positive number = "getting worse"):
+         res ≤ 3 : linear interp from deterRate (res=0) down to 0.05 (res=3)
+         res > 3 : each unit above 3 cuts 0.06; goes negative when ≥4 (= improvement) */
+      var mag
+      if (res <= 3) {
+        mag = cfg.deterRate - (cfg.deterRate - 0.05) * (res / 3)
+      } else {
+        mag = 0.05 - (res - 3) * 0.06
+      }
+      /* Apply difficulty scaling to deterioration only; improvement is unscaled */
+      var   rate = (mag > 0 ? mag * _diffScale : mag) * cfg.direction
       /* Frequency monitor modifiers — TEMPERATURE only, deterioration only */
       if (sys === 'sicaklik' && rate > 0) {
         if (gameState.freqBonus)  rate *= 0.90   // SYNC ≥ 90 %: −10 %
@@ -1874,13 +1918,16 @@
 
       if (next === 'crit') {
         gameState.critSeconds[sys]++
-        if (gameState.critSeconds[sys] >= 90) {
+        gameState.totalCritSeconds++
+        if (gameState.critSeconds[sys] >= 120) {
           gameState.systemFailure = true
+          gameState.meltdownOccurred = true
           var _fMsg
           if      (sys === 'sicaklik') _fMsg = '⚠ FATAL: Thermal ceiling exceeded — fuel assembly damage probable. Shift terminated.'
           else if (sys === 'basinc')   _fMsg = '⚠ FATAL: Primary circuit failure — containment boundary compromised. Shift terminated.'
           else                         _fMsg = '⚠ FATAL: Uncontrolled power excursion — SCRAM engaged. Shift terminated.'
           addLog(_fMsg, 'anomaly')
+          setTimeout(function() { endShift() }, 4000)
         }
       } else {
         gameState.critSeconds[sys] = 0
@@ -1945,10 +1992,18 @@
   var _gcDuration = 8  * 60   // 480  — shift ends at 06:00
   var _gcInterval
 
-  /* Difficulty scale — applied to deterioration rate only (recovery unaffected).
-     Increases by 5 % every 30 game-minutes; capped at 2×.
-     Timeline:  22:00 → 1.0×   00:00 → 1.2×   03:00 → 1.5×   06:00 → 1.8× */
-  var _diffScale  = 1.0
+  /* Difficulty scale — step function by shift phase, applied to deterioration only.
+     22:00–23:00 → 0.4×   23:00–01:00 → 0.7×   01:00–03:00 → 1.0×
+     03:00–05:00 → 1.4×   05:00–06:00 → 1.8×                          */
+  var _diffScale = 0.4
+
+  function _getDiffScale() {
+    if      (_gcElapsed < 60)  return 0.4
+    else if (_gcElapsed < 180) return 0.7
+    else if (_gcElapsed < 300) return 1.0
+    else if (_gcElapsed < 420) return 1.4
+    else                       return 1.8
+  }
 
   /* Hoisted function declarations — safe to call from anywhere. */
   function _gcTime() {
@@ -1991,18 +2046,25 @@
     _gcElapsed++
     _gcPaint()
 
-    /* Difficulty ramp: +5 % every 30 game-minutes, capped at 2× */
-    if (_gcElapsed % 30 === 0) {
-      _diffScale = Math.min(2.0, 1.0 + (_gcElapsed / 30) * 0.05)
+    /* Update difficulty step every tick */
+    _diffScale = _getDiffScale()
 
-      /* Phase-transition log messages */
-      if (_gcElapsed === 120)       // 00:00
-        _lsAdd('00:00 — Night phase transition. Thermal baseline climbing. Increased vigilance required.', 'system')
-      else if (_gcElapsed === 300)  // 03:00
-        _lsAdd('⚠ 03:00 — High-load phase active. All parameters trend adverse. Intervention threshold reduced.', 'warning')
+    /* Phase-transition log messages at key thresholds */
+    if (_gcElapsed === 60)        // 23:00 — difficulty steps to 0.7×
+      _lsAdd('23:00 — Load profile shifting. Thermal margins narrowing.', 'system')
+    else if (_gcElapsed === 120)  // 00:00 — difficulty steps to 1.0×... wait, 120min = 00:00
+      _lsAdd('00:00 — Night phase transition. Thermal baseline climbing. Increased vigilance required.', 'system')
+    else if (_gcElapsed === 180)  // 01:00 — difficulty 1.0×
+      _lsAdd('01:00 — Nominal load. All systems require active monitoring.', 'system')
+    else if (_gcElapsed === 300)  // 03:00 — difficulty 1.4×
+      _lsAdd('⚠ 03:00 — High-load phase active. All parameters trend adverse. Intervention threshold reduced.', 'warning')
+    else if (_gcElapsed === 420)  // 05:00 — difficulty 1.8×
+      _lsAdd('⚠ 05:00 — Final phase. Reactor load at maximum. Critical response time halved.', 'warning')
+
+    if (_gcElapsed >= _gcDuration) {
+      clearInterval(_gcInterval)
+      endShift()
     }
-
-    if (_gcElapsed >= _gcDuration) clearInterval(_gcInterval)
   }
 
   /* Public API — getCurrentTime() used by _lsAdd and external callers. */
@@ -2477,6 +2539,7 @@
 
   /* ── Success ─────────────────────────────────────────────────────── */
   function _fcSuccess() {
+    gameState.freqCalSuccess++
     _fcReturnToIdle()
     _fcFlash('fm-flash-green')
     _lsAdd('Calibration confirmed. Line 2 signal locked. Thermal coupling restored.', 'system')
@@ -2485,6 +2548,7 @@
 
   /* ── Failure ─────────────────────────────────────────────────────── */
   function _fcFail() {
+    gameState.freqCalFail++
     _fcReturnToIdle()
     _fcFlash('fm-flash-red')
     _lsAdd('⚠ Calibration timeout — Line 2 signal lost. Coolant damping compromised.', 'anomaly')
@@ -2632,17 +2696,22 @@
     var sign  = function(n) { return n >= 0 ? '+' : '' }
 
     Object.keys(SYSTEMS).forEach(function(sys) {
+      var cfg  = SYSTEMS[sys]
       var res  = gameState.resources[sys]
-      var raw  = (5 - res) / 5 * SYSTEMS[sys].maxRate
-      var rate = raw > 0 ? raw * _diffScale : raw
+      var mag
+      if (res <= 3) {
+        mag = cfg.deterRate - (cfg.deterRate - 0.05) * (res / 3)
+      } else {
+        mag = 0.05 - (res - 3) * 0.06
+      }
+      var rate = (mag > 0 ? mag * _diffScale : mag) * cfg.direction
       if (sys === 'sicaklik' && rate > 0) {
         if (gameState.freqBonus)  rate *= 0.90
         if (_fcPenaltyLevel >= 1) rate *= 1.20
         if (_fcPermDebuff)        rate *= 1.15
       }
-      var cfg = SYSTEMS[sys]
       lines.push(cfg.label + ': ' + gameState.systemValues[sys].toFixed(1) + cfg.unit +
-                 '  [rate: ' + sign(rate) + rate.toFixed(2) + '/s]')
+                 '  [rate: ' + sign(rate) + rate.toFixed(3) + '/s]')
     })
 
     var penLabel = ['NONE', 'L1 +20%', 'L2 ANOM', 'L3 PERM'][_fcPenaltyLevel] || '?'
@@ -2657,8 +2726,10 @@
       'FREQ MODE: '    + _fcMode + '  SYNC: ' + Math.round(_fcMatch()) + '%',
       'FREQ BONUS: '   + gameState.freqBonus + '  LOW-SYNC: ' + _fcLowSyncSecs + 's',
       'PENALTY: '      + penLabel + '  PERM: ' + _fcPermDebuff,
-      'DIFFICULTY: '   + _diffScale.toFixed(2) + 'x',
+      'DIFFICULTY: '   + _diffScale.toFixed(1) + 'x',
+      'CRIT TIMER: T:' + gameState.critSeconds.sicaklik + 's  P:' + gameState.critSeconds.basinc + 's  W:' + gameState.critSeconds.guc + 's  [max 120s]',
       'CORRECT: '      + gameState.correctDecisions + '  WRONG: ' + gameState.wrongDecisions + '  MISSED: ' + gameState.missedAnomalies,
+      'CRIT.TOT: '     + gameState.totalCritSeconds + 's  FC.OK: ' + gameState.freqCalSuccess + '  FC.FAIL: ' + gameState.freqCalFail,
     ].map(function(l) { return '<div>' + l + '</div>' }).join('')
   }
 
@@ -2672,6 +2743,54 @@
       _dbgUpdate()
     }
   })
+
+  /* ── Debug skip button ───────────────────────────────────────── */
+  document.getElementById('dbg-skip').addEventListener('click', function() {
+    _gcElapsed = 478
+    _diffScale = _getDiffScale()
+    _gcPaint()
+    _lsAdd('[DEBUG] Shift time advanced to 05:58. Final 2 game-minutes active.', 'system')
+  })
+
+  /* ═══════════════════════════════════════════════════════════════════
+     SHIFT END
+     ─────────────────────────────────────────────────────────────────
+     endShift() — collects final state, writes thermalShiftReport to
+     localStorage, then CRT-off → shift-end.html.
+     Called from: _gcTick() at 06:00, or 4 s after fatal meltdown.
+     ═══════════════════════════════════════════════════════════════════ */
+
+  var _shiftEnded = false
+
+  function endShift() {
+    if (_shiftEnded) return
+    _shiftEnded = true
+    clearInterval(_gcInterval)
+
+    var shiftNum = parseInt(localStorage.getItem('thermalShiftNumber') || '1')
+    var report = {
+      correctDecisions:    gameState.correctDecisions,
+      wrongDecisions:      gameState.wrongDecisions,
+      missedAnomalies:     gameState.missedAnomalies,
+      totalCritSeconds:    gameState.totalCritSeconds,
+      meltdownOccurred:    gameState.meltdownOccurred,
+      freqCalSuccess:      gameState.freqCalSuccess,
+      freqCalFail:         gameState.freqCalFail,
+      finalTemp:           gameState.systemValues.sicaklik,
+      finalPressure:       gameState.systemValues.basinc,
+      finalPower:          gameState.systemValues.guc,
+      finalTempStatus:     gameState.systemStatus.sicaklik,
+      finalPressureStatus: gameState.systemStatus.basinc,
+      finalPowerStatus:    gameState.systemStatus.guc,
+      finalRadiation:      sensorState.B.values.radiation.v,
+      shiftNumber:         shiftNum,
+    }
+    localStorage.setItem('thermalShiftReport', JSON.stringify(report))
+
+    var terminal = document.querySelector('.terminal')
+    terminal.style.animation = 'crtOff 0.65s cubic-bezier(0.4, 0, 1, 1) forwards'
+    setTimeout(function() { window.location.href = 'shift-end.html' }, 620)
+  }
 
 </script>
 

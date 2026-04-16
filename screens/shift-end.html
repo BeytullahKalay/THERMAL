@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>THERMAL — Shift Report</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap');
+
+  :root {
+    --phosphor:     #a8ff3e;
+    --phosphor-dim: #4a7a1a;
+    --phosphor-glow: rgba(168, 255, 62, 0.15);
+    --amber:        #ffb830;
+    --red-alert:    #ff3a3a;
+    --bg:           #080a04;
+    --panel-bg:     #0b0f05;
+    --border:       #2a3a10;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+
+  html { height: 100%; overflow: hidden; }
+
+  body {
+    background: var(--bg);
+    font-family: 'Share Tech Mono', monospace;
+    color: var(--phosphor);
+    height: 100vh;
+    overflow: hidden;
+    cursor: crosshair;
+  }
+
+  /* CRT scanlines */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      rgba(0,0,0,0.18) 0px,
+      rgba(0,0,0,0.18) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+    pointer-events: none;
+    z-index: 1000;
+  }
+
+  /* CRT vignette */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 60%, rgba(0,0,0,0.85) 100%);
+    pointer-events: none;
+    z-index: 999;
+  }
+
+  @keyframes powerOn {
+    0%   { transform: scaleY(0.01); filter: brightness(8) saturate(0); opacity: 0.6; }
+    12%  { transform: scaleY(0.01); filter: brightness(12) saturate(0); opacity: 1; }
+    24%  { transform: scaleY(1);    filter: brightness(2); opacity: 1; }
+    36%  { transform: scaleY(1);    filter: brightness(0.75); opacity: 1; }
+    50%  { transform: scaleY(1);    filter: brightness(1.3); opacity: 1; }
+    70%  { transform: scaleY(1);    filter: brightness(1); opacity: 1; }
+    100% { transform: scaleY(1);    filter: brightness(1); opacity: 1; }
+  }
+
+  @keyframes crtOff {
+    0%   { transform: scaleY(1);    filter: brightness(1); opacity: 1; }
+    8%   { transform: scaleY(1);    filter: brightness(3) saturate(0); opacity: 1; }
+    22%  { transform: scaleY(0.04); filter: brightness(8); opacity: 1; }
+    55%  { transform: scaleY(0.02); filter: brightness(3); opacity: 1; }
+    100% { transform: scaleY(0.01); filter: brightness(0); opacity: 0; }
+  }
+
+  @keyframes flicker {
+    0%, 97%, 100% { opacity: 1; }
+    98% { opacity: 0.92; }
+    99% { opacity: 0.97; }
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  @keyframes fadeSlideIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── TERMINAL GRID ────────────────────────────────────────────── */
+  .terminal {
+    display: grid;
+    grid-template-rows: 36px 1fr 52px;
+    grid-template-columns: 1fr;
+    height: 100vh;
+    padding: 8px;
+    gap: 6px;
+    animation: powerOn 0.8s cubic-bezier(0, 0, 0.4, 1) forwards, flicker 8s 0.8s infinite;
+    transform-origin: center center;
+  }
+
+  /* ── HEADER ───────────────────────────────────────────────────── */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border: 1px solid var(--border);
+    padding: 0 14px;
+    background: var(--panel-bg);
+    font-family: 'VT323', monospace;
+    font-size: 18px;
+    letter-spacing: 3px;
+  }
+
+  .header-title {
+    color: var(--phosphor);
+    text-shadow: 0 0 8px var(--phosphor);
+  }
+
+  .header-right {
+    color: var(--phosphor-dim);
+    font-size: 14px;
+    letter-spacing: 2px;
+  }
+
+  /* ── MAIN: THREE COLUMNS ──────────────────────────────────────── */
+  .main {
+    display: grid;
+    grid-template-columns: 300px 1fr 300px;
+    gap: 6px;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  /* ── SHARED PANEL ─────────────────────────────────────────────── */
+  .panel {
+    border: 1px solid var(--border);
+    background: var(--panel-bg);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+    animation: fadeSlideIn 0.5s 0.65s both;
+  }
+
+  .panel-title {
+    font-family: 'VT323', monospace;
+    font-size: 15px;
+    letter-spacing: 3px;
+    color: var(--phosphor-dim);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 8px;
+    margin-bottom: 14px;
+    flex-shrink: 0;
+  }
+
+  /* ── SECTION DIVIDERS ─────────────────────────────────────────── */
+  .section-label {
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--phosphor-dim);
+    margin-bottom: 8px;
+    flex-shrink: 0;
+  }
+
+  .panel-rule {
+    height: 1px;
+    background: var(--border);
+    margin: 14px 0;
+    flex-shrink: 0;
+  }
+
+  /* ── STAT ROWS ────────────────────────────────────────────────── */
+  .stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(42,58,16,0.35);
+    flex-shrink: 0;
+  }
+
+  .stat-row:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+  .stat-label { color: var(--phosphor-dim); }
+
+  .stat-val {
+    font-family: 'VT323', monospace;
+    font-size: 17px;
+    color: var(--phosphor);
+  }
+  .stat-val.ok   { color: var(--phosphor); }
+  .stat-val.warn { color: var(--amber);    }
+  .stat-val.crit { color: var(--red-alert); animation: blink 0.6s step-end infinite; }
+
+  /* ── RATING CENTER ────────────────────────────────────────────── */
+  .rating-panel {
+    border: 1px solid var(--border);
+    background: var(--panel-bg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+    overflow: hidden;
+    position: relative;
+    animation: fadeSlideIn 0.5s 0.45s both;
+  }
+
+  /* Four corner tick marks */
+  .rating-corner {
+    position: absolute;
+    font-size: 11px;
+    color: var(--phosphor-dim);
+    opacity: 0.35;
+  }
+  .rating-corner.tl { top: 8px;    left: 12px;  }
+  .rating-corner.tr { top: 8px;    right: 12px; }
+  .rating-corner.bl { bottom: 8px; left: 12px;  }
+  .rating-corner.br { bottom: 8px; right: 12px; }
+
+  .rating-label {
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: var(--phosphor-dim);
+    margin-bottom: 14px;
+    text-align: center;
+  }
+
+  .rating-rule {
+    width: 55%;
+    height: 1px;
+    background: var(--border);
+    margin-bottom: 22px;
+  }
+
+  .rating-grade {
+    font-family: 'VT323', monospace;
+    font-size: 52px;
+    letter-spacing: 3px;
+    text-align: center;
+    line-height: 1.05;
+    text-shadow: 0 0 28px currentColor;
+    margin-bottom: 18px;
+    padding: 0 20px;
+    white-space: pre-line;
+  }
+
+  .rating-desc {
+    font-size: 11px;
+    letter-spacing: 1.5px;
+    text-align: center;
+    line-height: 1.9;
+    padding: 0 28px;
+    max-width: 300px;
+    white-space: pre-line;
+  }
+
+  .rating-stats {
+    margin-top: 22px;
+    width: 68%;
+    border-top: 1px solid var(--border);
+    padding-top: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+  }
+
+  .rating-stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 10px;
+    letter-spacing: 1px;
+  }
+
+  .rating-stat-key { color: var(--phosphor-dim); }
+  .rating-stat-val {
+    font-family: 'VT323', monospace;
+    font-size: 15px;
+    color: var(--phosphor);
+  }
+
+  /* ── RADIATION BAR ────────────────────────────────────────────── */
+  .rad-level-bar {
+    height: 6px;
+    background: #0b0f05;
+    border: 1px solid var(--border);
+    margin-top: 6px;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+
+  .rad-level-fill {
+    height: 100%;
+    width: 0%;
+    transition: width 1.6s ease;
+  }
+
+  .rad-consequence {
+    font-size: 9px;
+    letter-spacing: 0.8px;
+    color: var(--phosphor-dim);
+    line-height: 1.7;
+    margin-top: 8px;
+    margin-bottom: 2px;
+    flex-shrink: 0;
+    font-style: italic;
+  }
+
+  /* ── SYSTEM STATE ROWS ────────────────────────────────────────── */
+  .sys-state-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 10px;
+    letter-spacing: 1px;
+    margin-bottom: 7px;
+    padding-bottom: 7px;
+    border-bottom: 1px solid rgba(42,58,16,0.3);
+    flex-shrink: 0;
+  }
+  .sys-state-row:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+  .sys-state-label { color: var(--phosphor-dim); }
+
+  .sys-state-val {
+    font-family: 'VT323', monospace;
+    font-size: 16px;
+  }
+  .sys-state-val.ok   { color: var(--phosphor);   text-shadow: 0 0 4px var(--phosphor); }
+  .sys-state-val.warn { color: var(--amber);       text-shadow: 0 0 4px var(--amber); }
+  .sys-state-val.crit { color: var(--red-alert);   text-shadow: 0 0 6px var(--red-alert); animation: blink 0.6s step-end infinite; }
+
+  /* ── ACTION BAR ───────────────────────────────────────────────── */
+  .action-bar {
+    border: 1px solid var(--border);
+    background: var(--panel-bg);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 20px;
+  }
+
+  .action-btn {
+    border: 1px solid;
+    background: none;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    padding: 8px 24px;
+    cursor: pointer;
+    transition: all 0.15s;
+    text-transform: uppercase;
+  }
+
+  .btn-menu-end {
+    border-color: var(--phosphor-dim);
+    color: var(--phosphor-dim);
+  }
+  .btn-menu-end:hover {
+    border-color: var(--phosphor);
+    color: var(--phosphor);
+    background: var(--phosphor-glow);
+    box-shadow: 0 0 8px var(--phosphor-glow);
+  }
+
+  .btn-next-shift {
+    border-color: var(--phosphor);
+    color: var(--phosphor);
+    text-shadow: 0 0 4px var(--phosphor);
+  }
+  .btn-next-shift:hover {
+    background: rgba(168, 255, 62, 0.12);
+    box-shadow: 0 0 14px rgba(168, 255, 62, 0.3);
+  }
+
+  .btn-next-shift.meltdown {
+    border-color: var(--red-alert);
+    color: var(--red-alert);
+    text-shadow: 0 0 4px var(--red-alert);
+  }
+  .btn-next-shift.meltdown:hover {
+    background: rgba(255, 58, 58, 0.10);
+    box-shadow: 0 0 14px rgba(255, 58, 58, 0.3);
+  }
+
+  .action-center-text {
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--phosphor-dim);
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<div class="terminal">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-title">// SHIFT COMPLETE — UNIT 4</div>
+    <div class="header-right">OPERATOR TERMINAL / SHIFT <span id="shift-num">—</span></div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+
+    <!-- LEFT: PERFORMANCE LOG -->
+    <div class="panel" id="perf-panel">
+      <div class="panel-title">// PERFORMANCE LOG</div>
+
+      <div class="section-label">ANOMALY RESPONSE</div>
+
+      <div class="stat-row">
+        <span class="stat-label">EVENTS REGISTERED</span>
+        <span class="stat-val" id="stat-total">—</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">CORRECT DECISIONS</span>
+        <span class="stat-val ok" id="stat-correct">—</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">WRONG DECISIONS</span>
+        <span class="stat-val" id="stat-wrong">—</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">MISSED — TIMED OUT</span>
+        <span class="stat-val" id="stat-missed">—</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">RESPONSE ACCURACY</span>
+        <span class="stat-val" id="stat-accuracy">—</span>
+      </div>
+
+      <div class="panel-rule"></div>
+
+      <div class="section-label">SYSTEM STABILITY</div>
+
+      <div class="stat-row">
+        <span class="stat-label">TOTAL CRITICAL SECS</span>
+        <span class="stat-val" id="stat-crit">—</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">FREQ. CALS COMPLETED</span>
+        <span class="stat-val ok" id="stat-fc-ok">—</span>
+      </div>
+      <div class="stat-row">
+        <span class="stat-label">FREQ. CALS FAILED</span>
+        <span class="stat-val" id="stat-fc-fail">—</span>
+      </div>
+    </div>
+
+    <!-- CENTER: RATING -->
+    <div class="rating-panel" id="rating-panel">
+      <span class="rating-corner tl">+</span>
+      <span class="rating-corner tr">+</span>
+      <span class="rating-corner bl">+</span>
+      <span class="rating-corner br">+</span>
+
+      <div class="rating-label">SHIFT PERFORMANCE CLASSIFICATION</div>
+      <div class="rating-rule"></div>
+
+      <div class="rating-grade" id="rating-grade">—</div>
+      <div class="rating-desc"  id="rating-desc">—</div>
+
+      <div class="rating-stats">
+        <div class="rating-stat-row">
+          <span class="rating-stat-key">ACCURACY</span>
+          <span class="rating-stat-val" id="rs-accuracy">—</span>
+        </div>
+        <div class="rating-stat-row">
+          <span class="rating-stat-key">CRIT. SECS</span>
+          <span class="rating-stat-val" id="rs-crit">—</span>
+        </div>
+        <div class="rating-stat-row">
+          <span class="rating-stat-key">FREQ. CALS</span>
+          <span class="rating-stat-val" id="rs-freq">—</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: ENVIRONMENTAL LOG -->
+    <div class="panel" id="env-panel">
+      <div class="panel-title">// ENVIRONMENTAL LOG</div>
+
+      <div class="section-label">RADIATION EXPOSURE</div>
+
+      <div class="stat-row">
+        <span class="stat-label">FINAL READING</span>
+        <span class="stat-val" id="env-rad-val">—</span>
+      </div>
+      <div class="stat-row" style="border-bottom:none; margin-bottom:4px;">
+        <span class="stat-label">EXPOSURE LEVEL</span>
+        <span class="stat-val" id="env-rad-level">—</span>
+      </div>
+      <div class="rad-level-bar">
+        <div class="rad-level-fill" id="env-rad-bar"></div>
+      </div>
+      <div class="rad-consequence" id="env-rad-text">—</div>
+
+      <div class="panel-rule"></div>
+
+      <div class="section-label">FINAL SYSTEM STATE</div>
+
+      <div class="sys-state-row">
+        <span class="sys-state-label">TEMPERATURE</span>
+        <span class="sys-state-val ok" id="env-temp">—</span>
+      </div>
+      <div class="sys-state-row">
+        <span class="sys-state-label">PRESSURE</span>
+        <span class="sys-state-val ok" id="env-pressure">—</span>
+      </div>
+      <div class="sys-state-row">
+        <span class="sys-state-label">POWER</span>
+        <span class="sys-state-val ok" id="env-power">—</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ACTION BAR -->
+  <div class="action-bar">
+    <button class="action-btn btn-menu-end" id="btn-menu">[ MAIN MENU ]</button>
+    <div class="action-center-text" id="action-center">—</div>
+    <button class="action-btn btn-next-shift" id="btn-next">[ NEXT SHIFT → ]</button>
+  </div>
+
+</div>
+
+<script>
+  /* ── Read report from localStorage ───────────────────────────── */
+  var reportRaw = localStorage.getItem('thermalShiftReport')
+  var r = reportRaw ? JSON.parse(reportRaw) : {
+    /* Fallback defaults — shown when opening the page directly for testing */
+    correctDecisions: 3, wrongDecisions: 1, missedAnomalies: 0,
+    totalCritSeconds: 18, meltdownOccurred: false,
+    freqCalSuccess: 2,   freqCalFail: 0,
+    finalTemp: 68.4,     finalPressure: 55.1,  finalPower: 70.8,
+    finalTempStatus: 'ok', finalPressureStatus: 'ok', finalPowerStatus: 'ok',
+    finalRadiation: 0.94, shiftNumber: 1,
+  }
+
+  /* ── Rating calculation ───────────────────────────────────────── */
+  function calcRating(d) {
+    if (d.meltdownOccurred) return {
+      grade: 'CRITICAL\nFAILURE',
+      color: 'var(--red-alert)',
+      desc:  'REACTOR INCIDENT RECORDED.\nSHIFT TERMINATED EARLY.\nFULL INVESTIGATION ORDERED.',
+    }
+    var total    = d.correctDecisions + d.wrongDecisions
+    var accuracy = total > 0 ? d.correctDecisions / total : 1.0
+    if (accuracy >= 0.90 && d.missedAnomalies === 0 && d.totalCritSeconds < 30) return {
+      grade: 'EXEMPLARY',
+      color: 'var(--phosphor)',
+      desc:  'OUTSTANDING PERFORMANCE.\nNO INCIDENTS RECORDED.\nCOMMENDATION ISSUED.',
+    }
+    if (accuracy >= 0.70 && d.missedAnomalies < 3) return {
+      grade: 'SATISFACTORY',
+      color: 'var(--phosphor)',
+      desc:  'SHIFT COMPLETED WITHOUT\nMAJOR INCIDENT.\nPERFORMANCE WITHIN STANDARD.',
+    }
+    if (accuracy >= 0.50) return {
+      grade: 'MARGINAL',
+      color: 'var(--amber)',
+      desc:  'MULTIPLE PROTOCOL DEVIATIONS\nNOTED.\nRETRAINING RECOMMENDED.',
+    }
+    return {
+      grade: 'UNSATISFACTORY',
+      color: 'var(--red-alert)',
+      desc:  'SIGNIFICANT FAILURES RECORDED.\nSUPERVISOR REVIEW REQUIRED.\nPENALTY LOG FILED.',
+    }
+  }
+
+  /* ── Radiation status ─────────────────────────────────────────── */
+  function radStatus(v) {
+    var pct = Math.min(100, v / 10 * 100)
+    if (v < 1.0) return { level: 'NOMINAL',   color: 'var(--phosphor)', pct: pct,
+      barGrad: 'linear-gradient(90deg, #2a5a08, var(--phosphor))',
+      text: 'Background levels. No environmental impact recorded.' }
+    if (v < 2.0) return { level: 'ELEVATED',  color: 'var(--phosphor)', pct: pct,
+      barGrad: 'linear-gradient(90deg, #2a5a08, var(--phosphor))',
+      text: 'Above background. Within occupational limit. Logged.' }
+    if (v < 3.0) return { level: 'WARNING',   color: 'var(--amber)',    pct: pct,
+      barGrad: 'linear-gradient(90deg, #7a4a00, var(--amber))',
+      text: 'Above normal. Monitoring review initiated. Log filed.' }
+    if (v < 4.0) return { level: 'HIGH',      color: 'var(--amber)',    pct: pct,
+      barGrad: 'linear-gradient(90deg, #7a4a00, var(--amber))',
+      text: 'High exposure detected. Medical evaluation required.' }
+    return        { level: 'DANGEROUS', color: 'var(--red-alert)', pct: pct,
+      barGrad: 'linear-gradient(90deg, #7a0000, var(--red-alert))',
+      text: 'Dangerous levels. Facility lockdown protocol engaged.' }
+  }
+
+  /* ── Computed values ──────────────────────────────────────────── */
+  var rating   = calcRating(r)
+  var rad      = radStatus(r.finalRadiation || 0)
+  var total    = r.correctDecisions + r.wrongDecisions
+  var acc      = total > 0 ? Math.round(r.correctDecisions / total * 100) : 100
+
+  /* ── Populate header ─────────────────────────────────────────── */
+  document.getElementById('shift-num').textContent = r.shiftNumber || 1
+
+  /* ── Populate performance log ────────────────────────────────── */
+  document.getElementById('stat-total').textContent = total + r.missedAnomalies
+
+  var correctEl = document.getElementById('stat-correct')
+  correctEl.textContent = r.correctDecisions
+  correctEl.className   = 'stat-val ok'
+
+  var wrongEl = document.getElementById('stat-wrong')
+  wrongEl.textContent = r.wrongDecisions
+  wrongEl.className   = 'stat-val ' + (r.wrongDecisions === 0 ? 'ok' : 'warn')
+
+  var missedEl = document.getElementById('stat-missed')
+  missedEl.textContent = r.missedAnomalies
+  missedEl.className   = 'stat-val ' + (r.missedAnomalies === 0 ? 'ok' : r.missedAnomalies < 3 ? 'warn' : 'crit')
+
+  var accEl = document.getElementById('stat-accuracy')
+  accEl.textContent = acc + '%'
+  accEl.className   = 'stat-val ' + (acc >= 70 ? 'ok' : acc >= 50 ? 'warn' : 'crit')
+
+  var critEl = document.getElementById('stat-crit')
+  critEl.textContent = r.totalCritSeconds + 's'
+  critEl.className   = 'stat-val ' + (r.totalCritSeconds < 30 ? 'ok' : r.totalCritSeconds < 120 ? 'warn' : 'crit')
+
+  var fcOkEl = document.getElementById('stat-fc-ok')
+  fcOkEl.textContent = r.freqCalSuccess
+  fcOkEl.className   = 'stat-val ok'
+
+  var fcFailEl = document.getElementById('stat-fc-fail')
+  fcFailEl.textContent = r.freqCalFail
+  fcFailEl.className   = 'stat-val ' + (r.freqCalFail === 0 ? 'ok' : 'warn')
+
+  /* ── Populate rating panel ───────────────────────────────────── */
+  var gradeEl = document.getElementById('rating-grade')
+  gradeEl.textContent   = rating.grade
+  gradeEl.style.color   = rating.color
+
+  var descEl = document.getElementById('rating-desc')
+  descEl.textContent  = rating.desc
+  descEl.style.color  = (rating.color === 'var(--phosphor)')
+    ? 'var(--phosphor-dim)'
+    : rating.color
+
+  document.getElementById('rs-accuracy').textContent = acc + '%'
+  document.getElementById('rs-crit').textContent     = r.totalCritSeconds + 's'
+  document.getElementById('rs-freq').textContent     =
+    r.freqCalSuccess + ' / ' + (r.freqCalSuccess + r.freqCalFail)
+
+  /* ── Populate environmental log ──────────────────────────────── */
+  var radValEl = document.getElementById('env-rad-val')
+  radValEl.textContent = (r.finalRadiation || 0).toFixed(2) + ' mSv'
+  radValEl.className   = 'stat-val ' + (r.finalRadiation < 2.0 ? 'ok' : r.finalRadiation < 3.0 ? 'warn' : 'crit')
+
+  var radLvlEl = document.getElementById('env-rad-level')
+  radLvlEl.textContent   = rad.level
+  radLvlEl.style.color   = rad.color
+  radLvlEl.style.fontFamily = "'VT323', monospace"
+  radLvlEl.style.fontSize   = '17px'
+
+  var radBar = document.getElementById('env-rad-bar')
+  radBar.style.background = rad.barGrad
+  setTimeout(function() { radBar.style.width = rad.pct.toFixed(1) + '%' }, 120)
+
+  document.getElementById('env-rad-text').textContent = rad.text
+
+  /* Final system state */
+  function setSysState(id, val, unit, status) {
+    var el = document.getElementById(id)
+    el.textContent = val.toFixed(1) + unit
+    el.className   = 'sys-state-val ' + (status || 'ok')
+  }
+  setSysState('env-temp',     r.finalTemp     || 65.0, '°C', r.finalTempStatus     || 'ok')
+  setSysState('env-pressure', r.finalPressure || 52.0, '%',  r.finalPressureStatus || 'ok')
+  setSysState('env-power',    r.finalPower    || 72.0, '%',  r.finalPowerStatus    || 'ok')
+
+  /* ── Action bar center text ──────────────────────────────────── */
+  var centerEl = document.getElementById('action-center')
+  if (r.meltdownOccurred) {
+    centerEl.textContent  = 'INCIDENT REPORT FILED — UNIT 4 / SHIFT ' + (r.shiftNumber || 1)
+    centerEl.style.color  = 'var(--red-alert)'
+  } else {
+    centerEl.textContent = 'SHIFT ' + (r.shiftNumber || 1) + ' COMPLETE — UNIT 4 STABLE'
+  }
+
+  /* ── Adjust NEXT SHIFT button for meltdown ───────────────────── */
+  var btnNext = document.getElementById('btn-next')
+  if (r.meltdownOccurred) {
+    btnNext.classList.add('meltdown')
+    btnNext.textContent = '[ RETRY SHIFT ]'
+  }
+
+  /* ── CRT-off navigation helper ───────────────────────────────── */
+  function crtNavigate(url) {
+    var t = document.querySelector('.terminal')
+    t.style.animation = 'crtOff 0.65s cubic-bezier(0.4, 0, 1, 1) forwards'
+    setTimeout(function() { window.location.href = url }, 620)
+  }
+
+  /* ── Button handlers ─────────────────────────────────────────── */
+  document.getElementById('btn-menu').addEventListener('click', function() {
+    crtNavigate('menu.html')
+  })
+
+  document.getElementById('btn-next').addEventListener('click', function() {
+    /* Meltdown → retry same shift number. Normal end → advance shift. */
+    var nextShift = r.meltdownOccurred
+      ? (r.shiftNumber || 1)
+      : (r.shiftNumber || 1) + 1
+    localStorage.setItem('thermalShiftNumber', String(nextShift))
+    crtNavigate('game.html')
+  })
+</script>
+
+</body>
+</html>
