@@ -238,6 +238,24 @@
     gap: 6px;
     margin-bottom: 8px;
     flex-wrap: nowrap;
+    position: relative;
+  }
+
+  .demand-ind {
+    position: absolute;
+    top: -9px;
+    right: 0;
+    font-size: 8px;
+    letter-spacing: 1px;
+    color: var(--amber);
+    text-shadow: 0 0 4px rgba(255, 184, 48, 0.6);
+    animation: demand-blink 1.1s steps(2, start) infinite;
+    pointer-events: none;
+  }
+  @keyframes demand-blink {
+    0%   { opacity: 1; }
+    50%  { opacity: 0.25; }
+    100% { opacity: 1; }
   }
 
   .resource-name {
@@ -689,6 +707,7 @@
 
         <div class="resource-row">
           <span class="resource-name">TEMPERATURE</span>
+          <span class="demand-ind" id="demand-ind-sicaklik" style="display:none">▲ HIGH DEMAND</span>
           <button class="resource-btn" id="res-minus-sicaklik">−</button>
           <span class="resource-val" id="res-val-sicaklik">4</span>
           <button class="resource-btn" id="res-plus-sicaklik">+</button>
@@ -703,6 +722,7 @@
 
         <div class="resource-row">
           <span class="resource-name">PRESSURE</span>
+          <span class="demand-ind" id="demand-ind-basinc" style="display:none">▲ HIGH DEMAND</span>
           <button class="resource-btn" id="res-minus-basinc">−</button>
           <span class="resource-val" id="res-val-basinc">3</span>
           <button class="resource-btn" id="res-plus-basinc">+</button>
@@ -717,6 +737,7 @@
 
         <div class="resource-row">
           <span class="resource-name">POWER</span>
+          <span class="demand-ind" id="demand-ind-guc" style="display:none">▲ HIGH DEMAND</span>
           <button class="resource-btn" id="res-minus-guc">−</button>
           <span class="resource-val" id="res-val-guc">3</span>
           <button class="resource-btn" id="res-plus-guc">+</button>
@@ -842,12 +863,12 @@
   <!-- BOTTOM BAR -->
   <div id="bottom-bar">
 
-    <!-- LEFT: FREQUENCY MONITOR — oscilloscope instrument -->
+    <!-- LEFT: COOLANT RESONANCE MONITOR — oscilloscope instrument -->
     <div id="freq-monitor">
 
       <!-- Title + countdown timer -->
       <div class="fm-header">
-        <span class="fm-title" id="fm-title">// FREQUENCY MONITOR</span>
+        <span class="fm-title" id="fm-title">// COOLANT RESONANCE MONITOR</span>
         <span class="fc-timer" id="fc-timer" style="display:none"></span>
       </div>
 
@@ -1225,7 +1246,7 @@
   min-height: 0;
 }
 
-/* ── LEFT: FREQUENCY MONITOR (flex:3 ≈ 60%) ─────────────────────── */
+/* ── LEFT: COOLANT RESONANCE MONITOR (flex:3 ≈ 60%) ─────────────── */
 #freq-monitor {
   flex:           3;
   border-right:   1px solid #1e2e0c;
@@ -1844,6 +1865,48 @@
     renderSensor('B')
   }, 30000)
 
+  /* Radiation telemetry snapshots — captured at 22:00, 00:00, 02:00, 04:00 */
+  var _radSnap = [parseFloat(sensorState.B.values.radiation.v.toFixed(2))]
+
+  /* ═══════════════════════════════════════════════════════════════════
+     DEMAND SHIFT SYSTEM
+     One demand event per shift. Doubles deterioration on the targeted
+     system unless operator reallocates 5+ resources to it.
+     TYPE A — Thermal surge      : window 23:00–00:00 (60–120) , 120 min
+     TYPE B — Pressure event     : window 00:00–01:00 (120–180), 150 min
+     TYPE C — Power fluctuation  : window 01:00–02:00 (180–240), 120 min
+     ═══════════════════════════════════════════════════════════════════ */
+  var _DEMAND_DEFS = [
+    { type: 'A', label: 'THERMAL SURGE',      system: 'sicaklik', sysLabel: 'TEMPERATURE',
+      winStart: 60,  winEnd: 120, duration: 120,
+      startMsg: '▲ HIGH DEMAND: Thermal surge inbound — coolant load on TEMPERATURE rising. Reallocate to ≥5 units or deterioration will double.',
+      endMsg:   'Thermal surge subsiding. TEMPERATURE load returning to nominal.' },
+    { type: 'B', label: 'PRESSURE EVENT',     system: 'basinc',   sysLabel: 'PRESSURE',
+      winStart: 120, winEnd: 180, duration: 150,
+      startMsg: '▲ HIGH DEMAND: Primary loop pressure event — PRESSURE control taxed. Reallocate to ≥5 units or deterioration will double.',
+      endMsg:   'Pressure event resolved. PRESSURE control margin restored.' },
+    { type: 'C', label: 'POWER FLUCTUATION',  system: 'guc',      sysLabel: 'POWER',
+      winStart: 180, winEnd: 240, duration: 120,
+      startMsg: '▲ HIGH DEMAND: Grid demand fluctuation detected — POWER regulation strained. Reallocate to ≥5 units or deterioration will double.',
+      endMsg:   'Grid fluctuation cleared. POWER regulation stable.' },
+  ]
+  var _demandShift = (function() {
+    var def = _DEMAND_DEFS[Math.floor(Math.random() * _DEMAND_DEFS.length)]
+    var startElapsed = def.winStart + Math.floor(Math.random() * (def.winEnd - def.winStart))
+    return {
+      type:         def.type,
+      label:        def.label,
+      system:       def.system,
+      sysLabel:     def.sysLabel,
+      startElapsed: startElapsed,
+      endElapsed:   startElapsed + def.duration,
+      startMsg:     def.startMsg,
+      endMsg:       def.endMsg,
+      active:       false,
+      ended:        false,
+    }
+  })()
+
   /* ═══════════════════════════════════════════════════════════════════
      RESOURCE DISTRIBUTION SYSTEM
      ═══════════════════════════════════════════════════════════════════ */
@@ -2001,6 +2064,10 @@
         if (gameState.freqBonus)  rate *= 0.90   // SYNC ≥ 90 %: −10 %
         if (_fcPenaltyLevel >= 1) rate *= 1.20   // SYNC < 50 % for 30 s+: +20 %
         if (_fcPermDebuff)        rate *= 1.15   // permanent level-3 debuff: +15 %
+      }
+      /* Demand shift modifier — 2× deterioration unless target system has ≥5 resources */
+      if (_demandShift.active && _demandShift.system === sys && mag > 0 && res < 5) {
+        rate *= 2.0
       }
       let   val  = Math.max(cfg.gaugeMin, Math.min(cfg.gaugeMax,
                      gameState.systemValues[sys] + rate
@@ -2176,6 +2243,25 @@
     else if (_gcElapsed === 420)  // 05:00 — difficulty 1.8×
       _lsAdd('⚠ 05:00 — Final phase. Reactor load at maximum. Critical response time halved.', 'warning')
 
+    /* Radiation snapshots at 00:00, 02:00, 04:00 (elapsed 120, 240, 360) */
+    if (_gcElapsed === 120 || _gcElapsed === 240 || _gcElapsed === 360)
+      _radSnap.push(parseFloat(sensorState.B.values.radiation.v.toFixed(2)))
+
+    /* Demand shift trigger / end */
+    if (!_demandShift.active && !_demandShift.ended && _gcElapsed === _demandShift.startElapsed) {
+      _demandShift.active = true
+      _lsAdd(_demandShift.startMsg, 'warning')
+      var _di = document.getElementById('demand-ind-' + _demandShift.system)
+      if (_di) _di.style.display = ''
+    }
+    if (_demandShift.active && _gcElapsed === _demandShift.endElapsed) {
+      _demandShift.active = false
+      _demandShift.ended  = true
+      _lsAdd(_demandShift.endMsg, 'system')
+      var _di2 = document.getElementById('demand-ind-' + _demandShift.system)
+      if (_di2) _di2.style.display = 'none'
+    }
+
     if (_gcElapsed >= _gcDuration) {
       clearInterval(_gcInterval)
       endShift()
@@ -2287,11 +2373,12 @@
   /* ── Active anomaly tracking ─────────────────────────────────────── */
   var _anom = {
     active:      false,
-    isFake:      false,
+    isFake:      false,   // true = plain false alarm (no clue)
+    isLogClue:   false,   // true = LOG_CLUE false alarm (sensor fires, clue was planted)
     sensorId:    null,
     valueKey:    null,
-    decideTimer: null,   // 90 s decision deadline
-    escTimer:    null,   // 60 s stage-2 timer
+    decideTimer: null,
+    escTimer:    null,
     stage:       0,
   }
 
@@ -2327,36 +2414,100 @@
     },
   ]
 
-  /* ── False-alarm messages ────────────────────────────────────────── */
+  /* ── Plain false-alarm messages (no clue) ───────────────────────── */
   var FAKE_MSGS = [
     '⚠ CONFLICT: SEN.A read cycle delayed 14 s — transmission desynchronized. Verify.',
     '⚠ CONFLICT: Reactor outlet log: 308°C. Historical trend: 311°C. Delta 3°C — investigate.',
     '⚠ CONFLICT: Line 2 pressure transducer bouncing. Log shows stable. Manual check required.',
   ]
 
+  /* ── LOG_CLUE templates ──────────────────────────────────────────── */
+  /*  Each entry: sensorId/valueKey/type for triggerAnomaly,
+      conflictMsg shown when the sensor fires (same style as real),
+      clueMsg planted 60-90 s earlier in 'system' category.          */
+  var LOG_CLUE_TYPES = [
+    {
+      sensorId: 'A', valueKey: 'flow', type: 1,
+      conflictMsg: '⚠ CONFLICT: Line 2 flow log: 4.2 m/s — SEN.A reads 0.0 m/s. Total discrepancy.',
+      clueMsg: 'Coolant flow sensor A scheduled recalibration. Brief zero-reading expected. No action required.',
+    },
+    {
+      sensorId: 'A', valueKey: 'valve', type: 2,
+      conflictMsg: '⚠ CONFLICT: Valve V-114 log: CLOSED — SEN.A contact reads: OPEN.',
+      clueMsg: 'Valve B3 entering scheduled maintenance cycle. State indicator may show incorrectly during cycle.',
+    },
+    {
+      sensorId: 'B', valueKey: 'coreTemp', type: 3,
+      conflictMsg: '⚠ CONFLICT: Core temperature declining — no coolant activation registered. SEN.B unresponsive.',
+      clueMsg: 'Planned thermal test in progress. Core temperature reduction is intentional.',
+    },
+    {
+      sensorId: 'A', valueKey: 'temp', type: 4,
+      conflictMsg: '⚠ CONFLICT: SEN.A reads nominal — operator log parameters inconsistent. Source unknown.',
+      clueMsg: 'Sensor array diagnostic running. Temporary discrepancies between arrays are expected.',
+    },
+  ]
+
   /* ── _anomSpawn ──────────────────────────────────────────────────── */
   function _anomSpawn() {
     if (_anom.active || gameState.systemFailure) return
-    _anom.active = true
-    _anom.stage  = 0
-    _anom.isFake = Math.random() < 0.30
+    _anom.active    = true
+    _anom.stage     = 0
+    _anom.isFake    = false
+    _anom.isLogClue = false
 
-    if (_anom.isFake) {
+    var roll = Math.random()
+
+    if (roll < 0.40) {
+      /* ── LOG_CLUE false alarm (40%) ─────────────────────────────── */
+      _anom.isLogClue = true
+      _anom.isFake    = true
+      var tpl = LOG_CLUE_TYPES[Math.floor(Math.random() * LOG_CLUE_TYPES.length)]
+      _anom.sensorId = tpl.sensorId
+      _anom.valueKey = tpl.valueKey
+
+      /* Plant the clue 60–90 s before the sensor fires */
+      var clueDelay = 60000 + Math.floor(Math.random() * 30000)
+      _lsAdd(tpl.clueMsg, 'system')
+
+      /* Sensor fires after the clue delay */
+      setTimeout(function() {
+        if (!_anom.active || !_anom.isLogClue) return   // cleared early
+        triggerAnomaly(tpl.sensorId, tpl.valueKey, tpl.type)
+        _lsAdd(tpl.conflictMsg, 'conflict')
+        /* Decision window starts NOW (when sensor fires) */
+        _anom.decideTimer = setTimeout(function() { _anomEscalate(1) }, 90000)
+      }, clueDelay)
+
+      /* Buttons become active immediately when the sensor fires.
+         We use a small flag so _anomSetButtons is called from inside the timer. */
+      /* Override: defer button enable until sensor fires. Disable now if they were on. */
+      _anomSetButtons(false)
+      /* The inner setTimeout above will call _anomSetButtons(true) — proxy via flag: */
+      _anom._logClueTimer = setTimeout(function() {
+        if (!_anom.active || !_anom.isLogClue) return
+        _anomSetButtons(true)
+      }, clueDelay)
+
+    } else if (roll < 0.60) {
+      /* ── Plain false alarm (20%) ─────────────────────────────────── */
+      _anom.isFake   = true
       _anom.sensorId = null
       _anom.valueKey = null
       _lsAdd(FAKE_MSGS[Math.floor(Math.random() * FAKE_MSGS.length)], 'conflict')
+      _anomSetButtons(true)
+      _anom.decideTimer = setTimeout(function() { _anomEscalate(1) }, 90000)
+
     } else {
+      /* ── Real anomaly (60%) ──────────────────────────────────────── */
       var tpl = ANOM_TYPES[Math.floor(Math.random() * ANOM_TYPES.length)]
       _anom.sensorId = tpl.sensorId
       _anom.valueKey = tpl.valueKey
       triggerAnomaly(tpl.sensorId, tpl.valueKey, tpl.type)
       _lsAdd(tpl.logMsg, 'conflict')
+      _anomSetButtons(true)
+      _anom.decideTimer = setTimeout(function() { _anomEscalate(1) }, 90000)
     }
-
-    _anomSetButtons(true)
-
-    /* 90 s decision window */
-    _anom.decideTimer = setTimeout(function() { _anomEscalate(1) }, 90000)
   }
 
   /* ── _anomEscalate ───────────────────────────────────────────────── */
@@ -2367,12 +2518,10 @@
     if (stage === 1) {
       gameState.missedAnomalies++
       _lsAdd('⚠ OVERDUE: No operator response within 90 s. Situation advancing. Supervisor on standby.', 'warning')
-      /* Force visual escalation on the sensor if not already done */
       if (!_anom.isFake && _anom.sensorId) {
         var snsr = sensorState[_anom.sensorId]
         if (snsr.anomaly) { snsr.anomaly.escalated = true; renderSensor(_anom.sensorId) }
       }
-      /* Stage 2 after another 60 s */
       _anom.escTimer = setTimeout(function() { _anomEscalate(2) }, 60000)
 
     } else if (stage === 2) {
@@ -2386,14 +2535,15 @@
   function _anomClear() {
     clearTimeout(_anom.decideTimer)
     clearTimeout(_anom.escTimer)
-    if (!_anom.isFake && _anom.sensorId) {
-      resolveAnomaly(_anom.sensorId, _anom.valueKey)
-    }
-    _anom.active   = false
-    _anom.isFake   = false
-    _anom.sensorId = null
-    _anom.valueKey = null
-    _anom.stage    = 0
+    clearTimeout(_anom._logClueTimer)
+    if (_anom.sensorId) resolveAnomaly(_anom.sensorId, _anom.valueKey)
+    _anom.active      = false
+    _anom.isFake      = false
+    _anom.isLogClue   = false
+    _anom.sensorId    = null
+    _anom.valueKey    = null
+    _anom.stage       = 0
+    _anom._logClueTimer = null
     _anomSetButtons(false)
   }
 
@@ -2401,7 +2551,6 @@
   function _anomDecide(isReport) {
     if (!_anom.active) return
 
-    /* White flash on the pressed button */
     var btn = isReport ? _btnReport : _btnNormal
     btn.classList.add('btn-flash')
     setTimeout(function() { btn.classList.remove('btn-flash') }, 220)
@@ -2409,33 +2558,45 @@
     _anomSetButtons(false)
     clearTimeout(_anom.decideTimer)
     clearTimeout(_anom.escTimer)
+    clearTimeout(_anom._logClueTimer)
 
-    /* Correct = report on real anomaly / normal on false alarm */
+    /* Correct:
+       real anomaly   → isReport true
+       plain fake     → isReport false
+       LOG_CLUE fake  → isReport false (clue revealed it was scheduled) */
     var correct = _anom.isFake ? !isReport : isReport
 
     if (correct) {
       gameState.correctDecisions++
-      if (!_anom.isFake && _anom.sensorId) resolveAnomaly(_anom.sensorId, _anom.valueKey)
-      _lsAdd(isReport
-        ? '✓ Anomaly logged and resolved. Supervisory system notified. Record updated.'
-        : '✓ False alarm confirmed. Sensor transient only — no active anomaly. Log cleared.',
-        'system')
+      if (_anom.sensorId) resolveAnomaly(_anom.sensorId, _anom.valueKey)
+      if (_anom.isLogClue) {
+        _lsAdd('Operator assessment confirmed. No anomaly. Scheduled event as logged.', 'system')
+      } else {
+        _lsAdd(isReport
+          ? '✓ Anomaly logged and resolved. Supervisory system notified. Record updated.'
+          : '✓ False alarm confirmed. Sensor transient only — no active anomaly. Log cleared.',
+          'system')
+      }
     } else {
       gameState.wrongDecisions++
-      if (!_anom.isFake && _anom.sensorId) resolveAnomaly(_anom.sensorId, _anom.valueKey)
-      _lsAdd(isReport
-        ? '✗ Report filed — post-review: no anomaly confirmed. Protocol deviation noted.'
-        : '✗ Status cleared — anomaly was active. Escalation unmanned. Supervisor alerted.',
-        'warning')
+      if (_anom.sensorId) resolveAnomaly(_anom.sensorId, _anom.valueKey)
+      if (_anom.isLogClue) {
+        _lsAdd('False anomaly report filed. Operator error recorded. Review shift log.', 'warning')
+      } else {
+        _lsAdd(isReport
+          ? '✗ Report filed — post-review: no anomaly confirmed. Protocol deviation noted.'
+          : '✗ Status cleared — anomaly was active. Escalation unmanned. Supervisor alerted.',
+          'warning')
+      }
     }
 
-    _anom.active   = false
-    _anom.isFake   = false
-    _anom.sensorId = null
-    _anom.valueKey = null
-    _anom.stage    = 0
+    _anom.active    = false
+    _anom.isFake    = false
+    _anom.isLogClue = false
+    _anom.sensorId  = null
+    _anom.valueKey  = null
+    _anom.stage     = 0
 
-    /* 3 s cooldown before next spawn */
     setTimeout(_scheduleNextAnomaly, 3000)
   }
 
@@ -2457,7 +2618,7 @@
   setTimeout(_anomSpawn, 180000 + Math.floor(Math.random() * 120000))
 
   /* ═══════════════════════════════════════════════════════════════════
-     FREQUENCY MONITOR — always-on bottom bar (idle / active modes)
+     COOLANT RESONANCE MONITOR — always-on bottom bar (idle / active modes)
      ─────────────────────────────────────────────────────────────────
      IDLE   : waves always draw; target drifts continuously toward a
               destination that changes every 20-30 s.
@@ -2526,14 +2687,14 @@
     _fcMatchLbl.textContent = 'SYNC: ' + Math.round(match) + '%'
 
     _fcMatchBar.className = 'fc-match-bar'
-    if      (match >= 90) _fcMatchBar.classList.add('fc-match-good')
+    if      (match >= 95) _fcMatchBar.classList.add('fc-match-good')
     else if (match >= 50) _fcMatchBar.classList.add('fc-match-warn')
     else                  _fcMatchBar.classList.add('fc-match-bad')
 
-    gameState.freqBonus = (match >= 90)
+    gameState.freqBonus = (match >= 95)
 
     if (_fcMode === 'active') {
-      var ready = match >= 90
+      var ready = match >= 95
       _fcConfirm.disabled = !ready
       _fcConfirm.classList.toggle('fc-confirm-ready', ready)
     }
@@ -2573,7 +2734,7 @@
     _fcDriftStep(dt)
 
     /* Recompute freqBonus every frame — cheap, no DOM */
-    gameState.freqBonus = (_fcMatch() >= 90)
+    gameState.freqBonus = (_fcMatch() >= 95)
 
     _fcSyncCanvas()
     var ctx = _fcCanvas.getContext('2d')
@@ -2648,7 +2809,7 @@
     _fcConfirm.disabled      = true
     _fcConfirm.classList.remove('fc-confirm-ready')
     _fcMonitor.classList.remove('fm-active')
-    _fmTitleEl.textContent   = '// FREQUENCY MONITOR'
+    _fmTitleEl.textContent   = '// COOLANT RESONANCE MONITOR'
     _fmTitleEl.style.color   = ''
   }
 
@@ -2657,7 +2818,7 @@
     gameState.freqCalSuccess++
     _fcReturnToIdle()
     _fcFlash('fm-flash-green')
-    _lsAdd('Calibration confirmed. Line 2 signal locked. Thermal coupling restored.', 'system')
+    _lsAdd('CRM calibration complete. Primary loop nominal.', 'system')
     setTimeout(_scheduleNextFreqCal, 3000)
   }
 
@@ -2666,7 +2827,7 @@
     gameState.freqCalFail++
     _fcReturnToIdle()
     _fcFlash('fm-flash-red')
-    _lsAdd('⚠ Calibration timeout — Line 2 signal lost. Coolant damping compromised.', 'anomaly')
+    _lsAdd('⚠ CRM calibration failed. Primary loop resonance unstable.', 'anomaly')
     if (!_anom.active && !gameState.systemFailure) triggerAnomaly('A', 'flow', 1)
     setTimeout(_scheduleNextFreqCal, 5000)
   }
@@ -2692,14 +2853,14 @@
     _fcConfirm.classList.remove('fc-confirm-ready')
     _fcConfirm.style.display = 'block'
 
-    _fmTitleEl.textContent = '// CALIBRATION REQUIRED !'
+    _fmTitleEl.textContent = '// CRM CALIBRATION REQUIRED !'
     _fmTitleEl.style.color = 'var(--amber)'
     _fcMonitor.classList.add('fm-active')
 
     _fcTimerInt = setInterval(_fcTimerTick, 1000)
     _fcRefresh()
 
-    _lsAdd('⚠ Line 2 carrier signal deviation: target lock lost. Manual calibration window open — 60 s.', 'warning')
+    _lsAdd('⚠ Coolant resonance deviation detected on primary loop. Manual calibration window open — 60 s.', 'warning')
   }
 
   /* ── Pick new drift destination every 20–30 s ───────────────────── */
@@ -2716,7 +2877,7 @@
   function _fcPenaltyTick() {
     var match = _fcMatch()
 
-    if (match < 50) {
+    if (match < 95) {
       _fcLowSyncSecs++
 
       /* Level 3 — permanent debuff (fires once, never again) */
@@ -2732,13 +2893,13 @@
         if (!_anom.active && !gameState.systemFailure) triggerAnomaly('A', 'flow', 1)
       }
       /* Level 1 — deterioration penalty */
-      else if (_fcLowSyncSecs >= 30 && _fcPenaltyLevel < 1) {
+      else if (_fcLowSyncSecs >= 15 && _fcPenaltyLevel < 1) {
         _fcPenaltyLevel = 1
-        _lsAdd('⚠ Frequency hold below 50 % sustained 30 s. Coolant flow rate fluctuating.', 'warning')
+        _lsAdd('⚠ CRM hold below 95 % sustained 15 s. Coolant flow rate fluctuating.', 'warning')
       }
 
     } else {
-      /* Sync recovered above 50 % — reset transient level.
+      /* Sync recovered above 95 % — reset transient level.
          _fcPermDebuff is permanent and tracked independently. */
       if (_fcPenaltyLevel > 0) _fcPenaltyLevel = 0
       _fcLowSyncSecs = 0
@@ -2830,6 +2991,23 @@
     })
 
     var penLabel = ['NONE', 'L1 +20%', 'L2 ANOM', 'L3 PERM'][_fcPenaltyLevel] || '?'
+
+    /* Demand shift readout */
+    var demandLine
+    if (_demandShift.active) {
+      var remMin = Math.max(0, _demandShift.endElapsed - _gcElapsed)
+      var rh = Math.floor(remMin / 60), rm = remMin % 60
+      var remStr = (rh > 0 ? rh + 'h ' : '') + String(rm).padStart(2, '0') + 'm'
+      demandLine = 'DEMAND SHIFT: ' + _demandShift.type + ' (' + _demandShift.label + ') — ' +
+                   _demandShift.sysLabel + ' [' + remStr + ' left]'
+    } else if (_demandShift.ended) {
+      demandLine = 'DEMAND SHIFT: ' + _demandShift.type + ' (' + _demandShift.label + ') — ENDED'
+    } else {
+      var sh = Math.floor(_demandShift.startElapsed / 60), sm = _demandShift.startElapsed % 60
+      var startTime = String((22 + sh) % 24).padStart(2, '0') + ':' + String(sm).padStart(2, '0')
+      demandLine = 'DEMAND SHIFT: ' + _demandShift.type + ' (' + _demandShift.label + ') — pending @ ' + startTime
+    }
+
     _dbgEl.innerHTML = [
       'GAME TIME: '    + _gcTime(),
       lines[0],
@@ -2838,13 +3016,14 @@
       'RADIATION: '    + sensorState.B.values.radiation.v.toFixed(2) + ' mSv',
       'RESOURCES: T:[' + gameState.resources.sicaklik + '] P:[' + gameState.resources.basinc + '] W:[' + gameState.resources.guc + ']',
       'ANOMALY: '      + (_anom.active ? 'active' : 'none'),
-      'FREQ MODE: '    + _fcMode + '  SYNC: ' + Math.round(_fcMatch()) + '%',
-      'FREQ BONUS: '   + gameState.freqBonus + '  LOW-SYNC: ' + _fcLowSyncSecs + 's',
+      'CRM MODE: '     + _fcMode + '  CRM SYNC: ' + Math.round(_fcMatch()) + '%',
+      'CRM BONUS: '    + gameState.freqBonus + '  LOW-SYNC: ' + _fcLowSyncSecs + 's',
       'PENALTY: '      + penLabel + '  PERM: ' + _fcPermDebuff,
       'DIFFICULTY: '   + _diffScale.toFixed(1) + 'x',
       'CRIT TIMER: T:' + gameState.critSeconds.sicaklik + 's  P:' + gameState.critSeconds.basinc + 's  W:' + gameState.critSeconds.guc + 's  [max 120s]',
       'CORRECT: '      + gameState.correctDecisions + '  WRONG: ' + gameState.wrongDecisions + '  MISSED: ' + gameState.missedAnomalies,
       'CRIT.TOT: '     + gameState.totalCritSeconds + 's  FC.OK: ' + gameState.freqCalSuccess + '  FC.FAIL: ' + gameState.freqCalFail,
+      demandLine,
     ].map(function(l) { return '<div>' + l + '</div>' }).join('')
   }
 
@@ -2898,6 +3077,7 @@
       finalPressureStatus: gameState.systemStatus.basinc,
       finalPowerStatus:    gameState.systemStatus.guc,
       finalRadiation:      sensorState.B.values.radiation.v,
+      radSnapshots:        _radSnap.concat([parseFloat(sensorState.B.values.radiation.v.toFixed(2))]),
       shiftNumber:         shiftNum,
     }
     localStorage.setItem('thermalShiftReport', JSON.stringify(report))
@@ -2939,12 +3119,12 @@
         var offset = FC_CIRC - (match / 100 * FC_CIRC)
         _kvArc.setAttribute('stroke-dashoffset', offset.toFixed(1))
         _kvArc.setAttribute('stroke',
-          match >= 90 ? '#a8ff3e' : match >= 50 ? '#ffb830' : '#ff3a3a')
+          match >= 95 ? '#a8ff3e' : match >= 50 ? '#ffb830' : '#ff3a3a')
       }
 
       /* Sync text colour */
       if (_kvPct) {
-        _kvPct.style.color = match >= 90
+        _kvPct.style.color = match >= 95
           ? 'var(--phosphor)'
           : match >= 50 ? 'var(--amber)' : 'var(--red-alert)'
       }

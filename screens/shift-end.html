@@ -289,32 +289,81 @@
     color: var(--phosphor);
   }
 
-  /* ── RADIATION BAR ────────────────────────────────────────────── */
-  .rad-level-bar {
-    height: 6px;
-    background: #0b0f05;
-    border: 1px solid var(--border);
-    margin-top: 6px;
-    overflow: hidden;
-    flex-shrink: 0;
-  }
-
-  .rad-level-fill {
-    height: 100%;
-    width: 0%;
-    transition: width 1.6s ease;
-  }
-
-  .rad-consequence {
+  /* ── TELEMETRY CHART ─────────────────────────────────────────── */
+  .telem-section-label {
     font-size: 9px;
-    letter-spacing: 0.8px;
+    letter-spacing: 2px;
     color: var(--phosphor-dim);
-    line-height: 1.7;
-    margin-top: 8px;
-    margin-bottom: 2px;
+    margin-bottom: 7px;
     flex-shrink: 0;
-    font-style: italic;
   }
+
+  .telem-chart {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+
+  .telem-row {
+    display: flex;
+    align-items: baseline;
+    gap: 5px;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0;
+  }
+
+  .telem-time {
+    color: var(--phosphor-dim);
+    width: 36px;
+    flex-shrink: 0;
+  }
+
+  .telem-bar-txt {
+    color: var(--phosphor);
+    flex: 1;
+    letter-spacing: 0;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+  .telem-bar-txt.last-warn { color: var(--amber); }
+  .telem-bar-txt.last-crit { color: var(--red-alert); }
+
+  .telem-val {
+    color: var(--phosphor-dim);
+    width: 58px;
+    text-align: right;
+    flex-shrink: 0;
+    font-size: 9px;
+  }
+  .telem-val.final-ok   { color: var(--phosphor); }
+  .telem-val.final-warn { color: var(--amber); }
+  .telem-val.final-crit { color: var(--red-alert); }
+
+  /* ── TELEM STAT ROWS ──────────────────────────────────────────── */
+  .telem-stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 10px;
+    letter-spacing: 0.8px;
+    margin-bottom: 6px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid rgba(42,58,16,0.3);
+    flex-shrink: 0;
+  }
+  .telem-stat-row:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+  .telem-stat-label { color: var(--phosphor-dim); }
+
+  .telem-stat-val {
+    font-family: 'VT323', monospace;
+    font-size: 15px;
+    color: var(--phosphor);
+  }
+  .telem-stat-val.warn { color: var(--amber); }
+  .telem-stat-val.crit { color: var(--red-alert); animation: blink 0.6s step-end infinite; }
 
   /* ── SYSTEM STATE ROWS ────────────────────────────────────────── */
   .sys-state-row {
@@ -488,24 +537,27 @@
       </div>
     </div>
 
-    <!-- RIGHT: ENVIRONMENTAL LOG -->
+    <!-- RIGHT: ATMOSPHERIC TELEMETRY -->
     <div class="panel" id="env-panel">
-      <div class="panel-title">// ENVIRONMENTAL LOG</div>
+      <div class="panel-title">// ATMOSPHERIC TELEMETRY</div>
 
-      <div class="section-label">RADIATION EXPOSURE</div>
+      <div class="telem-section-label">RADIATION DISPERSAL MODEL</div>
+      <div class="telem-chart" id="telem-chart"><!-- injected by JS --></div>
 
-      <div class="stat-row">
-        <span class="stat-label">FINAL READING</span>
-        <span class="stat-val" id="env-rad-val">—</span>
+      <div class="panel-rule"></div>
+
+      <div class="telem-stat-row">
+        <span class="telem-stat-label">EXPOSURE RADIUS</span>
+        <span class="telem-stat-val" id="telem-radius">—</span>
       </div>
-      <div class="stat-row" style="border-bottom:none; margin-bottom:4px;">
-        <span class="stat-label">EXPOSURE LEVEL</span>
-        <span class="stat-val" id="env-rad-level">—</span>
+      <div class="telem-stat-row">
+        <span class="telem-stat-label">POPULATION DENSITY</span>
+        <span class="telem-stat-val" id="telem-pop">—</span>
       </div>
-      <div class="rad-level-bar">
-        <div class="rad-level-fill" id="env-rad-bar"></div>
+      <div class="telem-stat-row">
+        <span class="telem-stat-label">INCIDENT CLASS</span>
+        <span class="telem-stat-val" id="telem-class">—</span>
       </div>
-      <div class="rad-consequence" id="env-rad-text">—</div>
 
       <div class="panel-rule"></div>
 
@@ -656,22 +708,71 @@
   document.getElementById('rs-freq').textContent     =
     r.freqCalSuccess + ' / ' + (r.freqCalSuccess + r.freqCalFail)
 
-  /* ── Populate environmental log ──────────────────────────────── */
-  var radValEl = document.getElementById('env-rad-val')
-  radValEl.textContent = (r.finalRadiation || 0).toFixed(2) + ' mSv'
-  radValEl.className   = 'stat-val ' + (r.finalRadiation < 2.0 ? 'ok' : r.finalRadiation < 3.0 ? 'warn' : 'crit')
+  /* ── Telemetry panel ─────────────────────────────────────────── */
+  var fRad   = r.finalRadiation || 1.0
+  var snaps  = r.radSnapshots || (function() {
+    /* Fallback: linear interpolation from 0.80 to final */
+    return [
+      0.80,
+      parseFloat((0.80 + (fRad - 0.80) * 0.25).toFixed(2)),
+      parseFloat((0.80 + (fRad - 0.80) * 0.50).toFixed(2)),
+      parseFloat((0.80 + (fRad - 0.80) * 0.75).toFixed(2)),
+      fRad
+    ]
+  })()
+  var SNAP_TIMES = ['22:00', '00:00', '02:00', '04:00', '06:00']
+  var MAX_BAR   = 18
+  var maxVal    = Math.max.apply(null, snaps)
 
-  var radLvlEl = document.getElementById('env-rad-level')
-  radLvlEl.textContent   = rad.level
-  radLvlEl.style.color   = rad.color
-  radLvlEl.style.fontFamily = "'VT323', monospace"
-  radLvlEl.style.fontSize   = '17px'
+  var chartEl = document.getElementById('telem-chart')
+  if (chartEl) {
+    chartEl.innerHTML = snaps.map(function(v, i) {
+      var barLen  = Math.max(1, Math.round(v / maxVal * MAX_BAR))
+      var barStr  = '░'.repeat(barLen)
+      var isLast  = (i === snaps.length - 1)
+      var barCls  = 'telem-bar-txt'
+      var valCls  = 'telem-val'
+      if (isLast) {
+        if      (fRad >= 3.5) { barCls += ' last-crit'; valCls += ' final-crit' }
+        else if (fRad >= 2.5) { barCls += ' last-warn'; valCls += ' final-warn' }
+        else if (fRad >= 1.5) { barCls += ' last-warn'; valCls += ' final-warn' }
+        else                  { valCls += ' final-ok' }
+      }
+      return '<div class="telem-row">' +
+        '<span class="telem-time">' + SNAP_TIMES[i] + '</span>' +
+        '<span class="' + barCls + '">' + barStr + '</span>' +
+        '<span class="' + valCls + '">' + v.toFixed(2) + ' mSv</span>' +
+        '</div>'
+    }).join('')
+  }
 
-  var radBar = document.getElementById('env-rad-bar')
-  radBar.style.background = rad.barGrad
-  setTimeout(function() { radBar.style.width = rad.pct.toFixed(1) + '%' }, 120)
+  /* Exposure radius */
+  var radiusEl = document.getElementById('telem-radius')
+  radiusEl.textContent = (fRad * 12).toFixed(1) + ' km'
+  radiusEl.className   = 'telem-stat-val' + (fRad >= 2.5 ? ' warn' : '')
 
-  document.getElementById('env-rad-text').textContent = rad.text
+  /* Population density — deterministic rotation per shift for variety */
+  var popDens  = ['LOW', 'MEDIUM', 'HIGH'][((r.shiftNumber || 1) * 7 + 1) % 3]
+  var popEl    = document.getElementById('telem-pop')
+  popEl.textContent  = popDens
+  popEl.className    = 'telem-stat-val' + (popDens === 'HIGH' ? ' warn' : '')
+
+  /* Incident classification */
+  var incEl = document.getElementById('telem-class')
+  if (fRad < 1.5) {
+    incEl.textContent = 'NONE'
+    incEl.className   = 'telem-stat-val'
+  } else if (fRad < 2.5) {
+    incEl.textContent = 'MINOR'
+    incEl.className   = 'telem-stat-val warn'
+  } else if (fRad < 3.5) {
+    incEl.textContent = 'MODERATE'
+    incEl.className   = 'telem-stat-val warn'
+    incEl.style.animation = 'blink 0.9s step-end infinite'
+  } else {
+    incEl.textContent = 'SEVERE'
+    incEl.className   = 'telem-stat-val crit'
+  }
 
   /* Final system state */
   function setSysState(id, val, unit, status) {
