@@ -588,6 +588,7 @@
 
 </div>
 
+<script src="../js/saveSystem.js"></script>
 <script>
   /* ── Read report from localStorage ───────────────────────────── */
   var reportRaw = localStorage.getItem('thermalShiftReport')
@@ -598,8 +599,11 @@
     freqCalSuccess: 2,   freqCalFail: 0,
     finalTemp: 68.4,     finalPressure: 55.1,  finalPower: 70.8,
     finalTempStatus: 'ok', finalPressureStatus: 'ok', finalPowerStatus: 'ok',
-    finalRadiation: 0.94, shiftNumber: 1,
+    finalRadiation: 0.94, radiationReached: 0.94, shiftNumber: 1, shiftPay: 400,
   }
+
+  /* ── Save state (already updated by game.html's endShift) ──────── */
+  var _save = (window.saveSystem ? window.saveSystem.loadGame() : null)
 
   /* ── Rating calculation ───────────────────────────────────────── */
   function calcRating(d) {
@@ -786,11 +790,14 @@
 
   /* ── Action bar center text ──────────────────────────────────── */
   var centerEl = document.getElementById('action-center')
+  var pay      = (typeof r.shiftPay === 'number') ? r.shiftPay
+               : (window.saveSystem ? window.saveSystem.calcShiftPay(r.radiationReached || r.finalRadiation || 0, !!r.meltdownOccurred) : 0)
+
   if (r.meltdownOccurred) {
-    centerEl.textContent  = 'INCIDENT REPORT FILED — UNIT 4 / SHIFT ' + (r.shiftNumber || 1)
-    centerEl.style.color  = 'var(--red-alert)'
+    centerEl.textContent = 'INCIDENT REPORT FILED — UNIT 4 / SHIFT ' + (r.shiftNumber || 1) + ' — PAYMENT WITHHELD'
+    centerEl.style.color = 'var(--red-alert)'
   } else {
-    centerEl.textContent = 'SHIFT ' + (r.shiftNumber || 1) + ' COMPLETE — UNIT 4 STABLE'
+    centerEl.textContent = 'SHIFT ' + (r.shiftNumber || 1) + ' COMPLETE — UNIT 4 STABLE  //  PAYMENT: ' + pay + ' UNITS'
   }
 
   /* ── Adjust NEXT SHIFT button for meltdown ───────────────────── */
@@ -813,11 +820,14 @@
   })
 
   document.getElementById('btn-next').addEventListener('click', function() {
-    /* Meltdown → retry same shift number. Normal end → advance shift. */
-    var nextShift = r.meltdownOccurred
-      ? (r.shiftNumber || 1)
-      : (r.shiftNumber || 1) + 1
-    localStorage.setItem('thermalShiftNumber', String(nextShift))
+    /* Save is already updated by game.html's endShift(). On meltdown
+       updateShift() keeps shiftNumber the same (retry), on success it
+       was incremented. Legacy thermalShiftNumber is kept in sync for
+       any code still reading it. */
+    if (window.saveSystem) {
+      var s = window.saveSystem.loadGame()
+      try { localStorage.setItem('thermalShiftNumber', String(s.shiftNumber)) } catch (e) {}
+    }
     crtNavigate('game.html')
   })
 </script>

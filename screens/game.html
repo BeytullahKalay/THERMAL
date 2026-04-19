@@ -654,6 +654,7 @@
     <div class="header-status">
       <span class="status-ok">● REACTOR ONLINE</span>
       <span class="status-warn">▲ COOLANT LINE 2</span>
+      <span class="status-warn" id="header-shift">SHIFT 1</span>
       <span class="status-time" id="header-clock">22:00</span>
     </div>
   </div>
@@ -910,15 +911,19 @@
         <!-- Oscilloscope circle with sync arc -->
         <div class="fm-scope-col">
           <div class="fm-scope-outer">
-            <!-- Sync progress ring -->
-            <svg class="fm-sync-svg" viewBox="0 0 110 110">
+            <!-- Sync progress ring — rectangular, pathLength normalises to 326.7
+                 so the existing _kvUpdate() JS math (stroke-dashoffset) is unchanged. -->
+            <svg class="fm-sync-svg" viewBox="0 0 220 110" preserveAspectRatio="none">
               <!-- Track -->
-              <circle cx="55" cy="55" r="52" fill="none" stroke="#1a2a08" stroke-width="5"/>
-              <!-- Progress arc (JS sets dashoffset + stroke color) -->
-              <circle cx="55" cy="55" r="52" fill="none" stroke="#a8ff3e" stroke-width="5"
+              <rect x="2.5" y="2.5" width="215" height="105" rx="5" ry="5"
+                fill="none" stroke="#1a2a08" stroke-width="5"
+                pathLength="326.7"/>
+              <!-- Progress stroke (JS sets dashoffset + stroke color) -->
+              <rect x="2.5" y="2.5" width="215" height="105" rx="5" ry="5"
+                fill="none" stroke="#a8ff3e" stroke-width="5"
                 stroke-linecap="round"
+                pathLength="326.7"
                 stroke-dasharray="326.7" stroke-dashoffset="0"
-                transform="rotate(-90 55 55)"
                 id="fm-sync-arc"/>
             </svg>
             <!-- Oscilloscope screen -->
@@ -1444,30 +1449,29 @@
   flex-shrink:    0;
 }
 
-/* Outer wrapper — positions the SVG ring and the scope circle */
+/* Outer wrapper — positions the SVG ring and the scope rectangle */
 .fm-scope-outer {
   position:    relative;
-  width:       110px;
+  flex:        1 1 auto;
+  min-width:   160px;
+  max-width:   260px;
   height:      110px;
-  flex-shrink: 0;
 }
 
 /* Sync-ring SVG: overlaid on top, pointer-events off */
 .fm-sync-svg {
   position:       absolute;
   top: 0; left: 0;
-  width:          110px;
-  height:         110px;
+  width:          100%;
+  height:         100%;
   pointer-events: none;
 }
 
-/* Oscilloscope screen circle */
+/* Oscilloscope screen — rectangular */
 .fm-scope-circle {
   position:      absolute;
-  top: 9px; left: 9px;
-  width:         92px;
-  height:        92px;
-  border-radius: 50%;
+  top: 9px; left: 9px; right: 9px; bottom: 9px;
+  border-radius: 4px;
   border:        3px solid #2a4a10;
   background:    #000308;
   overflow:      hidden;
@@ -1479,7 +1483,7 @@
   box-shadow:   0 0 12px rgba(255,184,48,0.35), inset 0 0 16px rgba(0,0,0,0.85);
 }
 
-/* Canvas fills scope circle */
+/* Canvas fills scope rectangle */
 #fc-canvas {
   width:      100%;
   height:     100%;
@@ -1487,7 +1491,7 @@
   background: transparent;
 }
 
-/* Scanline overlay inside scope circle */
+/* Scanline overlay inside scope rectangle */
 .fm-scope-scan {
   position:      absolute;
   inset:         0;
@@ -1498,7 +1502,7 @@
     transparent 1px,
     transparent 3px
   );
-  border-radius: 50%;
+  border-radius: 4px;
   pointer-events: none;
 }
 
@@ -1757,7 +1761,15 @@
   </div>
 </div>
 
+<script src="../js/saveSystem.js"></script>
 <script>
+  /* ─── Save system — load current run state once at boot ──────── */
+  var _save = window.saveSystem.loadGame()
+
+  /* Sync legacy shift-number key so existing endShift() path keeps
+     behaving identically while we migrate to the new save. */
+  try { localStorage.setItem('thermalShiftNumber', String(_save.shiftNumber)) } catch (e) {}
+
   /* ─── Pause Menu ─────────────────────────────────────────────── */
   let isPaused = false;
   const overlay = document.getElementById('pause-overlay');
@@ -2080,6 +2092,19 @@
 
   /* Radiation telemetry snapshots — captured at 22:00, 00:00, 02:00, 04:00 */
   var _radSnap = [parseFloat(sensorState.B.values.radiation.v.toFixed(2))]
+
+  /* Track maximum radiation reached during the shift (for shift pay calc) */
+  var _radMax = sensorState.B.values.radiation.v
+  setInterval(function() {
+    var v = sensorState.B.values.radiation.v
+    if (v > _radMax) _radMax = v
+  }, 1000)
+
+  /* Paint header shift label from save */
+  ;(function() {
+    var el = document.getElementById('header-shift')
+    if (el) el.textContent = 'SHIFT ' + (_save.shiftNumber || 1)
+  })()
 
   /* ═══════════════════════════════════════════════════════════════════
      DEMAND SHIFT SYSTEM
@@ -3542,6 +3567,14 @@
         (_vmMode === 'active'
           ? '  CORRECT: [V' + _vmCorrectSeq.join(',V') + ']  SHOWN: [V' + _vmDisplayedSeq.join(',V') + ']'
           : ''),
+      (function() {
+        var s = (window.saveSystem && window.saveSystem.loadGame())
+                ? window.saveSystem.loadGame() : _save
+        return 'SAVE: Shift ' + s.shiftNumber +
+               ' | Money ' + s.totalMoney + '/' + s.targetMoney +
+               ' | Evicted ' + s.evicted +
+               ' | Rent Skip ' + s.shiftsWithoutRent
+      })(),
     ].map(function(l) { return '<div>' + l + '</div>' }).join('')
   }
 
@@ -3579,7 +3612,11 @@
     _shiftEnded = true
     clearInterval(_gcInterval)
 
-    var shiftNum = parseInt(localStorage.getItem('thermalShiftNumber') || '1')
+    var shiftNum         = _save.shiftNumber || 1
+    var radiationReached = Math.max(_radMax, sensorState.B.values.radiation.v)
+    var shiftPay         = window.saveSystem.calcShiftPay(
+                             radiationReached, gameState.meltdownOccurred)
+
     var report = {
       correctDecisions:    gameState.correctDecisions,
       wrongDecisions:      gameState.wrongDecisions,
@@ -3595,10 +3632,15 @@
       finalPressureStatus: gameState.systemStatus.basinc,
       finalPowerStatus:    gameState.systemStatus.guc,
       finalRadiation:      sensorState.B.values.radiation.v,
+      radiationReached:    radiationReached,
       radSnapshots:        _radSnap.concat([parseFloat(sensorState.B.values.radiation.v.toFixed(2))]),
       shiftNumber:         shiftNum,
+      shiftPay:            shiftPay,
     }
     localStorage.setItem('thermalShiftReport', JSON.stringify(report))
+
+    /* Persist the shift into the save object (pay, shift++, etc.) */
+    window.saveSystem.updateShift(report)
 
     var terminal = document.querySelector('.terminal')
     terminal.style.animation = 'crtOff 0.65s cubic-bezier(0.4, 0, 1, 1) forwards'

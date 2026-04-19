@@ -464,6 +464,84 @@
     text-shadow: 0 0 8px var(--red-alert);
   }
 
+  /* Reset progress — small link-style button pinned bottom of menu */
+  .reset-progress {
+    margin-top: 16px;
+    text-align: center;
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: rgba(255, 58, 58, 0.4);
+    cursor: pointer;
+    padding: 6px 10px;
+    border: 1px solid transparent;
+    transition: all 0.15s;
+    user-select: none;
+    opacity: 0;
+    animation: fadeUp 0.6s 1.4s forwards;
+  }
+  .reset-progress:hover {
+    color: var(--red-alert);
+    border-color: rgba(255, 58, 58, 0.4);
+    text-shadow: 0 0 6px var(--red-alert);
+  }
+
+  /* Reset-confirm overlay */
+  #reset-confirm {
+    position: fixed;
+    inset: 0;
+    background: rgba(8, 10, 4, 0.92);
+    z-index: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s ease;
+  }
+  #reset-confirm.active { opacity: 1; pointer-events: all; }
+
+  .reset-dialog {
+    width: 420px;
+    border: 1px solid var(--border);
+    background: var(--panel-bg);
+    padding: 24px 28px;
+    box-shadow: 0 0 40px rgba(255,58,58,0.06), inset 0 0 30px rgba(0,0,0,0.4);
+  }
+  .reset-dialog-title {
+    font-family: 'VT323', monospace;
+    font-size: 20px;
+    letter-spacing: 3px;
+    color: var(--red-alert);
+    text-shadow: 0 0 8px rgba(255,58,58,0.4);
+    margin-bottom: 10px;
+  }
+  .reset-dialog-msg {
+    font-size: 11px;
+    line-height: 1.6;
+    color: var(--phosphor-dim);
+    letter-spacing: 1px;
+    margin-bottom: 20px;
+  }
+  .reset-dialog-btns {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+  }
+  .reset-btn {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    padding: 8px 18px;
+    border: 1px solid var(--phosphor-dim);
+    background: none;
+    color: var(--phosphor-dim);
+    cursor: pointer;
+    transition: all 0.12s;
+  }
+  .reset-btn:hover { color: var(--phosphor); border-color: var(--phosphor); }
+  .reset-btn.danger { color: rgba(255,58,58,0.6); border-color: rgba(255,58,58,0.4); }
+  .reset-btn.danger:hover { color: var(--red-alert); border-color: var(--red-alert); box-shadow: 0 0 10px rgba(255,58,58,0.25); }
+
   /* ── SETTINGS OVERLAY ───────────────────────────────────────────── */
   #settings-overlay {
     position: fixed;
@@ -696,7 +774,7 @@
 
     <!-- Status snapshot -->
     <div class="status-snapshot">
-      <div class="snapshot-title">// LAST SHIFT STATUS</div>
+      <div class="snapshot-title">// OPERATOR STATUS</div>
       <div class="snapshot-rows">
         <div class="snapshot-row">
           <span class="snap-label">TEMPERATURE</span>
@@ -713,21 +791,27 @@
           <div class="snap-bar"><div class="snap-fill" style="width:71%"></div></div>
           <span class="snap-val snap-ok">71%</span>
         </div>
+        <div class="snapshot-row" style="border-top:1px solid var(--border); padding-top:6px; margin-top:2px;">
+          <span class="snap-label">TREATMENT FUND</span>
+          <div class="snap-bar"></div>
+          <span class="snap-val snap-ok" id="menu-money-progress">0 / 2400</span>
+        </div>
       </div>
     </div>
 
     <!-- Menu -->
     <div class="menu-list">
 
-      <div class="menu-item">
+      <div class="menu-item" id="menu-item-primary" style="display:none">
         <span class="menu-prefix">01</span>
-        <span class="menu-label">START SHIFT</span>
+        <span class="menu-label" id="menu-primary-label">NEW GAME</span>
+        <span class="menu-lock"  id="menu-primary-meta"></span>
         <span class="menu-arrow">▶</span>
       </div>
 
-      <div class="menu-item">
+      <div class="menu-item" id="menu-item-newgame" style="display:none">
         <span class="menu-prefix">02</span>
-        <span class="menu-label">CONTINUE</span>
+        <span class="menu-label">NEW GAME</span>
         <span class="menu-arrow">▶</span>
       </div>
 
@@ -793,6 +877,20 @@
 </div>
 
 
+<!-- ══ NEW GAME CONFIRM DIALOG ══════════════════════════════════ -->
+<div id="reset-confirm">
+  <div class="reset-dialog">
+    <div class="reset-dialog-title">// NEW GAME ?</div>
+    <div class="reset-dialog-msg">
+      This will erase your current progress. Continue?
+    </div>
+    <div class="reset-dialog-btns">
+      <button class="reset-btn"        id="reset-confirm-no">[ CANCEL ]</button>
+      <button class="reset-btn danger" id="reset-confirm-yes">[ CONFIRM ]</button>
+    </div>
+  </div>
+</div>
+
 <!-- ══ SETTINGS OVERLAY ═════════════════════════════════════════ -->
 <div id="settings-overlay">
   <div class="settings-panel">
@@ -835,6 +933,7 @@
   </div>
 </div>
 
+<script src="../js/saveSystem.js"></script>
 <script>
   const { ipcRenderer } = require('electron')
 
@@ -845,12 +944,95 @@
     setTimeout(() => { window.location.href = url; }, 620);
   }
 
-  /* ─── Menu item click handlers ───────────────────────────────── */
-  const items = document.querySelectorAll('.menu-item');
-  items[0].addEventListener('click', () => navigateTo('game.html')); // VARDİYAYA BAŞLA
-  items[1].addEventListener('click', () => navigateTo('game.html')); // DEVAM ET
-  items[4].addEventListener('click', openSettings);                   // AYARLAR
-  items[5].addEventListener('click', () => window.close());           // ÇIKIŞ
+  /* ─── Save system — determine menu case, paint, wire buttons ──── */
+  var _save    = window.saveSystem.loadGame()
+  var _hasSave = !!localStorage.getItem(window.saveSystem.SAVE_KEY)
+
+  /* Decide which of the three cases we're in:
+       'fresh'    — no save file: only [01 NEW GAME]
+       'continue' — save exists, not gameOver: [01 CONTINUE] + [02 NEW GAME]
+       'ended'    — save exists, gameOver: only [01 NEW GAME]         */
+  function menuCase() {
+    if (!_hasSave)     return 'fresh'
+    if (_save.gameOver) return 'ended'
+    return 'continue'
+  }
+
+  /* Paint primary item + secondary item + money progress */
+  function paintMenu() {
+    var s         = _save
+    var c         = menuCase()
+    var primary   = document.getElementById('menu-item-primary')
+    var newgame   = document.getElementById('menu-item-newgame')
+    var primLabel = document.getElementById('menu-primary-label')
+    var primMeta  = document.getElementById('menu-primary-meta')
+    var progEl    = document.getElementById('menu-money-progress')
+
+    if (c === 'continue') {
+      primary.style.display = ''
+      newgame.style.display = ''
+      primLabel.textContent = 'CONTINUE — SHIFT ' + s.shiftNumber
+      primMeta.textContent  = ''
+    } else {
+      /* 'fresh' and 'ended' — only primary shown, labelled NEW GAME */
+      primary.style.display = ''
+      newgame.style.display = 'none'
+      primLabel.textContent = 'NEW GAME'
+      if (c === 'ended') {
+        primMeta.textContent = s.gameOverReason === 'win' ? '// RUN COMPLETE' : '// RUN ENDED'
+      } else {
+        primMeta.textContent = ''
+      }
+    }
+
+    if (progEl) progEl.textContent = s.totalMoney + ' / ' + s.targetMoney
+  }
+
+  /* Primary click:
+       'continue' → resume game as-is
+       'fresh'    → start fresh shift 1 (save already defaulted)
+       'ended'    → reset save, then start fresh                         */
+  function onPrimary() {
+    var c = menuCase()
+    if (c === 'ended') {
+      _save    = window.saveSystem.resetGame()
+      _hasSave = true
+    }
+    navigateTo('game.html')
+  }
+
+  /* Secondary "NEW GAME" (only visible in 'continue' case) — confirm */
+  function onNewGameRequest() {
+    document.getElementById('reset-confirm').classList.add('active')
+  }
+  function onNewGameConfirm() {
+    _save    = window.saveSystem.resetGame()
+    _hasSave = true
+    paintMenu()
+    document.getElementById('reset-confirm').classList.remove('active')
+    navigateTo('game.html')
+  }
+  function onNewGameCancel() {
+    document.getElementById('reset-confirm').classList.remove('active')
+  }
+
+  /* ─── Wire menu item clicks ──────────────────────────────────── */
+  document.getElementById('menu-item-primary').addEventListener('click', onPrimary)
+  document.getElementById('menu-item-newgame').addEventListener('click', onNewGameRequest)
+
+  /* Fixed-position items (indices in original order: 0 primary, 1 newgame,
+     2 RECORDS, 3 OPERATOR FILE, 4 SETTINGS, 5 EXIT). */
+  const items = document.querySelectorAll('.menu-item')
+  items[4].addEventListener('click', openSettings)
+  items[5].addEventListener('click', () => window.close())
+
+  /* Confirm dialog */
+  var _resetYes = document.getElementById('reset-confirm-yes')
+  if (_resetYes) _resetYes.addEventListener('click', onNewGameConfirm)
+  var _resetNo  = document.getElementById('reset-confirm-no')
+  if (_resetNo)  _resetNo.addEventListener('click', onNewGameCancel)
+
+  paintMenu()
 
   /* ═══════════════════════════════════════════════════════════════
      SETTINGS
