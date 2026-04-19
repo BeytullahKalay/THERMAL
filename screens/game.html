@@ -863,7 +863,16 @@
   <!-- BOTTOM BAR -->
   <div id="bottom-bar">
 
-    <!-- LEFT: COOLANT RESONANCE MONITOR — oscilloscope instrument -->
+    <!-- LEFT: MINI-GAMES (tabbed: CRM / VALVES) -->
+    <div id="mini-games">
+
+      <!-- Tab bar -->
+      <div class="mg-tabs">
+        <button class="mg-tab mg-tab-active" id="mg-tab-crm"   type="button">[ CRM ]</button>
+        <button class="mg-tab"               id="mg-tab-valve" type="button">[ VALVES ]</button>
+      </div>
+
+    <!-- COOLANT RESONANCE MONITOR — oscilloscope instrument -->
     <div id="freq-monitor">
 
       <!-- Title + countdown timer -->
@@ -956,6 +965,43 @@
         <button id="fc-freq-plus"></button>
         <button id="fc-amp-minus"></button>
         <button id="fc-amp-plus"></button>
+      </div>
+
+    </div>
+
+      <!-- PRESSURE VALVE SEQUENCING -->
+      <div id="valve-monitor" style="display:none">
+        <div class="vm-header">
+          <span class="vm-title" id="vm-title">// PRESSURE VALVES</span>
+          <span class="vm-timer" id="vm-timer" style="display:none"></span>
+        </div>
+
+        <div class="vm-valves" id="vm-valves">
+          <div class="vm-valve" data-valve="1">
+            <span class="vm-valve-label">V1</span>
+            <span class="vm-valve-state" id="vm-state-1">CLSD</span>
+          </div>
+          <div class="vm-valve" data-valve="2">
+            <span class="vm-valve-label">V2</span>
+            <span class="vm-valve-state" id="vm-state-2">CLSD</span>
+          </div>
+          <div class="vm-valve" data-valve="3">
+            <span class="vm-valve-label">V3</span>
+            <span class="vm-valve-state" id="vm-state-3">CLSD</span>
+          </div>
+          <div class="vm-valve" data-valve="4">
+            <span class="vm-valve-label">V4</span>
+            <span class="vm-valve-state" id="vm-state-4">CLSD</span>
+          </div>
+        </div>
+
+        <div class="vm-sequence" id="vm-sequence">
+          <span class="vm-seq-label">SEQUENCE:</span>
+          <span class="vm-seq-slot" id="vm-seq-1">[ _ ]</span>
+          <span class="vm-seq-slot" id="vm-seq-2">[ _ ]</span>
+          <span class="vm-seq-slot" id="vm-seq-3">[ _ ]</span>
+          <span class="vm-seq-slot" id="vm-seq-4">[ _ ]</span>
+        </div>
       </div>
 
     </div>
@@ -1246,15 +1292,58 @@
   min-height: 0;
 }
 
-/* ── LEFT: COOLANT RESONANCE MONITOR (flex:3 ≈ 60%) ─────────────── */
-#freq-monitor {
+/* ── LEFT: MINI-GAMES wrapper (flex:3 ≈ 60%) ─────────────────────── */
+#mini-games {
   flex:           3;
   border-right:   1px solid #1e2e0c;
+  display:        flex;
+  flex-direction: column;
+  min-width:      0;
+}
+
+.mg-tabs {
+  display:        flex;
+  border-bottom:  1px solid #1e2e0c;
+  flex-shrink:    0;
+  background:     #070a03;
+}
+.mg-tab {
+  background:      none;
+  border:          none;
+  border-right:    1px solid #1e2e0c;
+  color:           var(--phosphor-dim);
+  font-family:     'VT323', monospace;
+  font-size:       12px;
+  letter-spacing:  2px;
+  padding:         4px 14px;
+  cursor:          pointer;
+  transition:      color 0.15s, background 0.15s;
+}
+.mg-tab:hover { color: var(--phosphor); background: rgba(168,255,62,0.04); }
+.mg-tab.mg-tab-active {
+  color:           var(--phosphor);
+  background:      rgba(168,255,62,0.06);
+  text-shadow:     0 0 4px rgba(168,255,62,0.4);
+}
+.mg-tab.mg-tab-alert {
+  color:           var(--amber);
+  animation:       mgTabAlert 0.9s steps(2,start) infinite;
+}
+@keyframes mgTabAlert {
+  0%   { opacity: 1; }
+  50%  { opacity: 0.35; }
+  100% { opacity: 1; }
+}
+
+/* ── COOLANT RESONANCE MONITOR ───────────────────────────────────── */
+#freq-monitor {
+  flex:           1;
   padding:        8px 12px;
   display:        flex;
   flex-direction: column;
   gap:            4px;
   min-width:      0;
+  min-height:     0;
   transition:     border-color 0.3s;
 }
 
@@ -1449,6 +1538,130 @@
   text-shadow:  0 0 8px var(--phosphor);
 }
 .fc-confirm.fc-confirm-ready:hover { background: rgba(168,255,62,0.10); }
+
+/* ── PRESSURE VALVE SEQUENCING ───────────────────────────────────── */
+#valve-monitor {
+  flex:           1;
+  padding:        8px 12px;
+  display:        flex;
+  flex-direction: column;
+  gap:            6px;
+  min-width:      0;
+  min-height:     0;
+  transition:     border-color 0.3s, box-shadow 0.3s;
+}
+
+.vm-header {
+  display:         flex;
+  justify-content: space-between;
+  align-items:     center;
+  border-bottom:   1px solid var(--border);
+  padding-bottom:  5px;
+  flex-shrink:     0;
+}
+.vm-title {
+  font-family:    'VT323', monospace;
+  font-size:      14px;
+  letter-spacing: 2px;
+  color:          var(--phosphor-dim);
+  transition:     color 0.2s;
+}
+.vm-timer {
+  font-family:    'Share Tech Mono', monospace;
+  font-size:      11px;
+  color:          var(--amber);
+  letter-spacing: 0.1em;
+}
+.vm-timer.vm-timer-crit {
+  color:     var(--red-alert);
+  animation: sensorShake 0.18s infinite;
+}
+
+#valve-monitor.vm-active { animation: fmBorderPulse 1.2s ease-in-out infinite; }
+#valve-monitor.vm-flash-green { animation: fmFlashGreen 0.7s ease-out forwards !important; }
+#valve-monitor.vm-flash-red   { animation: fmFlashRed   0.7s ease-out forwards !important; }
+
+.vm-valves {
+  display:         flex;
+  justify-content: space-around;
+  align-items:     center;
+  gap:             8px;
+  flex:            1;
+  min-height:      0;
+}
+.vm-valve {
+  flex:           1;
+  max-width:      72px;
+  min-height:     54px;
+  border:         1px solid #1e2e0c;
+  background:     #080a04;
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  justify-content: center;
+  gap:            4px;
+  font-family:    'VT323', monospace;
+  transition:     border-color 0.2s, box-shadow 0.2s, background 0.2s;
+  user-select:    none;
+}
+.vm-valve-label {
+  font-size:      14px;
+  letter-spacing: 1px;
+  color:          var(--phosphor-dim);
+}
+.vm-valve-state {
+  font-family:    'Share Tech Mono', monospace;
+  font-size:      10px;
+  letter-spacing: 1px;
+  color:          var(--phosphor-dim);
+}
+.vm-valve.vm-valve-open {
+  border-color:   var(--phosphor);
+  box-shadow:     inset 0 0 6px rgba(168,255,62,0.18), 0 0 4px rgba(168,255,62,0.25);
+}
+.vm-valve.vm-valve-open .vm-valve-state { color: var(--phosphor); }
+.vm-valve.vm-valve-open .vm-valve-label { color: var(--phosphor); }
+
+#valve-monitor.vm-active .vm-valve {
+  cursor:         pointer;
+  border-color:   #3a5a18;
+}
+#valve-monitor.vm-active .vm-valve:hover {
+  border-color:   var(--phosphor);
+  background:     #0c1006;
+}
+
+.vm-valve.vm-valve-wrong {
+  animation: vmValveWrong 0.45s ease-out;
+}
+@keyframes vmValveWrong {
+  0%   { border-color: var(--red-alert); box-shadow: inset 0 0 8px rgba(255,58,58,0.5), 0 0 8px rgba(255,58,58,0.5); background: #2a0808; }
+  100% { border-color: #1e2e0c;          box-shadow: none;                                                            background: #080a04; }
+}
+
+.vm-sequence {
+  display:         flex;
+  align-items:     center;
+  gap:             4px;
+  flex-wrap:       nowrap;
+  font-family:     'Share Tech Mono', monospace;
+  font-size:       10px;
+  letter-spacing:  1px;
+  flex-shrink:     0;
+  padding-top:     2px;
+  border-top:      1px solid var(--border);
+}
+.vm-seq-label {
+  color:           var(--phosphor-dim);
+  margin-right:    4px;
+}
+.vm-seq-slot {
+  color:           var(--phosphor-dim);
+  min-width:       28px;
+  text-align:      center;
+  transition:      color 0.15s;
+}
+.vm-seq-slot.vm-seq-filled { color: var(--phosphor); }
 
 /* ── RIGHT: DEBUG PANEL (flex:2 ≈ 40%) ──────────────────────────── */
 #debug-panel {
@@ -1919,6 +2132,8 @@
     critSeconds:      { sicaklik: 0, basinc: 0, guc: 0 },
     systemFailure:    false,
     freqBonus:        true,   // true when SYNC ≥ 90%; reduces TEMP deterioration 10%
+    valveBonus:       false,  // true after successful valve sequence; pauses PRESSURE deterioration
+    valvePenalty:     false,  // true after failed valve sequence; +25% PRESSURE deterioration
     correctDecisions: 0,
     wrongDecisions:   0,
     missedAnomalies:  0,
@@ -2064,6 +2279,11 @@
         if (gameState.freqBonus)  rate *= 0.90   // SYNC ≥ 90 %: −10 %
         if (_fcPenaltyLevel >= 1) rate *= 1.20   // SYNC < 50 % for 30 s+: +20 %
         if (_fcPermDebuff)        rate *= 1.15   // permanent level-3 debuff: +15 %
+      }
+      /* Valve mini-game modifiers — PRESSURE only, deterioration only */
+      if (sys === 'basinc' && mag > 0) {
+        if (gameState.valveBonus)   rate  = 0       // pause deterioration entirely
+        if (gameState.valvePenalty) rate *= 1.25    // +25 %
       }
       /* Demand shift modifier — 2× deterioration unless target system has ≥5 resources */
       if (_demandShift.active && _demandShift.system === sys && mag > 0 && res < 5) {
@@ -2861,6 +3081,8 @@
     _fcRefresh()
 
     _lsAdd('⚠ Coolant resonance deviation detected on primary loop. Manual calibration window open — 60 s.', 'warning')
+
+    if (typeof _mgFlagAlert === 'function') _mgFlagAlert('crm')
   }
 
   /* ── Pick new drift destination every 20–30 s ───────────────────── */
@@ -2959,6 +3181,288 @@
   setTimeout(triggerFreqCalibration, 240000 + Math.floor(Math.random() * 120000))
 
   /* ═══════════════════════════════════════════════════════════════════
+     MINI-GAME TABS  (CRM / VALVES)
+     ═══════════════════════════════════════════════════════════════════ */
+  var _mgTabCrm    = document.getElementById('mg-tab-crm')
+  var _mgTabValve  = document.getElementById('mg-tab-valve')
+  var _crmPanel    = document.getElementById('freq-monitor')
+  var _valvePanel  = document.getElementById('valve-monitor')
+
+  function _mgShow(which) {
+    if (which === 'crm') {
+      _crmPanel.style.display   = ''
+      _valvePanel.style.display = 'none'
+      _mgTabCrm.classList.add('mg-tab-active')
+      _mgTabValve.classList.remove('mg-tab-active', 'mg-tab-alert')
+    } else {
+      _crmPanel.style.display   = 'none'
+      _valvePanel.style.display = ''
+      _mgTabValve.classList.add('mg-tab-active')
+      _mgTabValve.classList.remove('mg-tab-alert')
+      _mgTabCrm.classList.remove('mg-tab-active', 'mg-tab-alert')
+    }
+  }
+  function _mgFlagAlert(which) {
+    if (which === 'crm'   && !_mgTabCrm.classList.contains('mg-tab-active'))   _mgTabCrm.classList.add('mg-tab-alert')
+    if (which === 'valve' && !_mgTabValve.classList.contains('mg-tab-active')) _mgTabValve.classList.add('mg-tab-alert')
+  }
+  _mgTabCrm.addEventListener('click',   function() { _mgShow('crm') })
+  _mgTabValve.addEventListener('click', function() { _mgShow('valve') })
+
+  /* ═══════════════════════════════════════════════════════════════════
+     PRESSURE VALVE SEQUENCING MINI-GAME
+     ═══════════════════════════════════════════════════════════════════ */
+  var _vmPanel      = _valvePanel
+  var _vmTitleEl    = document.getElementById('vm-title')
+  var _vmTimerEl    = document.getElementById('vm-timer')
+  var _vmValveEls   = [1,2,3,4].map(function(i){ return document.querySelector('.vm-valve[data-valve="'+i+'"]') })
+  var _vmStateEls   = [1,2,3,4].map(function(i){ return document.getElementById('vm-state-'+i) })
+  var _vmSeqSlots   = [1,2,3,4].map(function(i){ return document.getElementById('vm-seq-'+i) })
+
+  /* State */
+  var _vmMode         = 'idle'           // 'idle' | 'active'
+  var _vmValveOpen    = [false, false, false, false]   // current visible state of each valve
+  var _vmCorrectSeq   = []               // correct sequence (array of valve numbers 1-4)
+  var _vmDisplayedSeq = []               // sequence shown in log (may differ from correct)
+  var _vmInput        = []               // player's current input
+  var _vmTimeLeft     = 45
+  var _vmTimerInt     = null
+  var _vmIdleTimer    = null
+  var _vmBonusTimer   = null
+  var _vmPenaltyTimer = null
+  var _vmBonusRemain  = 0
+  var _vmPenaltyRemain= 0
+  var _vmWasWrongLog  = false
+
+  /* ── Render valve visual states ──────────────────────────────────── */
+  function _vmRender() {
+    for (var i = 0; i < 4; i++) {
+      var open = _vmValveOpen[i]
+      _vmStateEls[i].textContent = open ? 'OPEN' : 'CLSD'
+      if (open) _vmValveEls[i].classList.add('vm-valve-open')
+      else      _vmValveEls[i].classList.remove('vm-valve-open')
+    }
+  }
+
+  function _vmRenderSeq() {
+    for (var i = 0; i < 4; i++) {
+      if (_vmMode === 'active') {
+        if (_vmInput[i]) {
+          _vmSeqSlots[i].textContent = '[ V' + _vmInput[i] + ' ]'
+          _vmSeqSlots[i].classList.add('vm-seq-filled')
+        } else {
+          _vmSeqSlots[i].textContent = '[ _ ]'
+          _vmSeqSlots[i].classList.remove('vm-seq-filled')
+        }
+      } else {
+        _vmSeqSlots[i].textContent = '[ _ ]'
+        _vmSeqSlots[i].classList.remove('vm-seq-filled')
+      }
+    }
+    document.getElementById('vm-sequence').style.opacity = _vmMode === 'active' ? '1' : '0.35'
+  }
+
+  /* ── IDLE breathing — toggle 1-2 random valves every 40-60s ─────── */
+  function _vmIdleBreath() {
+    if (_vmMode !== 'idle' || gameState.systemFailure) {
+      _vmIdleTimer = setTimeout(_vmIdleBreath, 30000)
+      return
+    }
+    var n = 1 + Math.floor(Math.random() * 2)
+    var picks = [0,1,2,3].sort(function(){ return Math.random() - 0.5 }).slice(0, n)
+    picks.forEach(function(i) { _vmValveOpen[i] = !_vmValveOpen[i] })
+    _vmRender()
+    _vmIdleTimer = setTimeout(_vmIdleBreath, 40000 + Math.floor(Math.random() * 20000))
+  }
+
+  /* ── Wrong-log probability scaled by shift phase ─────────────────── */
+  function _vmWrongLogChance() {
+    if      (_gcElapsed < 180) return 0.20    // 22:00–01:00
+    else if (_gcElapsed < 360) return 0.40    // 01:00–04:00
+    else                       return 0.60    // 04:00–06:00
+  }
+
+  /* ── Generate a 4-step random permutation of valves 1-4 ──────────── */
+  function _vmRandomSeq() {
+    var arr = [1,2,3,4]
+    for (var i = arr.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1))
+      var t = arr[i]; arr[i] = arr[j]; arr[j] = t
+    }
+    return arr
+  }
+
+  /* ── triggerValveSequence — switch IDLE → ACTIVE ─────────────────── */
+  function triggerValveSequence() {
+    if (gameState.systemFailure) return
+    if (_vmMode === 'active') return                    // already active
+    if (_fcMode === 'active') {                          // do not collide with CRM active
+      setTimeout(triggerValveSequence, 30000)
+      return
+    }
+    if (_anom && _anom.active) {                         // do not collide with anomaly decision
+      setTimeout(triggerValveSequence, 20000)
+      return
+    }
+
+    _vmMode = 'active'
+    /* Reset all valves to CLOSED at sequence start */
+    _vmValveOpen = [false, false, false, false]
+    _vmRender()
+
+    _vmCorrectSeq = _vmRandomSeq()
+    _vmInput = []
+
+    /* Decide whether to show wrong sequence in log */
+    _vmWasWrongLog = Math.random() < _vmWrongLogChance()
+    if (_vmWasWrongLog) {
+      /* Swap two adjacent positions in displayed sequence */
+      _vmDisplayedSeq = _vmCorrectSeq.slice()
+      var swap = Math.floor(Math.random() * 3)            // 0,1,2 → swap with next
+      var tmp = _vmDisplayedSeq[swap]
+      _vmDisplayedSeq[swap] = _vmDisplayedSeq[swap + 1]
+      _vmDisplayedSeq[swap + 1] = tmp
+    } else {
+      _vmDisplayedSeq = _vmCorrectSeq.slice()
+    }
+
+    _vmTimeLeft = 45
+    _vmTitleEl.textContent = '// SEQUENCE REQUIRED !'
+    _vmTitleEl.style.color = 'var(--amber)'
+    _vmTimerEl.style.display = ''
+    _vmTimerEl.textContent   = _vmTimeLeft + 's'
+    _vmTimerEl.classList.remove('vm-timer-crit')
+    _vmPanel.classList.add('vm-active')
+    _vmRenderSeq()
+
+    _vmTimerInt = setInterval(_vmTimerTick, 1000)
+
+    _lsAdd('⚠ Pressure relief sequence initiated. Open valves in order: [V' +
+           _vmDisplayedSeq.join(', V') + '].', 'warning')
+
+    _mgFlagAlert('valve')
+  }
+
+  function _vmTimerTick() {
+    _vmTimeLeft--
+    if (_vmTimeLeft <= 0) {
+      _vmFail('timeout')
+      return
+    }
+    _vmTimerEl.textContent = _vmTimeLeft + 's'
+    if (_vmTimeLeft <= 10) _vmTimerEl.classList.add('vm-timer-crit')
+  }
+
+  /* ── Valve click handler ─────────────────────────────────────────── */
+  _vmValveEls.forEach(function(el, idx) {
+    el.addEventListener('click', function() {
+      if (_vmMode !== 'active') return
+      var valveNum = idx + 1
+      var pos      = _vmInput.length
+      if (_vmCorrectSeq[pos] === valveNum) {
+        /* Correct so far */
+        _vmInput.push(valveNum)
+        _vmValveOpen[valveNum - 1] = true
+        _vmRender()
+        _vmRenderSeq()
+        if (_vmInput.length === 4) _vmSuccess()
+      } else {
+        /* Wrong — flash valve red, reset input but keep valve states */
+        el.classList.remove('vm-valve-wrong')
+        void el.offsetWidth
+        el.classList.add('vm-valve-wrong')
+        setTimeout(function(){ el.classList.remove('vm-valve-wrong') }, 500)
+        /* Reset sequence input + close any opened valves from this attempt */
+        _vmInput.forEach(function(vn) { _vmValveOpen[vn - 1] = false })
+        _vmInput = []
+        _vmRender()
+        _vmRenderSeq()
+      }
+    })
+  })
+
+  /* ── Success ─────────────────────────────────────────────────────── */
+  function _vmSuccess() {
+    clearInterval(_vmTimerInt); _vmTimerInt = null
+    _vmFlash('vm-flash-green')
+    _lsAdd('Pressure relief sequence complete. Loop pressure normalized.', 'system')
+
+    /* 45-second PRESSURE deterioration pause */
+    gameState.valveBonus = true
+    _vmBonusRemain = 45
+    if (_vmBonusTimer) clearInterval(_vmBonusTimer)
+    _vmBonusTimer = setInterval(function() {
+      _vmBonusRemain--
+      if (_vmBonusRemain <= 0) {
+        gameState.valveBonus = false
+        clearInterval(_vmBonusTimer); _vmBonusTimer = null
+      }
+    }, 1000)
+
+    _vmReset()
+    _scheduleNextValveSeq()
+  }
+
+  /* ── Failure ─────────────────────────────────────────────────────── */
+  function _vmFail(reason) {
+    clearInterval(_vmTimerInt); _vmTimerInt = null
+    _vmFlash('vm-flash-red')
+    _lsAdd('⚠ Sequence error. Pressure relief failed. Manual intervention required.', 'anomaly')
+
+    /* 60-second PRESSURE deterioration +25% */
+    gameState.valvePenalty = true
+    _vmPenaltyRemain = 60
+    if (_vmPenaltyTimer) clearInterval(_vmPenaltyTimer)
+    _vmPenaltyTimer = setInterval(function() {
+      _vmPenaltyRemain--
+      if (_vmPenaltyRemain <= 0) {
+        gameState.valvePenalty = false
+        clearInterval(_vmPenaltyTimer); _vmPenaltyTimer = null
+      }
+    }, 1000)
+
+    _vmReset()
+    _scheduleNextValveSeq()
+  }
+
+  function _vmFlash(cls) {
+    _vmPanel.classList.remove('vm-active', 'vm-flash-green', 'vm-flash-red')
+    void _vmPanel.offsetWidth
+    _vmPanel.classList.add(cls)
+    setTimeout(function() { _vmPanel.classList.remove(cls) }, 750)
+  }
+
+  function _vmReset() {
+    _vmMode = 'idle'
+    _vmInput = []
+    _vmCorrectSeq = []
+    _vmDisplayedSeq = []
+    _vmTimerEl.style.display = 'none'
+    _vmTimerEl.classList.remove('vm-timer-crit')
+    _vmTitleEl.textContent = '// PRESSURE VALVES'
+    _vmTitleEl.style.color = ''
+    _vmPanel.classList.remove('vm-active')
+    /* Close all valves after the relief sequence */
+    _vmValveOpen = [false, false, false, false]
+    _vmRender()
+    _vmRenderSeq()
+  }
+
+  function _scheduleNextValveSeq() {
+    if (gameState.systemFailure) return
+    /* every 5–9 minutes (real time) */
+    setTimeout(triggerValveSequence, 300000 + Math.floor(Math.random() * 240000))
+  }
+
+  /* ── Boot ─────────────────────────────────────────────────────────── */
+  _vmRender()
+  _vmRenderSeq()
+  /* Idle breathing kickoff */
+  _vmIdleTimer = setTimeout(_vmIdleBreath, 40000 + Math.floor(Math.random() * 20000))
+  /* First spawn 5–8 minutes in (real time) */
+  setTimeout(triggerValveSequence, 300000 + Math.floor(Math.random() * 180000))
+
+  /* ═══════════════════════════════════════════════════════════════════
      DEBUG PANEL  (F1 to toggle)
      ═══════════════════════════════════════════════════════════════════ */
 
@@ -2985,6 +3489,13 @@
         if (gameState.freqBonus)  rate *= 0.90
         if (_fcPenaltyLevel >= 1) rate *= 1.20
         if (_fcPermDebuff)        rate *= 1.15
+      }
+      if (sys === 'basinc' && mag > 0) {
+        if (gameState.valveBonus)   rate  = 0
+        if (gameState.valvePenalty) rate *= 1.25
+      }
+      if (_demandShift.active && _demandShift.system === sys && mag > 0 && res < 5) {
+        rate *= 2.0
       }
       lines.push(cfg.label + ': ' + gameState.systemValues[sys].toFixed(1) + cfg.unit +
                  '  [rate: ' + sign(rate) + rate.toFixed(3) + '/s]')
@@ -3024,6 +3535,13 @@
       'CORRECT: '      + gameState.correctDecisions + '  WRONG: ' + gameState.wrongDecisions + '  MISSED: ' + gameState.missedAnomalies,
       'CRIT.TOT: '     + gameState.totalCritSeconds + 's  FC.OK: ' + gameState.freqCalSuccess + '  FC.FAIL: ' + gameState.freqCalFail,
       demandLine,
+      'VALVE MODE: '   + _vmMode +
+        '  BONUS: '   + (gameState.valveBonus   ? 'true [' + _vmBonusRemain   + 's]' : 'false') +
+        '  PEN: '     + (gameState.valvePenalty ? 'true [' + _vmPenaltyRemain + 's]' : 'false'),
+      'VALVE WRONG LOG: ' + _vmWasWrongLog +
+        (_vmMode === 'active'
+          ? '  CORRECT: [V' + _vmCorrectSeq.join(',V') + ']  SHOWN: [V' + _vmDisplayedSeq.join(',V') + ']'
+          : ''),
     ].map(function(l) { return '<div>' + l + '</div>' }).join('')
   }
 
