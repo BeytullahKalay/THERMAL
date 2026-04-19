@@ -464,26 +464,6 @@
     text-shadow: 0 0 8px var(--red-alert);
   }
 
-  /* Reset progress — small link-style button pinned bottom of menu */
-  .reset-progress {
-    margin-top: 16px;
-    text-align: center;
-    font-size: 9px;
-    letter-spacing: 2px;
-    color: rgba(255, 58, 58, 0.4);
-    cursor: pointer;
-    padding: 6px 10px;
-    border: 1px solid transparent;
-    transition: all 0.15s;
-    user-select: none;
-    opacity: 0;
-    animation: fadeUp 0.6s 1.4s forwards;
-  }
-  .reset-progress:hover {
-    color: var(--red-alert);
-    border-color: rgba(255, 58, 58, 0.4);
-    text-shadow: 0 0 6px var(--red-alert);
-  }
 
   /* Reset-confirm overlay */
   #reset-confirm {
@@ -817,28 +797,28 @@
 
       <div class="menu-divider"></div>
 
-      <div class="menu-item">
-        <span class="menu-prefix">03</span>
+      <div class="menu-item" id="menu-item-records">
+        <span class="menu-prefix" id="prefix-records">03</span>
         <span class="menu-label locked">RECORDS</span>
         <span class="menu-lock">// UNLOCKS AT SHIFT 3</span>
       </div>
 
-      <div class="menu-item">
-        <span class="menu-prefix">04</span>
+      <div class="menu-item" id="menu-item-operatorfile">
+        <span class="menu-prefix" id="prefix-operatorfile">04</span>
         <span class="menu-label locked">OPERATOR FILE</span>
         <span class="menu-lock">// LOCKED</span>
       </div>
 
       <div class="menu-divider"></div>
 
-      <div class="menu-item">
-        <span class="menu-prefix">05</span>
+      <div class="menu-item" id="menu-item-settings">
+        <span class="menu-prefix" id="prefix-settings">05</span>
         <span class="menu-label">SETTINGS</span>
         <span class="menu-arrow">▶</span>
       </div>
 
-      <div class="menu-item">
-        <span class="menu-prefix">06</span>
+      <div class="menu-item" id="menu-item-exit">
+        <span class="menu-prefix" id="prefix-exit">06</span>
         <span class="menu-label danger">EXIT</span>
         <span class="menu-arrow">▶</span>
       </div>
@@ -953,10 +933,21 @@
        'continue' — save exists, not gameOver: [01 CONTINUE] + [02 NEW GAME]
        'ended'    — save exists, gameOver: only [01 NEW GAME]         */
   function menuCase() {
-    if (!_hasSave)     return 'fresh'
+    if (!_hasSave)      return 'fresh'
     if (_save.gameOver) return 'ended'
     return 'continue'
   }
+
+  /* Update the numeric prefixes for the static items based on
+     whether item 02 (NEW GAME) is visible.                      */
+  function updatePrefixes(hasContinue) {
+    var offset = hasContinue ? 0 : -1   // 02 hidden → everything shifts down by 1
+    document.getElementById('prefix-records')      .textContent = pad(3 + offset)
+    document.getElementById('prefix-operatorfile') .textContent = pad(4 + offset)
+    document.getElementById('prefix-settings')     .textContent = pad(5 + offset)
+    document.getElementById('prefix-exit')         .textContent = pad(6 + offset)
+  }
+  function pad(n) { return n < 10 ? '0' + n : '' + n }
 
   /* Paint primary item + secondary item + money progress */
   function paintMenu() {
@@ -969,12 +960,14 @@
     var progEl    = document.getElementById('menu-money-progress')
 
     if (c === 'continue') {
+      /* CASE 2 — save exists, not game-over */
       primary.style.display = ''
       newgame.style.display = ''
       primLabel.textContent = 'CONTINUE — SHIFT ' + s.shiftNumber
       primMeta.textContent  = ''
+      updatePrefixes(true)
     } else {
-      /* 'fresh' and 'ended' — only primary shown, labelled NEW GAME */
+      /* CASE 1 / CASE 3 — only [01 NEW GAME] */
       primary.style.display = ''
       newgame.style.display = 'none'
       primLabel.textContent = 'NEW GAME'
@@ -983,6 +976,7 @@
       } else {
         primMeta.textContent = ''
       }
+      updatePrefixes(false)
     }
 
     if (progEl) progEl.textContent = s.totalMoney + ' / ' + s.targetMoney
@@ -990,15 +984,17 @@
 
   /* Primary click:
        'continue' → resume game as-is
-       'fresh'    → start fresh shift 1 (save already defaulted)
-       'ended'    → reset save, then start fresh                         */
+       'fresh'    → reset to a clean save, start shift 1
+       'ended'    → reset save, start shift 1                           */
   function onPrimary() {
     var c = menuCase()
-    if (c === 'ended') {
-      _save    = window.saveSystem.resetGame()
-      _hasSave = true
+    if (c === 'continue') {
+      navigateTo('game.html')
+    } else {
+      /* fresh or ended — always write a clean save before starting */
+      window.saveSystem.resetGame()
+      navigateTo('game.html')
     }
-    navigateTo('game.html')
   }
 
   /* Secondary "NEW GAME" (only visible in 'continue' case) — confirm */
@@ -1006,9 +1002,7 @@
     document.getElementById('reset-confirm').classList.add('active')
   }
   function onNewGameConfirm() {
-    _save    = window.saveSystem.resetGame()
-    _hasSave = true
-    paintMenu()
+    window.saveSystem.resetGame()
     document.getElementById('reset-confirm').classList.remove('active')
     navigateTo('game.html')
   }
@@ -1016,21 +1010,15 @@
     document.getElementById('reset-confirm').classList.remove('active')
   }
 
-  /* ─── Wire menu item clicks ──────────────────────────────────── */
-  document.getElementById('menu-item-primary').addEventListener('click', onPrimary)
-  document.getElementById('menu-item-newgame').addEventListener('click', onNewGameRequest)
-
-  /* Fixed-position items (indices in original order: 0 primary, 1 newgame,
-     2 RECORDS, 3 OPERATOR FILE, 4 SETTINGS, 5 EXIT). */
-  const items = document.querySelectorAll('.menu-item')
-  items[4].addEventListener('click', openSettings)
-  items[5].addEventListener('click', () => window.close())
+  /* ─── Wire menu item clicks — use stable IDs, not fragile indices ── */
+  document.getElementById('menu-item-primary')     .addEventListener('click', onPrimary)
+  document.getElementById('menu-item-newgame')     .addEventListener('click', onNewGameRequest)
+  document.getElementById('menu-item-settings')    .addEventListener('click', openSettings)
+  document.getElementById('menu-item-exit')        .addEventListener('click', () => window.close())
 
   /* Confirm dialog */
-  var _resetYes = document.getElementById('reset-confirm-yes')
-  if (_resetYes) _resetYes.addEventListener('click', onNewGameConfirm)
-  var _resetNo  = document.getElementById('reset-confirm-no')
-  if (_resetNo)  _resetNo.addEventListener('click', onNewGameCancel)
+  document.getElementById('reset-confirm-yes').addEventListener('click', onNewGameConfirm)
+  document.getElementById('reset-confirm-no') .addEventListener('click', onNewGameCancel)
 
   paintMenu()
 
