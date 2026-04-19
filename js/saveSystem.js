@@ -100,9 +100,13 @@
     save.totalMoney         = (save.totalMoney || 0) + pay
 
     if (shiftReport.meltdownOccurred) {
-      /* Meltdown → retry the same shift number (matches existing shift-end flow) */
-      save.gameOver       = false   // still recoverable unless designed otherwise
-      save.gameOverReason = null
+      /* Meltdown → run ends. Player must start a new game. */
+      save.gameOver       = true
+      save.gameOverReason = 'meltdown'
+    } else if (shiftReport.streetDeath) {
+      /* Homelessness death → run ends. */
+      save.gameOver       = true
+      save.gameOverReason = 'street'
     } else {
       save.shiftNumber = (save.shiftNumber || 1) + 1
     }
