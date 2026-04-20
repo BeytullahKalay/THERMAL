@@ -1714,14 +1714,14 @@
       div.style.animationDelay = (idx * 0.04) + 's'
 
       if (f.real) {
+        div.id = 'file-' + f.key
+        div.setAttribute('data-file', f.key)
         if (f.decrypted) {
           decryptCount++
           div.className = 'file-entry unlocked'
-          div.setAttribute('data-file', f.key)
         } else if (f.available) {
           availCount++
           div.className = 'file-entry available'
-          div.setAttribute('data-file', f.key)
         } else {
           div.className = 'file-entry locked'
         }
@@ -1982,6 +1982,7 @@
 </script>
 <script src="../js/messaging.js"></script>
 <script src="../js/hacking.js"></script>
+<script src="../js/log-reader.js"></script>
 
 </body>
 </html>

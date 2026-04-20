@@ -35,10 +35,11 @@ function menuCase() {
 /* ── Numeric prefixes shift when item 02 is hidden ──────────────── */
 function updatePrefixes(hasContinue) {
   var offset = hasContinue ? 0 : -1   // 02 hidden → shift everything down 1
-  document.getElementById('prefix-records')      .textContent = pad(3 + offset)
-  document.getElementById('prefix-operatorfile') .textContent = pad(4 + offset)
-  document.getElementById('prefix-settings')     .textContent = pad(5 + offset)
-  document.getElementById('prefix-exit')         .textContent = pad(6 + offset)
+  document.getElementById('prefix-manual')       .textContent = pad(3 + offset)
+  document.getElementById('prefix-records')      .textContent = pad(4 + offset)
+  document.getElementById('prefix-operatorfile') .textContent = pad(5 + offset)
+  document.getElementById('prefix-settings')     .textContent = pad(6 + offset)
+  document.getElementById('prefix-exit')         .textContent = pad(7 + offset)
 }
 function pad(n) { return n < 10 ? '0' + n : '' + n }
 
@@ -117,6 +118,7 @@ function onNewGameCancel() {
 /* ── Wire menu item clicks — stable IDs, not fragile indices ────── */
 document.getElementById('menu-item-primary')      .addEventListener('click', onPrimary)
 document.getElementById('menu-item-newgame')      .addEventListener('click', onNewGameRequest)
+document.getElementById('menu-item-manual')       .addEventListener('click', () => navigateTo('manual.html'))
 document.getElementById('menu-item-settings')     .addEventListener('click', openSettings)
 document.getElementById('menu-item-exit')         .addEventListener('click', () => window.close())
 document.getElementById('menu-item-operatorfile') .addEventListener('click', function() {

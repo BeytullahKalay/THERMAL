@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>THERMAL — Safe Operation Manual</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap');
+
+  :root {
+    --phosphor:      #a8ff3e;
+    --phosphor-dim:  #4a7a1a;
+    --phosphor-glow: rgba(168, 255, 62, 0.15);
+    --amber:         #ffb830;
+    --red-alert:     #ff3a3a;
+    --bg:            #080a04;
+    --panel-bg:      #0b0f05;
+    --border:        #1e2e0c;
+    --scanline:      rgba(0,0,0,0.18);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+  html { height: 100%; overflow: hidden; }
+
+  body {
+    background: var(--bg);
+    font-family: 'Share Tech Mono', monospace;
+    color: var(--phosphor);
+    height: 100vh;
+    overflow: hidden;
+    cursor: crosshair;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg, var(--scanline) 0px, var(--scanline) 1px, transparent 1px, transparent 3px
+    );
+    pointer-events: none;
+    z-index: 1000;
+  }
+
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.88) 100%);
+    pointer-events: none;
+    z-index: 999;
+  }
+
+  @keyframes powerOn {
+    0%   { transform: scaleY(0.01); filter: brightness(8) saturate(0); opacity: 0.6; }
+    12%  { transform: scaleY(0.01); filter: brightness(12) saturate(0); opacity: 1; }
+    24%  { transform: scaleY(1);    filter: brightness(2); }
+    36%  { transform: scaleY(1);    filter: brightness(0.75); }
+    50%  { transform: scaleY(1);    filter: brightness(1.3); }
+    100% { transform: scaleY(1);    filter: brightness(1); }
+  }
+
+  @keyframes crtOff {
+    0%   { transform: scaleY(1);    filter: brightness(1);  opacity: 1; }
+    8%   { transform: scaleY(1);    filter: brightness(3) saturate(0); }
+    22%  { transform: scaleY(0.04); filter: brightness(8); }
+    55%  { transform: scaleY(0.02); filter: brightness(3); }
+    100% { transform: scaleY(0.01); filter: brightness(0);  opacity: 0; }
+  }
+
+  @keyframes flicker {
+    0%, 96%, 100% { opacity: 1; }
+    97%           { opacity: 0.90; }
+    98.5%         { opacity: 0.96; }
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; } to { opacity: 1; }
+  }
+
+  /* ── LAYOUT ───────────────────────────────────────────────────── */
+  .terminal {
+    display: grid;
+    grid-template-rows: 40px 1fr 44px;
+    height: 100vh;
+    padding: 10px;
+    gap: 6px;
+    animation: powerOn 0.8s cubic-bezier(0,0,0.4,1) forwards, flicker 9s 0.8s infinite;
+    transform-origin: center center;
+  }
+
+  /* ── HEADER ───────────────────────────────────────────────────── */
+  .header {
+    border: 1px solid var(--border);
+    background: var(--panel-bg);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+  }
+
+  .header-title {
+    font-family: 'VT323', monospace;
+    font-size: 17px;
+    letter-spacing: 3px;
+    color: var(--phosphor);
+    text-shadow: 0 0 5px var(--phosphor);
+  }
+
+  .header-meta {
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--phosphor-dim);
+  }
+
+  /* ── BODY ─────────────────────────────────────────────────────── */
+  .body {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 6px;
+    min-height: 0;
+  }
+
+  /* ── TOC SIDEBAR ──────────────────────────────────────────────── */
+  .toc {
+    border: 1px solid var(--border);
+    background: var(--panel-bg);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    overflow: hidden;
+  }
+
+  .toc-title {
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: var(--phosphor-dim);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 8px;
+    margin-bottom: 10px;
+  }
+
+  .toc-item {
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: var(--phosphor-dim);
+    padding: 5px 6px;
+    cursor: pointer;
+    border: 1px solid transparent;
+    transition: all 0.12s;
+    line-height: 1.4;
+  }
+
+  .toc-item:hover {
+    color: var(--phosphor);
+    border-color: var(--border);
+    background: rgba(168,255,62,0.04);
+  }
+
+  .toc-item.active {
+    color: var(--phosphor);
+    border-color: var(--phosphor-dim);
+    background: rgba(168,255,62,0.06);
+  }
+
+  .toc-num {
+    color: var(--phosphor-dim);
+    margin-right: 6px;
+    opacity: 0.6;
+  }
+
+  /* ── CONTENT ──────────────────────────────────────────────────── */
+  .content {
+    border: 1px solid var(--border);
+    background: var(--panel-bg);
+    overflow-y: auto;
+    padding: 28px 36px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+  .content::-webkit-scrollbar { width: 3px; }
+  .content::-webkit-scrollbar-thumb { background: var(--border); }
+
+  .section { display: none; animation: fadeIn 0.2s both; }
+  .section.active { display: block; }
+
+  .section-eyebrow {
+    font-size: 9px;
+    letter-spacing: 4px;
+    color: var(--phosphor-dim);
+    margin-bottom: 6px;
+  }
+
+  .section-title {
+    font-family: 'VT323', monospace;
+    font-size: 28px;
+    letter-spacing: 3px;
+    color: var(--phosphor);
+    text-shadow: 0 0 6px var(--phosphor);
+    margin-bottom: 6px;
+    line-height: 1.1;
+  }
+
+  .section-rule {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 16px 0 22px;
+  }
+
+  .para {
+    font-size: 11px;
+    line-height: 2.0;
+    letter-spacing: 0.4px;
+    color: #7aaa3a;
+    margin-bottom: 18px;
+  }
+
+  .para-label {
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: var(--phosphor-dim);
+    margin-bottom: 8px;
+    margin-top: 22px;
+  }
+
+  /* Parameter table */
+  .param-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 20px;
+  }
+
+  .param-table th {
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: var(--phosphor-dim);
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    padding: 0 12px 7px 0;
+    font-weight: normal;
+  }
+
+  .param-table td {
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    color: #7aaa3a;
+    padding: 7px 12px 7px 0;
+    border-bottom: 1px solid rgba(30,46,12,0.4);
+    vertical-align: top;
+  }
+
+  .param-table td.key {
+    color: var(--phosphor-dim);
+    width: 180px;
+    font-size: 10px;
+    letter-spacing: 1px;
+  }
+
+  .param-table td.val {
+    font-family: 'VT323', monospace;
+    font-size: 17px;
+    color: var(--phosphor);
+    letter-spacing: 1px;
+  }
+
+  .param-table td.note {
+    font-size: 10px;
+    color: #4a6a20;
+    letter-spacing: 0.3px;
+  }
+
+  /* Step list */
+  .step-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .step {
+    display: grid;
+    grid-template-columns: 28px 1fr;
+    gap: 10px;
+    align-items: baseline;
+  }
+
+  .step-num {
+    font-family: 'VT323', monospace;
+    font-size: 18px;
+    color: var(--phosphor-dim);
+    text-align: right;
+  }
+
+  .step-text {
+    font-size: 11px;
+    line-height: 1.85;
+    letter-spacing: 0.4px;
+    color: #7aaa3a;
+  }
+
+  .step-text .hi { color: var(--phosphor); }
+  .step-text .lo { color: var(--amber); }
+
+  /* Warning box */
+  .warn-box {
+    border: 1px solid #3a2a04;
+    background: rgba(255,184,48,0.04);
+    padding: 12px 16px;
+    margin: 18px 0;
+  }
+
+  .warn-box-label {
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: var(--amber);
+    margin-bottom: 8px;
+    opacity: 0.8;
+  }
+
+  .warn-box-text {
+    font-size: 11px;
+    line-height: 1.85;
+    letter-spacing: 0.4px;
+    color: #9a7a30;
+  }
+
+  /* Footer note */
+  .section-footer {
+    margin-top: 30px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--phosphor-dim);
+    opacity: 0.45;
+    line-height: 1.9;
+  }
+
+  /* ── ACTION BAR ───────────────────────────────────────────────── */
+  .action-bar {
+    border: 1px solid var(--border);
+    background: var(--panel-bg);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 18px;
+  }
+
+  .action-bar-note {
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--phosphor-dim);
+    opacity: 0.5;
+  }
+
+  .back-btn {
+    background: none;
+    border: 1px solid var(--phosphor-dim);
+    color: var(--phosphor-dim);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    padding: 8px 22px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .back-btn:hover {
+    border-color: var(--phosphor);
+    color: var(--phosphor);
+    background: rgba(168,255,62,0.08);
+    box-shadow: 0 0 10px rgba(168,255,62,0.15);
+  }
+</style>
+</head>
+<body>
+
+<div class="terminal">
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-title">// SAFE OPERATION MANUAL — UNIT 4</div>
+    <div class="header-meta">REVISION 3 — NIGHT SHIFT PERSONNEL — INTERNAL DISTRIBUTION</div>
+  </div>
+
+  <!-- BODY -->
+  <div class="body">
+
+    <!-- TOC -->
+    <div class="toc">
+      <div class="toc-title">// CONTENTS</div>
+      <div class="toc-item active" data-section="overview">
+        <span class="toc-num">1.</span>SYSTEM OVERVIEW
+      </div>
+      <div class="toc-item" data-section="parameters">
+        <span class="toc-num">2.</span>NORMAL OPERATING PARAMETERS
+      </div>
+      <div class="toc-item" data-section="anomaly">
+        <span class="toc-num">3.</span>ANOMALY RESPONSE
+      </div>
+      <div class="toc-item" data-section="radiation">
+        <span class="toc-num">4.</span>RADIATION MONITORING
+      </div>
+      <div class="toc-item" data-section="emergency">
+        <span class="toc-num">5.</span>EMERGENCY PROCEDURES
+      </div>
+    </div>
+
+    <!-- CONTENT -->
+    <div class="content" id="content">
+
+      <!-- SECTION 1 — OVERVIEW -->
+      <div class="section active" id="section-overview">
+        <div class="section-eyebrow">SECTION 1</div>
+        <div class="section-title">SYSTEM OVERVIEW</div>
+        <hr class="section-rule">
+
+        <div class="para">
+          Unit 4 operates as a pressurised thermal loop facility under standard night rotation.
+          The night shift operator assumes full responsibility for system monitoring between
+          22:00 and 06:00. No supervisory personnel are present on-site during this window.
+        </div>
+
+        <div class="para">
+          The operator's role is observation and response. Unit 4 is a mature installation
+          with a well-documented operational history. Under normal conditions, the systems
+          are self-regulating. Operator intervention is required only when automated
+          thresholds are exceeded.
+        </div>
+
+        <div class="para-label">OPERATOR RESPONSIBILITIES</div>
+        <div class="step-list">
+          <div class="step">
+            <div class="step-num">01</div>
+            <div class="step-text">Monitor temperature, pressure, and power output continuously throughout the shift.</div>
+          </div>
+          <div class="step">
+            <div class="step-num">02</div>
+            <div class="step-text">Log all anomalies in the shift register. Do not skip entries.</div>
+          </div>
+          <div class="step">
+            <div class="step-num">03</div>
+            <div class="step-text">Apply corrective action according to the procedures in Section 3.</div>
+          </div>
+          <div class="step">
+            <div class="step-num">04</div>
+            <div class="step-text">Complete and submit the shift report before departing. Incomplete reports will be returned.</div>
+          </div>
+        </div>
+
+        <div class="para">
+          This manual reflects Unit 4's design parameters as of its last technical review.
+          Operators are advised to follow the procedures as written. Deviation from procedure,
+          even with good intention, increases system risk.
+        </div>
+
+        <div class="section-footer">
+          UNIT 4 SAFE OPERATION MANUAL — REVISION 3<br>
+          APPROVED BY: FACILITY TECHNICAL AUTHORITY<br>
+          LAST REVIEWED: YEAR 2 / CYCLE 4<br>
+          NEXT REVIEW DUE: YEAR 3 / CYCLE 4 — STATUS: PENDING
+        </div>
+      </div>
+
+      <!-- SECTION 2 — PARAMETERS -->
+      <div class="section" id="section-parameters">
+        <div class="section-eyebrow">SECTION 2</div>
+        <div class="section-title">NORMAL OPERATING PARAMETERS</div>
+        <hr class="section-rule">
+
+        <div class="para">
+          The following values represent Unit 4's expected operating range under standard
+          night load conditions. Parameters within these ranges require no operator action.
+        </div>
+
+        <div class="para-label">PRIMARY SYSTEM VALUES</div>
+        <table class="param-table">
+          <tr>
+            <th>PARAMETER</th>
+            <th>NOMINAL RANGE</th>
+            <th>NOTES</th>
+          </tr>
+          <tr>
+            <td class="key">COOLANT TEMPERATURE</td>
+            <td class="val">55°C – 68°C</td>
+            <td class="note">Values above 68°C indicate elevated load. Monitor closely.</td>
+          </tr>
+          <tr>
+            <td class="key">SYSTEM PRESSURE</td>
+            <td class="val">48% – 57%</td>
+            <td class="note">Pressure above 57% should self-correct within 60 seconds.</td>
+          </tr>
+          <tr>
+            <td class="key">POWER OUTPUT</td>
+            <td class="val">62% – 76%</td>
+            <td class="note">Night load profile. Deviation is uncommon but not unusual.</td>
+          </tr>
+          <tr>
+            <td class="key">AMBIENT RADIATION</td>
+            <td class="val">&lt; 0.8 mSv</td>
+            <td class="note">Background levels. No action required below this threshold.</td>
+          </tr>
+        </table>
+
+        <div class="para-label">THRESHOLD CLASSIFICATIONS</div>
+        <table class="param-table">
+          <tr>
+            <th>CLASSIFICATION</th>
+            <th>TEMPERATURE</th>
+            <th>PRESSURE</th>
+            <th>POWER</th>
+          </tr>
+          <tr>
+            <td class="key">NOMINAL</td>
+            <td class="val" style="font-size:13px">55 – 68°C</td>
+            <td class="val" style="font-size:13px">48 – 57%</td>
+            <td class="val" style="font-size:13px">62 – 76%</td>
+          </tr>
+          <tr>
+            <td class="key">ELEVATED — MONITOR</td>
+            <td class="val" style="font-size:13px; color:var(--amber)">68 – 74°C</td>
+            <td class="val" style="font-size:13px; color:var(--amber)">57 – 64%</td>
+            <td class="val" style="font-size:13px; color:var(--amber)">76 – 84%</td>
+          </tr>
+          <tr>
+            <td class="key">CRITICAL — ACT</td>
+            <td class="val" style="font-size:13px; color:var(--red-alert)">&gt; 74°C</td>
+            <td class="val" style="font-size:13px; color:var(--red-alert)">&gt; 64%</td>
+            <td class="val" style="font-size:13px; color:var(--red-alert)">&gt; 84%</td>
+          </tr>
+        </table>
+
+        <div class="warn-box">
+          <div class="warn-box-label">// NOTE ON INSTRUMENTATION</div>
+          <div class="warn-box-text">
+            Night-shift sensor readings may occasionally show brief deviations from expected
+            values. This is a known characteristic of the Unit 4 instrumentation suite under
+            low-load conditions. If a reading appears anomalous but the system is otherwise
+            stable, allow 45–60 seconds before taking action. Most deviations self-correct.
+          </div>
+        </div>
+
+        <div class="section-footer">
+          Parameter values reflect Unit 4 design specification as of last technical review.<br>
+          Operators should note that field conditions may vary. Use judgement in conjunction<br>
+          with the values above. If in doubt, follow procedure.
+        </div>
+      </div>
+
+      <!-- SECTION 3 — ANOMALY RESPONSE -->
+      <div class="section" id="section-anomaly">
+        <div class="section-eyebrow">SECTION 3</div>
+        <div class="section-title">ANOMALY RESPONSE</div>
+        <hr class="section-rule">
+
+        <div class="para">
+          Anomalies are defined as any reading or system state that falls outside the nominal
+          ranges defined in Section 2. Operators should respond to anomalies promptly but
+          without haste. Most anomalies in Unit 4 resolve with minimal intervention.
+        </div>
+
+        <div class="para-label">TEMPERATURE ANOMALY</div>
+        <div class="step-list">
+          <div class="step">
+            <div class="step-num">01</div>
+            <div class="step-text">Verify the reading is genuine. Wait <span class="hi">45 seconds</span> if the system is otherwise stable. Instrumentation drift is common.</div>
+          </div>
+          <div class="step">
+            <div class="step-num">02</div>
+            <div class="step-text">If confirmed elevated: allocate additional coolant resources. The Coolant Resonance Monitor should be adjusted to match target frequency.</div>
+          </div>
+          <div class="step">
+            <div class="step-num">03</div>
+            <div class="step-text">If temperature exceeds <span class="lo">74°C</span>: increase resource allocation and log the event. Expected resolution time: <span class="hi">60–90 seconds</span>.</div>
+          </div>
+          <div class="step">
+            <div class="step-num">04</div>
+            <div class="step-text">If temperature does not resolve within <span class="lo">3 minutes</span>: escalate to facility management. Contact details are posted in the operator station.</div>
+          </div>
+        </div>
+
+        <div class="para-label">PRESSURE ANOMALY</div>
+        <div class="step-list">
+          <div class="step">
+            <div class="step-num">01</div>
+            <div class="step-text">Pressure deviations above 57% typically self-correct. Observe for <span class="hi">60 seconds</span> before acting.</div>
+          </div>
+          <div class="step">
+            <div class="step-num">02</div>
+            <div class="step-text">If persistent: use the Valve Sequencing panel to restore nominal pressure flow.</div>
+          </div>
+          <div class="step">
+            <div class="step-num">03</div>
+            <div class="step-text">Valve sequences are documented in the valve register. Follow the sequence exactly. <span class="lo">Incorrect sequences may temporarily worsen the reading.</span></div>
+          </div>
+        </div>
+
+        <div class="para-label">POWER OUTPUT ANOMALY</div>
+        <div class="step-list">
+          <div class="step">
+            <div class="step-num">01</div>
+            <div class="step-text">Power deviations above 84% are uncommon. Reduce power allocation immediately.</div>
+          </div>
+          <div class="step">
+            <div class="step-num">02</div>
+            <div class="step-text">Do not over-correct. Reducing power too aggressively can trigger a secondary temperature response.</div>
+          </div>
+        </div>
+
+        <div class="warn-box">
+          <div class="warn-box-label">// IMPORTANT — FALSE ANOMALY CLASSIFICATION</div>
+          <div class="warn-box-text">
+            Not every alert requires intervention. Unit 4 occasionally generates false anomaly
+            signals due to sensor sensitivity calibrated for an earlier operational profile.
+            Operators who respond to every alert indiscriminately will introduce more
+            instability than they resolve. Learn to distinguish genuine anomalies from
+            instrumentation artefacts. Experienced operators act on approximately
+            <span style="color:var(--phosphor)">60–70% of alerts.</span>
+          </div>
+        </div>
+
+        <div class="section-footer">
+          Anomaly procedures are based on Unit 4 design documentation and operational history.<br>
+          Operators are reminded that escalation contacts are available at the operator station.<br>
+          Response times listed are approximate. Actual resolution may vary.
+        </div>
+      </div>
+
+      <!-- SECTION 4 — RADIATION -->
+      <div class="section" id="section-radiation">
+        <div class="section-eyebrow">SECTION 4</div>
+        <div class="section-title">RADIATION MONITORING</div>
+        <hr class="section-rule">
+
+        <div class="para">
+          Unit 4 operates within established radiation safety limits. The ambient radiation
+          level in the operator station is monitored continuously. Operators should be aware
+          of the following thresholds and the actions associated with each.
+        </div>
+
+        <table class="param-table">
+          <tr>
+            <th>LEVEL</th>
+            <th>READING</th>
+            <th>REQUIRED ACTION</th>
+          </tr>
+          <tr>
+            <td class="key">BACKGROUND</td>
+            <td class="val">0.4 – 0.8 mSv</td>
+            <td class="note">No action required. Normal for this installation.</td>
+          </tr>
+          <tr>
+            <td class="key">ELEVATED</td>
+            <td class="val" style="color:var(--phosphor)">0.8 – 1.2 mSv</td>
+            <td class="note">Log the reading. Monitor for increase. No immediate action.</td>
+          </tr>
+          <tr>
+            <td class="key">NOTIFY</td>
+            <td class="val" style="color:var(--amber)">1.2 – 2.0 mSv</td>
+            <td class="note">Notify facility management at next available opportunity.</td>
+          </tr>
+          <tr>
+            <td class="key">EVACUATE</td>
+            <td class="val" style="color:var(--red-alert)">&gt; 2.0 mSv</td>
+            <td class="note">Initiate evacuation protocol. Contact emergency line.</td>
+          </tr>
+        </table>
+
+        <div class="warn-box">
+          <div class="warn-box-label">// OPERATOR HEALTH NOTE</div>
+          <div class="warn-box-text">
+            Cumulative radiation exposure is tracked by facility health records.
+            Operators are advised that short-duration exposure below 2.0 mSv presents
+            no documented long-term health risk under current occupational guidelines.
+            Annual health reviews are conducted for all night-shift personnel.
+            Results are available on request through the personnel office.
+          </div>
+        </div>
+
+        <div class="para">
+          The radiation monitor in your station displays a real-time reading. A reading above
+          1.2 mSv should be noted in your shift log. Readings above 2.0 mSv are rare under
+          normal operating conditions. If the reading reaches this level, the cause is
+          almost certainly an instrumentation fault rather than an actual release event.
+        </div>
+
+        <div class="section-footer">
+          Radiation thresholds conform to regional occupational exposure guidelines, Year 2 edition.<br>
+          Guideline review: pending. Previous revision: Year 1 / Cycle 2.<br>
+          Health monitoring programme: active. For queries contact the personnel office.
+        </div>
+      </div>
+
+      <!-- SECTION 5 — EMERGENCY -->
+      <div class="section" id="section-emergency">
+        <div class="section-eyebrow">SECTION 5</div>
+        <div class="section-title">EMERGENCY PROCEDURES</div>
+        <hr class="section-rule">
+
+        <div class="para">
+          A critical system event is defined as any two or more parameters simultaneously
+          in the critical range, or any single parameter that remains critical for more
+          than <span style="color:var(--amber)">three minutes</span> without resolution.
+          Critical events are rare in Unit 4's operational history.
+        </div>
+
+        <div class="para-label">IN THE EVENT OF A CRITICAL SYSTEM STATE</div>
+        <div class="step-list">
+          <div class="step">
+            <div class="step-num">01</div>
+            <div class="step-text">Do not leave the operator station. Your presence is required for system monitoring and documentation.</div>
+          </div>
+          <div class="step">
+            <div class="step-num">02</div>
+            <div class="step-text">Apply corrective procedures from Section 3. Prioritise the parameter furthest from nominal.</div>
+          </div>
+          <div class="step">
+            <div class="step-num">03</div>
+            <div class="step-text">Attempt to contact facility management using the emergency line posted at the operator station. <span class="lo">If no answer, continue with procedure.</span></div>
+          </div>
+          <div class="step">
+            <div class="step-num">04</div>
+            <div class="step-text">Document all actions taken in the shift log in real time. Accurate records are essential for post-event review.</div>
+          </div>
+          <div class="step">
+            <div class="step-num">05</div>
+            <div class="step-text">If the event resolves: complete a full incident report before end of shift. If the event does not resolve: <span class="lo">continue applying procedure.</span></div>
+          </div>
+        </div>
+
+        <div class="warn-box">
+          <div class="warn-box-label">// NOTE ON MELTDOWN CLASSIFICATION</div>
+          <div class="warn-box-text">
+            A full thermal meltdown event has not occurred at Unit 4 under documented
+            operational history. The term "meltdown" as used in other facility documentation
+            refers to a specific threshold breach condition that the Unit 4 design is intended
+            to prevent. Operators should understand that sustained correct procedure makes
+            this outcome effectively impossible. The procedures in this manual are sufficient.
+          </div>
+        </div>
+
+        <div class="para">
+          Operators who follow this manual's procedures will manage the full range of
+          conditions that Unit 4 presents. No situation you will encounter during a normal
+          night shift falls outside the scope of what is documented here.
+          If you find that it does, <span style="color:var(--phosphor-dim)">the fault is in the documentation.</span>
+        </div>
+
+        <div class="section-footer">
+          Emergency contact numbers are posted at the operator station.<br>
+          Facility management line: available during business hours.<br>
+          After-hours emergency contact: see posted notice at station.<br>
+          Last confirmed active: YEAR 2 / CYCLE 1.
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ACTION BAR -->
+  <div class="action-bar">
+    <div class="action-bar-note">// READ CAREFULLY — PROCEDURES ARE SUFFICIENT FOR ALL CONDITIONS</div>
+    <button class="back-btn" id="btn-back">[ ← RETURN TO MENU ]</button>
+  </div>
+
+</div>
+
+<script>
+(function() {
+  'use strict'
+
+  function crtOff(url) {
+    var t = document.querySelector('.terminal')
+    t.style.animation = 'crtOff 0.65s cubic-bezier(0.4,0,1,1) forwards'
+    setTimeout(function() { window.location.href = url }, 620)
+  }
+
+  document.getElementById('btn-back').addEventListener('click', function() {
+    crtOff('menu.html')
+  })
+
+  /* ── TOC navigation ─────────────────────────────────────────── */
+  var tocItems  = document.querySelectorAll('.toc-item')
+  var sections  = document.querySelectorAll('.section')
+
+  tocItems.forEach(function(item) {
+    item.addEventListener('click', function() {
+      var target = item.getAttribute('data-section')
+
+      tocItems.forEach(function(i) { i.classList.remove('active') })
+      sections.forEach(function(s) { s.classList.remove('active') })
+
+      item.classList.add('active')
+      var sec = document.getElementById('section-' + target)
+      if (sec) {
+        sec.classList.add('active')
+        document.getElementById('content').scrollTop = 0
+      }
+    })
+  })
+
+  /* ESC → menu */
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') crtOff('menu.html')
+  })
+})()
+</script>
+
+</body>
+</html>
