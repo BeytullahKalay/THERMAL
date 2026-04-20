@@ -32,7 +32,7 @@ function calcRating(d) {
   if (d.streetDeath) return {
     grade: 'OPERATOR\nDECEASED',
     color: 'var(--red-alert)',
-    desc:  'NO FIXED ADDRESS ON FILE.\nBODY RECOVERED FROM STREET.\nEMPLOYMENT RECORD CLOSED.',
+    desc:  d.streetDeathDesc || 'NO FIXED ADDRESS ON FILE.\nBODY RECOVERED FROM STREET.\nEMPLOYMENT RECORD CLOSED.',
   }
   var total    = d.correctDecisions + d.wrongDecisions
   var accuracy = total > 0 ? d.correctDecisions / total : 1.0
@@ -257,5 +257,5 @@ if (!_runEnded) document.getElementById('btn-next').addEventListener('click', fu
     var s = window.saveSystem.loadGame()
     try { localStorage.setItem('thermalShiftNumber', String(s.shiftNumber)) } catch (e) {}
   }
-  crtNavigate('game.html')
+  crtNavigate('home-terminal.html')
 })

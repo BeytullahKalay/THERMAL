@@ -73,6 +73,20 @@ function paintMenu() {
   }
 
   if (progEl) progEl.textContent = s.totalMoney + ' / ' + s.targetMoney
+
+  /* Operator File: unlocked only when a live run exists */
+  var opfileItem  = document.getElementById('menu-item-operatorfile')
+  var opfileLabel = opfileItem ? opfileItem.querySelector('.menu-label') : null
+  var opfileLock  = opfileItem ? opfileItem.querySelector('.menu-lock')  : null
+  if (c === 'continue') {
+    if (opfileLabel) opfileLabel.classList.remove('locked')
+    if (opfileLock)  { opfileLock.textContent = '▶'; opfileLock.className = 'menu-arrow' }
+    if (opfileItem)  opfileItem.classList.add('opfile-unlocked')
+  } else {
+    if (opfileLabel) opfileLabel.classList.add('locked')
+    if (opfileLock)  { opfileLock.textContent = '// LOCKED'; opfileLock.className = 'menu-lock' }
+    if (opfileItem)  opfileItem.classList.remove('opfile-unlocked')
+  }
 }
 
 /* ── Primary click ──────────────────────────────────────────────── */
@@ -101,10 +115,13 @@ function onNewGameCancel() {
 }
 
 /* ── Wire menu item clicks — stable IDs, not fragile indices ────── */
-document.getElementById('menu-item-primary')  .addEventListener('click', onPrimary)
-document.getElementById('menu-item-newgame')  .addEventListener('click', onNewGameRequest)
-document.getElementById('menu-item-settings') .addEventListener('click', openSettings)
-document.getElementById('menu-item-exit')     .addEventListener('click', () => window.close())
+document.getElementById('menu-item-primary')      .addEventListener('click', onPrimary)
+document.getElementById('menu-item-newgame')      .addEventListener('click', onNewGameRequest)
+document.getElementById('menu-item-settings')     .addEventListener('click', openSettings)
+document.getElementById('menu-item-exit')         .addEventListener('click', () => window.close())
+document.getElementById('menu-item-operatorfile') .addEventListener('click', function() {
+  if (menuCase() === 'continue') openOpFile()
+})
 
 /* ── Confirm dialog buttons ─────────────────────────────────────── */
 document.getElementById('reset-confirm-yes').addEventListener('click', onNewGameConfirm)
@@ -220,6 +237,21 @@ document.getElementById('settings-apply').addEventListener('click', async () => 
 
 /* Close button + ESC */
 document.getElementById('settings-close').addEventListener('click', closeSettings)
+
+/* ═══════════════════════════════════════════════════════════════════
+   OPERATOR FILE OVERLAY
+   ═══════════════════════════════════════════════════════════════════ */
+function openOpFile() {
+  document.getElementById('opfile-overlay').classList.add('active')
+}
+function closeOpFile() {
+  document.getElementById('opfile-overlay').classList.remove('active')
+}
+document.getElementById('opfile-close').addEventListener('click', closeOpFile)
+
 document.addEventListener('keydown', e => {
-  if (e.key === 'Escape') closeSettings()
+  if (e.key === 'Escape') {
+    closeSettings()
+    closeOpFile()
+  }
 })

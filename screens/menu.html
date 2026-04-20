@@ -457,6 +457,26 @@
     color: var(--phosphor-dim);
   }
 
+  /* ── SIDE PANEL GLITCH ── */
+  @keyframes glitchShift {
+    0%   { transform: translateX(0); }
+    20%  { transform: translateX(-2px); }
+    40%  { transform: translateX(2px); }
+    60%  { transform: translateX(-1px); }
+    80%  { transform: translateX(1px); }
+    100% { transform: translateX(0); }
+  }
+
+  .side-log .glitch-line {
+    color: rgba(168, 255, 62, 0.7) !important;
+    animation: glitchShift 0.12s steps(1) infinite;
+  }
+
+  .side-log .flash-entry {
+    color: rgba(255, 184, 48, 0.45);
+    transition: opacity 0.12s;
+  }
+
   /* Danger label (ÇIKIŞ) */
   .menu-label.danger { color: rgba(255, 58, 58, 0.55); }
   .menu-item:hover .menu-label.danger {
@@ -679,6 +699,123 @@
     color: rgba(255,184,48,0.5);
   }
 
+  /* ── OPERATOR FILE OVERLAY ──────────────────────────────────────── */
+  #opfile-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(4, 6, 2, 0.94);
+    z-index: 200;
+    align-items: center;
+    justify-content: center;
+  }
+  #opfile-overlay.active { display: flex; }
+
+  .opfile-panel {
+    width: 560px;
+    max-height: 82vh;
+    background: var(--panel-bg);
+    border: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    animation: fadeSlideIn 0.22s both;
+  }
+
+  .opfile-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 20px;
+    border-bottom: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .opfile-title {
+    font-family: 'VT323', monospace;
+    font-size: 16px;
+    letter-spacing: 3px;
+    color: var(--phosphor);
+    text-shadow: 0 0 4px var(--phosphor);
+  }
+
+  .opfile-close {
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--phosphor-dim);
+    cursor: pointer;
+    padding: 4px 8px;
+    border: 1px solid transparent;
+    transition: all 0.12s;
+  }
+  .opfile-close:hover {
+    color: var(--phosphor);
+    border-color: var(--border);
+  }
+
+  .opfile-body {
+    padding: 20px 24px;
+    overflow-y: auto;
+    flex: 1;
+    scrollbar-width: thin;
+    scrollbar-color: var(--border) transparent;
+  }
+  .opfile-body::-webkit-scrollbar { width: 3px; }
+  .opfile-body::-webkit-scrollbar-track { background: transparent; }
+  .opfile-body::-webkit-scrollbar-thumb { background: var(--border); }
+
+  .opfile-section { margin-bottom: 20px; }
+
+  .opfile-section-label {
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: var(--phosphor-dim);
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 5px;
+    margin-bottom: 10px;
+  }
+
+  .opfile-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    font-size: 11px;
+    letter-spacing: 0.5px;
+    color: var(--phosphor-dim);
+    margin-bottom: 6px;
+  }
+
+  .opfile-row .val {
+    font-family: 'VT323', monospace;
+    font-size: 15px;
+    letter-spacing: 1px;
+    color: var(--phosphor);
+  }
+
+  .opfile-note {
+    font-size: 11px;
+    letter-spacing: 0.4px;
+    color: var(--phosphor-dim);
+    line-height: 1.9;
+    padding: 8px 12px;
+    border-left: 2px solid var(--border);
+  }
+
+  .opfile-note .hi { color: var(--amber); }
+  .opfile-note .lo { color: var(--red-alert); opacity: 0.75; }
+
+  .opfile-stamp {
+    font-family: 'VT323', monospace;
+    font-size: 12px;
+    letter-spacing: 2px;
+    color: var(--phosphor-dim);
+    opacity: 0.5;
+    text-align: right;
+    margin-top: 8px;
+    border-top: 1px solid var(--border);
+    padding-top: 10px;
+  }
+
   .settings-footer {
     margin-top: 20px;
     border-top: 1px solid var(--border);
@@ -730,15 +867,7 @@
 
   <!-- LEFT SIDE — ambient log -->
   <div class="side-panel" style="grid-column:1; grid-row:1/4; align-items:flex-end;">
-    <div class="side-log">
-      <div><span class="ts">18:02</span>Shift handover.</div>
-      <div><span class="ts">18:15</span>Cooling nominal.</div>
-      <div><span class="ts">19:44</span>Pressure stable.</div>
-      <div><span class="ts">20:11</span>Power 71%.</div>
-      <div><span class="ts">21:03</span>Line 2 drop.</div>
-      <div><span class="ts">21:58</span>Protocol active.</div>
-      <div><span class="ts">22:00</span>Shift starting.</div>
-    </div>
+    <div class="side-log" id="side-log-left"></div>
   </div>
 
   <!-- CENTER -->
@@ -910,6 +1039,67 @@
       <div class="settings-apply-btn" id="settings-apply">▶ APPLY</div>
     </div>
 
+  </div>
+</div>
+
+<!-- ══ OPERATOR FILE OVERLAY ═════════════════════════════════════ -->
+<div id="opfile-overlay">
+  <div class="opfile-panel">
+
+    <div class="opfile-header">
+      <div class="opfile-title">// OPERATOR FILE — OP.18</div>
+      <div class="opfile-close" id="opfile-close">[ CLOSE ]</div>
+    </div>
+
+    <div class="opfile-body">
+
+      <div class="opfile-section">
+        <div class="opfile-section-label">IDENTIFICATION</div>
+        <div class="opfile-row"><span>DESIGNATION</span><span class="val">OPERATOR CLASS III</span></div>
+        <div class="opfile-row"><span>UNIT ASSIGNMENT</span><span class="val">UNIT 4 / NIGHT SHIFT</span></div>
+        <div class="opfile-row"><span>REGISTRY ID</span><span class="val">OP.18</span></div>
+        <div class="opfile-row"><span>PREDECESSOR</span><span class="val">OP.17 / VACANT</span></div>
+        <div class="opfile-row"><span>PRIOR EMPLOYMENT</span><span class="val">UNSPECIFIED</span></div>
+        <div class="opfile-row"><span>REFERENCES ON FILE</span><span class="val">NONE</span></div>
+      </div>
+
+      <div class="opfile-section">
+        <div class="opfile-section-label">SELECTION CRITERIA — INTERNAL NOTE</div>
+        <div class="opfile-note">
+          Candidate identified via regional workforce registry.<br>
+          Background verification: <span class="hi">passed (expedited).</span><br>
+          Financial dependency profile: <span class="hi">confirmed.</span><br>
+          Dependent requiring ongoing medical treatment: <span class="hi">1 (minor).</span><br>
+          Estimated voluntary departure probability: <span class="lo">LOW.</span><br>
+          Compliance profile: <span class="lo">SUITABLE.</span>
+        </div>
+      </div>
+
+      <div class="opfile-section">
+        <div class="opfile-section-label">PERFORMANCE EXPECTATIONS</div>
+        <div class="opfile-note">
+          Previous operators in this role have demonstrated<br>
+          declining performance metrics between shifts 8–12.<br>
+          Expectations have been <span class="hi">revised accordingly.</span><br>
+          Longevity target: <span class="hi">6 shifts minimum.</span><br>
+          No further target has been set.
+        </div>
+      </div>
+
+      <div class="opfile-section">
+        <div class="opfile-section-label">ADMINISTRATIVE NOTE</div>
+        <div class="opfile-note">
+          Operator has not been informed of predecessor<br>
+          incident classifications. <span class="lo">Standard protocol.</span><br>
+          Health and safety briefing completed: YES.<br>
+          Accuracy of briefing content: <span class="lo">NOT ASSESSED.</span><br>
+          File to be reviewed at shift 6.
+        </div>
+      </div>
+
+      <div class="opfile-stamp">// OP.18 — ACTIVE — CLASSIFICATION: INTERNAL / NOT FOR DISTRIBUTION</div>
+
+    </div>
   </div>
 </div>
 
