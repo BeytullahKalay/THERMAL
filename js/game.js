@@ -410,6 +410,12 @@
     meltdownOccurred: false,
   }
 
+  /* Per-shift anomaly event log — written to localStorage at endShift() */
+  var _shiftAnomalyLog = []
+  function _logAnom(text, cls) {
+    _shiftAnomalyLog.push({ ts: _gcTime(), text: text, cls: cls || '' })
+  }
+
   /* ── System physics config ─────────────────────────────────────────── */
   /*  Physics formula (per second):
       res ≤ 3 : mag = lerp(deterRate, 0.05, res/3)   [deterRate at res=0, 0.05 at res=3]
@@ -579,15 +585,16 @@
           _cMsg = '⚠ CRITICAL POWER: ' + val.toFixed(1) + '% — SCRAM threshold approached. Reduce load.'
           _nMsg = 'Reactor power within authorized band. Monitoring resumed.'
         }
-        if      (next === 'warn') addLog(_wMsg, 'warning')
-        else if (next === 'crit') addLog(_cMsg, 'anomaly')
-        else                      addLog(_nMsg, 'normal')
+        if      (next === 'warn') { addLog(_wMsg, 'warning'); _logAnom(_wMsg, 'lo') }
+        else if (next === 'crit') { addLog(_cMsg, 'anomaly'); _logAnom(_cMsg, 'lo') }
+        else                      { addLog(_nMsg, 'normal');  _logAnom(_nMsg, '')  }
         gameState.systemStatus[sys] = next
       }
 
       if (next === 'crit') {
         gameState.critSeconds[sys]++
         gameState.totalCritSeconds++
+        _meltdownUpdate(sys, gameState.critSeconds[sys])
         if (gameState.critSeconds[sys] >= 120) {
           gameState.systemFailure = true
           gameState.meltdownOccurred = true
@@ -599,9 +606,18 @@
           setTimeout(function() { endShift() }, 4000)
         }
       } else {
-        gameState.critSeconds[sys] = 0
+        if (gameState.critSeconds[sys] > 0) {
+          gameState.critSeconds[sys] = 0
+          _meltdownReset(sys)
+        }
       }
     })
+
+    /* If no system is currently critical, kill any active meltdown bar */
+    var _anyCrit = Object.keys(gameState.critSeconds).some(function(s) {
+      return gameState.critSeconds[s] > 0
+    })
+    if (!_anyCrit) _meltdownReset(null)
 
     renderGauges()
   }
@@ -822,23 +838,169 @@
     _lsAdd('[PREV.OP. LOG — 21:47] Noticed vibration in pump room near CP-3. Reported to foreman Ivanov. Told: normal. I do not think it is normal. — V. Morozov', 'system')
   }, 30000 + Math.floor(Math.random() * 60000))
 
-  /* ── Routine NORMAL log: one random entry every 60–90 seconds ─────── */
-  var ROUTINE_POOL = [
-    'Coolant pump CP-3 flow verified: 4.1 m/s. No deviation.',
-    'Control rod bank D: inserted 94 cm. Position confirmed.',
-    'Primary circuit pressure: 157.3 bar. Within tolerance.',
-    'Steam generator SG-2 level stable at 72 %. No deviation.',
-    'Reactor neutron flux ch.12: 3.41 ×10¹³ n/cm²·s. Nominal.',
-    'Emergency feedwater valve EFV-07: closed, sealed. Standby confirmed.',
-    'Valve V-114 cycle test complete. Actuation time: 1.2 s.',
-    'Boric acid concentration: 780 mg/kg. Record logged.',
-    'Radiation area monitor RAM-6: 0.22 mSv/h. Below threshold.',
-    'Turbine hall temperature: 34°C. Ventilation circuits normal.',
-  ]
+  /* ── Routine log generator — randomised values with range-based responses ── */
+  function _routineEntry() {
+    function rnd(a, b, dec) {
+      var v = a + Math.random() * (b - a)
+      return dec ? parseFloat(v.toFixed(dec)) : Math.floor(v)
+    }
+
+    var GEN = [
+
+      /* Coolant pump CP-3 flow (m/s) */
+      function() {
+        var v = rnd(2.5, 7.0, 1)
+        if (v < 3.6) return 'Coolant pump CP-3 flow: ' + v + ' m/s — LOW. Pump speed setpoint raised.'
+        if (v > 5.3) return 'Coolant pump CP-3 flow: ' + v + ' m/s — ELEVATED. Throttle valve partially closed.'
+        return 'Coolant pump CP-3 flow verified: ' + v + ' m/s. No deviation.'
+      },
+
+      /* Control rod bank D position (cm) */
+      function() {
+        var v = rnd(70, 112)
+        if (v < 85)  return 'Control rod bank D: inserted ' + v + ' cm — below target. Withdrawal sequence initiated.'
+        if (v > 100) return 'Control rod bank D: inserted ' + v + ' cm — DEEP insertion. Reactivity monitor standby.'
+        return 'Control rod bank D: inserted ' + v + ' cm. Position confirmed.'
+      },
+
+      /* Primary circuit pressure (bar) */
+      function() {
+        var v = rnd(140, 176, 1)
+        if (v < 153) return 'Primary circuit pressure: ' + v + ' bar — LOW. Pressurizer heaters activated.'
+        if (v > 163) return 'Primary circuit pressure: ' + v + ' bar — ELEVATED. Pressurizer spray valve opened.'
+        return 'Primary circuit pressure: ' + v + ' bar. Within tolerance.'
+      },
+
+      /* Steam generator SG-2 level (%) */
+      function() {
+        var v = rnd(58, 86)
+        if (v < 67) return 'Steam generator SG-2 level: ' + v + '% — LOW. Feedwater flow rate increased.'
+        if (v > 78) return 'Steam generator SG-2 level: ' + v + '% — HIGH. Feedwater throttled.'
+        return 'Steam generator SG-2 level stable at ' + v + '%. No deviation.'
+      },
+
+      /* Reactor neutron flux (×10¹³ n/cm²·s) */
+      function() {
+        var v = rnd(2.8, 4.2, 2)
+        if (v < 3.25) return 'Neutron flux ch.12: ' + v + ' ×10¹³ n/cm²·s — below setpoint. Control rod withdrawal initiated.'
+        if (v > 3.70) return 'Neutron flux ch.12: ' + v + ' ×10¹³ n/cm²·s — ABOVE setpoint. Rod insertion 2 cm.'
+        return 'Reactor neutron flux ch.12: ' + v + ' ×10¹³ n/cm²·s. Nominal.'
+      },
+
+      /* Turbine hall temperature (°C) */
+      function() {
+        var v = rnd(27, 48)
+        if (v < 32) return 'Turbine hall temperature: ' + v + '°C — below normal. HVAC output increased.'
+        if (v > 40) return 'Turbine hall temperature: ' + v + '°C — WARM. Ventilation rate increased.'
+        return 'Turbine hall temperature: ' + v + '°C. Ventilation circuits normal.'
+      },
+
+      /* Boric acid concentration (mg/kg) */
+      function() {
+        var v = rnd(680, 862)
+        if (v < 748) return 'Boric acid concentration: ' + v + ' mg/kg — below target. Makeup system activated.'
+        if (v > 808) return 'Boric acid concentration: ' + v + ' mg/kg — HIGH. Dilution sequence initiated.'
+        return 'Boric acid concentration: ' + v + ' mg/kg. Record logged.'
+      },
+
+      /* Radiation area monitor RAM-6 (mSv/h) */
+      function() {
+        var v = rnd(0.14, 0.52, 2)
+        if (v > 0.36) return 'Radiation area monitor RAM-6: ' + v + ' mSv/h — ELEVATED. Area inspection dispatched.'
+        return 'Radiation area monitor RAM-6: ' + v + ' mSv/h. Below threshold.'
+      },
+
+      /* Primary coolant delta-T (°C) */
+      function() {
+        var v = rnd(11, 35)
+        if (v < 17) return 'Primary coolant ΔT: ' + v + '°C — LOW. Thermal output check initiated.'
+        if (v > 27) return 'Primary coolant ΔT: ' + v + '°C — HIGH. Secondary flow rate increased.'
+        return 'Primary coolant ΔT: ' + v + '°C. Heat transfer nominal.'
+      },
+
+      /* Feed pump FP-2 discharge pressure (bar) */
+      function() {
+        var v = rnd(61, 96)
+        if (v < 71) return 'Feed pump FP-2 discharge: ' + v + ' bar — LOW. Speed setpoint raised.'
+        if (v > 84) return 'Feed pump FP-2 discharge: ' + v + ' bar — ELEVATED. Relief valve check logged.'
+        return 'Feed pump FP-2 discharge pressure: ' + v + ' bar. Nominal.'
+      },
+
+      /* Containment atmosphere humidity (%) */
+      function() {
+        var v = rnd(27, 65)
+        if (v < 37) return 'Containment humidity: ' + v + '% — DRY. Moisture monitoring flag raised.'
+        if (v > 54) return 'Containment humidity: ' + v + '% — ELEVATED. Ventilation rate adjusted.'
+        return 'Containment atmosphere humidity: ' + v + '%. Within parameters.'
+      },
+
+      /* Valve V-114 actuation time (s) */
+      function() {
+        var v = rnd(1.0, 2.4, 1)
+        if (v > 1.55) return 'Valve V-114 cycle test: ' + v + ' s — SLUGGISH. Actuator maintenance flag raised.'
+        return 'Valve V-114 cycle test complete. Actuation time: ' + v + ' s. Nominal.'
+      },
+
+      /* Condenser vacuum (mbar — lower is better) */
+      function() {
+        var v = rnd(34, 66)
+        if (v > 52) return 'Condenser vacuum: ' + v + ' mbar — POOR. Air ejector rate increased.'
+        return 'Condenser vacuum: ' + v + ' mbar. Within tolerance.'
+      },
+
+      /* Makeup water tank level (%) */
+      function() {
+        var v = rnd(37, 89)
+        if (v < 52) return 'Makeup water tank: ' + v + '% — LOW. Refill request submitted to auxiliary ops.'
+        if (v > 78) return 'Makeup water tank: ' + v + '%. Transfer to drain line initiated.'
+        return 'Makeup water tank level: ' + v + '%. Nominal.'
+      },
+
+      /* Emergency feedwater valve EFV-07 */
+      function() {
+        var roll = Math.random()
+        if (roll < 0.08) return 'Emergency feedwater valve EFV-07: position indicator FAULT. Manual verification required.'
+        if (roll < 0.18) return 'Emergency feedwater valve EFV-07: cycling — scheduled test in progress. Standby.'
+        return 'Emergency feedwater valve EFV-07: closed, sealed. Standby confirmed.'
+      },
+
+      /* Coolant loop A outlet temperature (°C) */
+      function() {
+        var v = rnd(293, 332, 1)
+        if (v < 304) return 'Coolant loop A outlet: ' + v + '°C — LOW. Thermal setpoint check underway.'
+        if (v > 321) return 'Coolant loop A outlet: ' + v + '°C — HIGH. Flow rate being adjusted.'
+        return 'Coolant loop A outlet temperature: ' + v + '°C. Nominal.'
+      },
+
+      /* Containment sump level (cm) */
+      function() {
+        var v = rnd(3, 28)
+        if (v > 20) return 'Containment sump level: ' + v + ' cm — RISING. Sump pump activated. Source under investigation.'
+        return 'Containment sump level: ' + v + ' cm. Nominal.'
+      },
+
+      /* Diesel generator DG-1 standby check */
+      function() {
+        var roll = Math.random()
+        if (roll < 0.12) return 'Diesel generator DG-1 standby test: START delay ' + rnd(3,9) + ' s — marginal. Maintenance notified.'
+        return 'Diesel generator DG-1 standby test: ready. Start time ' + rnd(1,2,1) + ' s. Nominal.'
+      },
+
+      /* Spent fuel pool temperature (°C) */
+      function() {
+        var v = rnd(28, 52)
+        if (v > 44) return 'Spent fuel pool temperature: ' + v + '°C — WARM. Cooling pump duty cycle increased.'
+        return 'Spent fuel pool temperature: ' + v + '°C. Cooling nominal.'
+      },
+
+    ]
+
+    return GEN[Math.floor(Math.random() * GEN.length)]()
+  }
 
   function _scheduleRoutine() {
     setTimeout(function() {
-      _lsAdd(ROUTINE_POOL[Math.floor(Math.random() * ROUTINE_POOL.length)], 'normal')
+      _lsAdd(_routineEntry(), 'normal')
       _scheduleRoutine()
     }, 15000 + Math.floor(Math.random() * 10000))
   }
@@ -992,6 +1154,7 @@
       _anom.valueKey = tpl.valueKey
       triggerAnomaly(tpl.sensorId, tpl.valueKey, tpl.type)
       _lsAdd(tpl.logMsg, 'conflict')
+      _logAnom(tpl.logMsg, 'lo')
       _anomSetButtons(true)
       _anom.decideTimer = setTimeout(function() { _anomEscalate(1) }, 90000)
     }
@@ -1005,6 +1168,7 @@
     if (stage === 1) {
       gameState.missedAnomalies++
       _lsAdd('⚠ OVERDUE: No operator response within 90 s. Situation advancing. Supervisor on standby.', 'warning')
+      _logAnom('⚠ OVERDUE: No response within 90 s. Situation advancing.', 'lo')
       if (!_anom.isFake && _anom.sensorId) {
         var snsr = sensorState[_anom.sensorId]
         if (snsr.anomaly) { snsr.anomaly.escalated = true; renderSensor(_anom.sensorId) }
@@ -1013,6 +1177,7 @@
 
     } else if (stage === 2) {
       _lsAdd('⚠ FATAL: Anomaly unresolved. Automatic protocol initiated. Operator incident filed.', 'anomaly')
+      _logAnom('⚠ FATAL: Anomaly unresolved. Automatic protocol initiated.', 'lo')
       _anomClear()
       setTimeout(_scheduleNextAnomaly, 5000)
     }
@@ -1058,22 +1223,26 @@
       if (_anom.sensorId) resolveAnomaly(_anom.sensorId, _anom.valueKey)
       if (_anom.isLogClue) {
         _lsAdd('Operator assessment confirmed. No anomaly. Scheduled event as logged.', 'system')
+        _logAnom('Operator assessment confirmed. No anomaly. Scheduled event as logged.', 'hi')
       } else {
-        _lsAdd(isReport
+        var _okMsg = isReport
           ? '✓ Anomaly logged and resolved. Supervisory system notified. Record updated.'
-          : '✓ False alarm confirmed. Sensor transient only — no active anomaly. Log cleared.',
-          'system')
+          : '✓ False alarm confirmed. Sensor transient only — no active anomaly. Log cleared.'
+        _lsAdd(_okMsg, 'system')
+        _logAnom(_okMsg, 'hi')
       }
     } else {
       gameState.wrongDecisions++
       if (_anom.sensorId) resolveAnomaly(_anom.sensorId, _anom.valueKey)
       if (_anom.isLogClue) {
         _lsAdd('False anomaly report filed. Operator error recorded. Review shift log.', 'warning')
+        _logAnom('False anomaly report filed. Operator error recorded.', 'lo')
       } else {
-        _lsAdd(isReport
+        var _errMsg = isReport
           ? '✗ Report filed — post-review: no anomaly confirmed. Protocol deviation noted.'
-          : '✗ Status cleared — anomaly was active. Escalation unmanned. Supervisor alerted.',
-          'warning')
+          : '✗ Status cleared — anomaly was active. Escalation unmanned. Supervisor alerted.'
+        _lsAdd(_errMsg, 'warning')
+        _logAnom(_errMsg, 'lo')
       }
     }
 
@@ -1942,12 +2111,20 @@
     }
     localStorage.setItem('thermalShiftReport', JSON.stringify(report))
 
+    /* Append this shift's anomaly log to the persistent archive */
+    try {
+      var _al = JSON.parse(localStorage.getItem('thermalAnomalyLog') || '[]')
+      _al.push({ shiftNumber: shiftNum, entries: _shiftAnomalyLog })
+      localStorage.setItem('thermalAnomalyLog', JSON.stringify(_al))
+    } catch(e) {}
+
     /* Persist the shift into the save object (pay, shift++, etc.) */
     window.saveSystem.updateShift(report)
 
     var terminal = document.querySelector('.terminal')
     terminal.style.animation = 'crtOff 0.65s cubic-bezier(0.4, 0, 1, 1) forwards'
-    setTimeout(function() { window.location.href = 'shift-end.html' }, 620)
+    var _nextScreen = gameState.meltdownOccurred ? 'death.html' : 'shift-end.html'
+    setTimeout(function() { window.location.href = _nextScreen }, 620)
   }
 
   /* ═══════════════════════════════════════════════════════════════════
@@ -2043,3 +2220,277 @@
     _kvUpdate()
   })()
 
+/* ═══════════════════════════════════════════════════════════════════
+   MELTDOWN ESCALATION EFFECTS  (progressive / continuous)
+   ─────────────────────────────────────────────────────────────────
+   All effects scale continuously with maxCritSeconds (0–120):
+     0–40 s  : progress bar + panel glow
+    40–65 s  : sparse sparks start
+    65–85 s  : static noise on critical panels
+    85–120 s : panels go SIGNAL LOST one by one (85 / 100 / 112 s)
+    80–120 s : screen glitch — gets faster & longer every 10 s
+   Recovery removes effects in reverse as maxCritSeconds falls.
+   ═══════════════════════════════════════════════════════════════════ */
+;(function() {
+
+  /* ── Inject styles once ─────────────────────────────────────────── */
+  var _mdStyle = document.createElement('style')
+  _mdStyle.textContent = [
+    '#meltdown-bar-wrap {',
+    '  position:fixed; top:0; left:0; right:0; z-index:9999;',
+    '  height:6px; background:#1a0a0a; display:none; overflow:hidden;',
+    '}',
+    '#meltdown-bar {',
+    '  height:100%; width:0%; background:#ffb830;',
+    '  KEEP',
+    '  box-shadow:0 0 8px #ffb830,0 0 20px #ff9900;',
+    '  transition:width 0.9s linear;',
+    '}',
+    '#meltdown-countdown {',
+    '  position:fixed; top:10px; right:16px; z-index:9999;',
+    '  font-family:"VT323",monospace; font-size:22px; color:#ff3a3a;',
+    '  text-shadow:0 0 8px #ff3a3a; display:none; letter-spacing:2px;',
+    '}',
+    '.panel-melt-glow {',
+    '  box-shadow:0 0 14px rgba(255,58,58,0.4),inset 0 0 10px rgba(255,58,58,0.12) !important;',
+    '  border-color:rgba(255,58,58,0.55) !important;',
+    '}',
+    '.panel-degrading { position:relative; overflow:hidden; }',
+    '.panel-degrading::after {',
+    '  content:""; position:absolute; inset:0; pointer-events:none; z-index:10;',
+    '  background:repeating-linear-gradient(',
+    '    0deg,transparent,transparent 2px,',
+    '    rgba(255,58,58,0.05) 2px,rgba(255,58,58,0.05) 4px);',
+    '  animation:mdStaticNoise 0.12s steps(1) infinite;',
+    '}',
+    '@keyframes mdStaticNoise {',
+    '  0%   {opacity:1;transform:translateY(0);}',
+    '  25%  {opacity:0.6;transform:translateY(-2px);}',
+    '  50%  {opacity:0.9;transform:translateY(1px);}',
+    '  75%  {opacity:0.5;transform:translateY(-1px);}',
+    '  100% {opacity:1;transform:translateY(0);}',
+    '}',
+    '.panel-offline { position:relative; overflow:hidden; }',
+    '.panel-offline-overlay {',
+    '  position:absolute; inset:0; z-index:20;',
+    '  background:rgba(8,10,4,0.85);',
+    '  display:flex; align-items:center; justify-content:center;',
+    '  font-family:"VT323",monospace; font-size:28px; color:#ff3a3a;',
+    '  text-shadow:0 0 10px #ff3a3a; letter-spacing:3px;',
+    '  animation:mdFlickerText 0.3s steps(1) infinite;',
+    '}',
+    '@keyframes mdFlickerText {',
+    '  0%,100%{opacity:1;} 45%{opacity:0.35;} 55%{opacity:0.8;}',
+    '}',
+    '.meltdown-spark {',
+    '  position:fixed; pointer-events:none; z-index:8888;',
+    '  width:3px; height:3px; border-radius:50%;',
+    '  animation:mdSparkFall linear forwards;',
+    '}',
+    '@keyframes mdSparkFall {',
+    '  0%   {opacity:1;transform:translate(0,0) scale(1);}',
+    '  100% {opacity:0;transform:translate(var(--sx),var(--sy)) scale(0.2);}',
+    '}',
+    '.screen-flicker-hard {',
+    '  animation:mdFlickerHard 0.15s steps(1) infinite !important;',
+    '}',
+    '@keyframes mdFlickerHard {',
+    '  0%,100%{opacity:1;} 20%{opacity:0.55;} 40%{opacity:0.85;} 60%{opacity:0.45;} 80%{opacity:0.9;}',
+    '}',
+  ].join('\n')
+  document.head.appendChild(_mdStyle)
+
+  /* ── Create bar + countdown DOM ─────────────────────────────────── */
+  var _mdWrap    = document.createElement('div')
+  _mdWrap.id     = 'meltdown-bar-wrap'
+  _mdWrap.innerHTML = '<div id="meltdown-bar"></div>'
+  document.body.appendChild(_mdWrap)
+
+  var _mdCdEl    = document.createElement('div')
+  _mdCdEl.id     = 'meltdown-countdown'
+  document.body.appendChild(_mdCdEl)
+
+  var _mdBar     = document.getElementById('meltdown-bar')
+
+  /* ── State ──────────────────────────────────────────────────────── */
+  var _mdPhase        = 0
+  var _mdOffline      = {}
+  var _mdFlickering   = false
+  var _mdSparkTimer   = null
+  var _mdPhase2Logged = false
+  var _mdPhase3Logged = false
+
+  /* Panel element lookup — gauge-block-* IDs from game.html */
+  function _sysPanel(s) {
+    return document.getElementById('gauge-block-' + s)
+  }
+
+  /* ── Public: called every systemTick crit second ───────────────── */
+  window._meltdownUpdate = function(sys, secs) {
+    if (gameState.systemFailure) return
+
+    var maxSecs = Math.max.apply(null,
+      Object.keys(gameState.critSeconds).map(function(s) {
+        return gameState.critSeconds[s]
+      })
+    )
+
+    var pct       = Math.min(100, Math.round(maxSecs / 120 * 100))
+    var remaining = Math.max(0, 120 - maxSecs)
+
+    _mdWrap.style.display = ''
+    _mdCdEl.style.display = ''
+    _mdBar.style.width    = pct + '%'
+    _mdCdEl.textContent   = '⚠ CRITICAL — ' + remaining + 's'
+
+    if (pct >= 66) {
+      _mdBar.style.background = '#ff3a3a'
+      _mdBar.style.boxShadow  = '0 0 12px #ff3a3a,0 0 30px #ff0000'
+    } else if (pct >= 33) {
+      _mdBar.style.background = '#ff6600'
+      _mdBar.style.boxShadow  = '0 0 8px #ff6600,0 0 20px #ff4400'
+    } else {
+      _mdBar.style.background = '#ffb830'
+      _mdBar.style.boxShadow  = '0 0 8px #ffb830,0 0 16px #ff9900'
+    }
+
+    var newPhase = maxSecs >= 80 ? 3 : maxSecs >= 40 ? 2 : 1
+    if (newPhase !== _mdPhase) {
+      _mdPhase = newPhase
+      _applyPhase(sys)
+    }
+  }
+
+  /* ── Public: called when a system recovers (or null = all-clear) ── */
+  window._meltdownReset = function(sys) {
+    var maxSecs = Math.max.apply(null,
+      Object.keys(gameState.critSeconds).map(function(s) {
+        return gameState.critSeconds[s]
+      })
+    )
+
+    if (maxSecs > 0) {
+      /* Another system still critical — just update bar */
+      var pct = Math.min(100, Math.round(maxSecs / 120 * 100))
+      _mdBar.style.width  = pct + '%'
+      _mdCdEl.textContent = '⚠ CRITICAL — ' + Math.max(0, 120 - maxSecs) + 's'
+      return
+    }
+
+    /* All clear */
+    _mdWrap.style.display = 'none'
+    _mdCdEl.style.display = 'none'
+    _mdBar.style.width    = '0%'
+    _mdPhase        = 0
+    _mdPhase2Logged = false
+    _mdPhase3Logged = false
+
+    if (_mdSparkTimer) { clearInterval(_mdSparkTimer); _mdSparkTimer = null }
+
+    Object.keys(SYSTEMS).forEach(function(s) {
+      var el = _sysPanel(s)
+      if (!el) return
+      el.classList.remove('panel-melt-glow', 'panel-degrading', 'panel-offline')
+      var ov = el.querySelector('.panel-offline-overlay')
+      if (ov) ov.remove()
+    })
+
+    var terminal = document.querySelector('.terminal')
+    if (terminal) terminal.classList.remove('screen-flicker-hard')
+    _mdFlickering = false
+    _mdOffline    = {}
+  }
+
+  /* ── Apply phase effects ─────────────────────────────────────────── */
+  function _applyPhase(triggeredSys) {
+    var terminal = document.querySelector('.terminal')
+
+    /* Phase 1+ — glow on all critical panels */
+    Object.keys(SYSTEMS).forEach(function(s) {
+      var el = _sysPanel(s)
+      if (!el) return
+      if (gameState.systemStatus[s] === 'crit') el.classList.add('panel-melt-glow')
+    })
+
+    /* Phase 2 — static noise + sparse sparks + log */
+    if (_mdPhase >= 2 && !_mdPhase2Logged) {
+      _mdPhase2Logged = true
+      addLog('⚠ THERMAL RUNAWAY — containment systems strained. Structural integrity at risk.', 'anomaly')
+      _logAnom('⚠ THERMAL RUNAWAY — containment systems strained.', 'lo')
+      Object.keys(SYSTEMS).forEach(function(s) {
+        var el = _sysPanel(s)
+        if (!el) return
+        if (gameState.systemStatus[s] === 'crit') el.classList.add('panel-degrading')
+      })
+      if (_mdSparkTimer) clearInterval(_mdSparkTimer)
+      _mdSparkTimer = setInterval(function() { _spawnSparks(2) }, 900)
+    }
+
+    /* Phase 3 — heavy sparks + screen flicker + SIGNAL LOST panel + log */
+    if (_mdPhase >= 3 && !_mdPhase3Logged) {
+      _mdPhase3Logged = true
+      addLog('⚠ MELTDOWN IMMINENT — facility breach sequence initiated. All personnel evacuate.', 'anomaly')
+      _logAnom('⚠ MELTDOWN IMMINENT — facility breach sequence initiated.', 'lo')
+      if (_mdSparkTimer) clearInterval(_mdSparkTimer)
+      _mdSparkTimer = setInterval(function() { _spawnSparks(3) }, 280)
+      if (terminal && !_mdFlickering) {
+        _mdFlickering = true
+        terminal.classList.add('screen-flicker-hard')
+      }
+      _offlinePanel(triggeredSys)
+    }
+  }
+
+  /* ── Take a panel offline (SIGNAL LOST overlay) ─────────────────── */
+  function _offlinePanel(sys) {
+    if (!sys || _mdOffline[sys]) return
+    var el = _sysPanel(sys)
+    if (!el) return
+    _mdOffline[sys] = true
+    el.classList.add('panel-offline')
+    el.classList.remove('panel-degrading', 'panel-melt-glow')
+    var ov = document.createElement('div')
+    ov.className   = 'panel-offline-overlay'
+    ov.textContent = '// SIGNAL LOST'
+    el.appendChild(ov)
+    addLog('⚠ ' + SYSTEMS[sys].label + ' panel offline — sensor feed interrupted.', 'anomaly')
+    _logAnom('⚠ ' + SYSTEMS[sys].label + ' panel offline — sensor feed interrupted.', 'lo')
+  }
+
+  /* ── Spark particle emitter ─────────────────────────────────────── */
+  function _spawnSparks(phase) {
+    var count = phase === 3
+      ? 3 + Math.floor(Math.random() * 5)
+      : 1 + Math.floor(Math.random() * 2)
+    for (var i = 0; i < count; i++) {
+      (function() {
+        var sp  = document.createElement('div')
+        sp.className = 'meltdown-spark'
+        var x   = Math.random() * window.innerWidth
+        var y   = Math.random() * window.innerHeight * 0.65 + 40
+        var dx  = (Math.random() - 0.5) * 90
+        var dy  = 30 + Math.random() * 130
+        var dur = 0.35 + Math.random() * 0.55
+        sp.style.left = x + 'px'
+        sp.style.top  = y + 'px'
+        sp.style.setProperty('--sx', dx + 'px')
+        sp.style.setProperty('--sy', dy + 'px')
+        sp.style.animationDuration = dur + 's'
+        var r = Math.random()
+        if (r < 0.18) {
+          sp.style.background  = '#ff3a3a'
+          sp.style.boxShadow   = '0 0 4px #ff3a3a,0 0 8px #ff0000'
+        } else if (r < 0.36) {
+          sp.style.background  = '#ffffff'
+          sp.style.boxShadow   = '0 0 4px #ffffff,0 0 8px #aaaaaa'
+        } else {
+          sp.style.background  = '#ffb830'
+          sp.style.boxShadow   = '0 0 4px #ffb830,0 0 8px #ff6600'
+        }
+        document.body.appendChild(sp)
+        setTimeout(function() { if (sp.parentNode) sp.remove() }, dur * 1000 + 120)
+      })()
+    }
+  }
+
+})()

@@ -64,6 +64,8 @@
     /* Also clear transient per-shift artefacts so a fresh run is truly clean. */
     try { global.localStorage.removeItem('thermalShiftReport') } catch (e) {}
     try { global.localStorage.removeItem('thermalShiftNumber') } catch (e) {}
+    try { global.localStorage.removeItem('thermalDecryptedFiles') } catch (e) {}
+    try { global.localStorage.removeItem('thermalAnomalyLog') } catch (e) {}
     var fresh = getDefault()
     saveGame(fresh)
     return fresh

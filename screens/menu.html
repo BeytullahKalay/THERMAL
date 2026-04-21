@@ -51,7 +51,7 @@
     content: '';
     position: fixed;
     inset: 0;
-    background: radial-gradient(ellipse at center, transparent 50%, rgba(0,0,0,0.9) 100%);
+    background: radial-gradient(ellipse at center, transparent 75%, rgba(0,0,0,0.5) 100%);
     pointer-events: none;
     z-index: 999;
   }
@@ -882,27 +882,27 @@
     </div>
 
     <!-- Status snapshot -->
-    <div class="status-snapshot">
-      <div class="snapshot-title">// OPERATOR STATUS</div>
+    <div class="status-snapshot" id="status-snapshot" style="display:none">
+      <div class="snapshot-title">// LAST SHIFT STATUS</div>
       <div class="snapshot-rows">
         <div class="snapshot-row">
           <span class="snap-label">TEMPERATURE</span>
-          <div class="snap-bar"><div class="snap-fill warn" style="width:87%"></div></div>
-          <span class="snap-val snap-warn">87°C</span>
+          <div class="snap-bar"><div class="snap-fill" id="snap-bar-temp" style="width:0%"></div></div>
+          <span class="snap-val" id="snap-val-temp">—</span>
         </div>
         <div class="snapshot-row">
           <span class="snap-label">PRESSURE</span>
-          <div class="snap-bar"><div class="snap-fill" style="width:61%"></div></div>
-          <span class="snap-val snap-ok">61%</span>
+          <div class="snap-bar"><div class="snap-fill" id="snap-bar-pressure" style="width:0%"></div></div>
+          <span class="snap-val" id="snap-val-pressure">—</span>
         </div>
         <div class="snapshot-row">
           <span class="snap-label">POWER</span>
-          <div class="snap-bar"><div class="snap-fill" style="width:71%"></div></div>
-          <span class="snap-val snap-ok">71%</span>
+          <div class="snap-bar"><div class="snap-fill" id="snap-bar-power" style="width:0%"></div></div>
+          <span class="snap-val" id="snap-val-power">—</span>
         </div>
         <div class="snapshot-row" style="border-top:1px solid var(--border); padding-top:6px; margin-top:2px;">
           <span class="snap-label">TREATMENT FUND</span>
-          <div class="snap-bar"></div>
+          <div class="snap-bar"><div class="snap-fill" id="snap-bar-fund" style="width:0%"></div></div>
           <span class="snap-val snap-ok" id="menu-money-progress">0 / 2400</span>
         </div>
       </div>
@@ -932,14 +932,8 @@
         <span class="menu-arrow">▶</span>
       </div>
 
-      <div class="menu-item" id="menu-item-records">
-        <span class="menu-prefix" id="prefix-records">04</span>
-        <span class="menu-label locked">RECORDS</span>
-        <span class="menu-lock">// UNLOCKS AT SHIFT 3</span>
-      </div>
-
       <div class="menu-item" id="menu-item-operatorfile">
-        <span class="menu-prefix" id="prefix-operatorfile">05</span>
+        <span class="menu-prefix" id="prefix-operatorfile">04</span>
         <span class="menu-label locked">OPERATOR FILE</span>
         <span class="menu-lock">// LOCKED</span>
       </div>
@@ -947,13 +941,13 @@
       <div class="menu-divider"></div>
 
       <div class="menu-item" id="menu-item-settings">
-        <span class="menu-prefix" id="prefix-settings">06</span>
+        <span class="menu-prefix" id="prefix-settings">05</span>
         <span class="menu-label">SETTINGS</span>
         <span class="menu-arrow">▶</span>
       </div>
 
       <div class="menu-item" id="menu-item-exit">
-        <span class="menu-prefix" id="prefix-exit">07</span>
+        <span class="menu-prefix" id="prefix-exit">06</span>
         <span class="menu-label danger">EXIT</span>
         <span class="menu-arrow">▶</span>
       </div>

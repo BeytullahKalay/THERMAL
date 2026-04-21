@@ -50,7 +50,7 @@
     content: '';
     position: fixed;
     inset: 0;
-    background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.88) 100%);
+    background: radial-gradient(ellipse at center, transparent 75%, rgba(0,0,0,0.5) 100%);
     pointer-events: none;
     z-index: 999;
   }
@@ -1646,6 +1646,51 @@
     wrap.innerHTML = sections.join('\n')
   }
 
+  /* ── Shift log viewer — reuses #log-overlay ─────────────────── */
+  function openShiftLog(shiftLog) {
+    var filenameEl = document.getElementById('log-filename')
+    var filemetaEl = document.getElementById('log-filemeta')
+    var bodyEl     = document.getElementById('log-body')
+    var overlayEl  = document.getElementById('log-overlay')
+    if (!overlayEl || !bodyEl) return
+
+    var sn = shiftLog.shiftNumber
+    if (filenameEl) filenameEl.textContent = 'SHIFT_' + sn + '_OPLOG.DAT'
+    if (filemetaEl) filemetaEl.textContent = 'SHIFT ' + sn + ' — AUTO-GENERATED — UNIT 4 / NIGHT ROTATION'
+
+    bodyEl.innerHTML = ''
+
+    var entries = shiftLog.entries || []
+    if (entries.length === 0) {
+      var empty = document.createElement('div')
+      empty.className = 'log-line'
+      empty.innerHTML = '<span class="log-ts"></span><span class="log-text" style="opacity:0.5">// NO ANOMALY EVENTS RECORDED THIS SHIFT</span>'
+      bodyEl.appendChild(empty)
+    } else {
+      var hdr = document.createElement('div')
+      hdr.className = 'log-entry-header'
+      hdr.textContent = 'SHIFT ' + sn + ' — ANOMALY LOG'
+      bodyEl.appendChild(hdr)
+
+      entries.forEach(function(line) {
+        var row = document.createElement('div')
+        row.className = 'log-line'
+        var ts = document.createElement('span')
+        ts.className = 'log-ts'
+        ts.textContent = line.ts || ''
+        var txt = document.createElement('span')
+        txt.className = 'log-text' + (line.cls ? ' ' + line.cls : '')
+        txt.textContent = line.text
+        row.appendChild(ts)
+        row.appendChild(txt)
+        bodyEl.appendChild(row)
+      })
+    }
+
+    bodyEl.scrollTop = 0
+    overlayEl.style.display = 'flex'
+  }
+
   /* ── FILES panel ─────────────────────────────────────────────── */
   ;(function buildFilesPanel() {
     var shiftNum  = _shiftNum
@@ -1747,12 +1792,48 @@
       listEl.appendChild(div)
     })
 
+    /* ── Shift anomaly logs ────────────────────────────────────────── */
+    var anomalyArchive = []
+    try { anomalyArchive = JSON.parse(localStorage.getItem('thermalAnomalyLog') || '[]') } catch(e) {}
+
+    if (anomalyArchive.length > 0) {
+      /* Separator */
+      var sep = document.createElement('div')
+      sep.style.cssText = 'border-top:1px solid var(--border);margin:14px 0 6px;font-size:9px;letter-spacing:3px;color:var(--phosphor-dim);'
+      sep.textContent = '// SHIFT LOGS — AUTO-GENERATED — UNIT 4'
+      listEl.appendChild(sep)
+
+      anomalyArchive.forEach(function(shiftLog, i) {
+        var sn  = shiftLog.shiftNumber
+        var div = document.createElement('div')
+        div.className = 'file-entry unlocked'
+        div.style.animationDelay = ((18 + i) * 0.04) + 's'
+        div.setAttribute('data-shiftlog', i)
+        div.innerHTML =
+          '<div class="file-entry-left">' +
+            '<div class="file-name">SHIFT_' + sn + '_OPLOG.DAT</div>' +
+            '<div class="file-meta">SHIFT ' + sn + ' — AUTO-GENERATED — UNIT 4 / NIGHT ROTATION</div>' +
+          '</div>' +
+          '<div class="file-entry-right"><span class="file-badge decrypted">[READABLE]</span></div>'
+        listEl.appendChild(div)
+      })
+    }
+
     /* Footer */
     if (footerEl) {
       footerEl.textContent = '// 18 FILES — ' +
         (18 - decryptCount) + ' ENCRYPTED — ' +
-        decryptCount + ' ACCESSIBLE'
+        decryptCount + ' ACCESSIBLE — ' +
+        anomalyArchive.length + ' SHIFT LOGS'
     }
+
+    /* Click handler for shift log entries */
+    listEl.addEventListener('click', function(e) {
+      var entry = e.target.closest('[data-shiftlog]')
+      if (!entry) return
+      var idx = parseInt(entry.getAttribute('data-shiftlog'), 10)
+      openShiftLog(anomalyArchive[idx])
+    }, true)
 
     /* Tab badge: show [!] if any available-but-not-decrypted file exists */
     var badgeEl = document.getElementById('tab-files-badge')

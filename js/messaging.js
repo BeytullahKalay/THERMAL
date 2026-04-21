@@ -21,8 +21,14 @@
 
   var tone      = Math.max(0, Math.min(3, _save.elenaToneLevel    || 0))
   var radiation = _save.lastShiftRadiation || 0
-  var money     = _save.totalMoney         || 0
   var shiftNum  = _save.shiftNumber        || 1
+
+  /* This shift's pay — read from the shift report written by endShift(). */
+  var money = 0
+  try {
+    var _rep = JSON.parse(localStorage.getItem('thermalShiftReport') || '{}')
+    money = (_rep.shiftPay != null) ? _rep.shiftPay : 400
+  } catch(e) { money = 400 }
 
   /* ── Message sets ─────────────────────────────────────────────── */
   var MESSAGE_SETS = {
@@ -232,9 +238,9 @@
     else if (action === 'send_what') sent = money
     else                             sent = 0
 
-    /* Update save */
+    /* Update save — totalMoney already updated by updateShift(); don't touch it here.
+       Only record what was sent this shift and update housing/tone. */
     var s = window.saveSystem.loadGame()
-    s.totalMoney        = Math.max(0, (s.totalMoney || 0) - sent)
     s.lastShiftMoneySent = sent
 
     /* shiftsWithoutRent:

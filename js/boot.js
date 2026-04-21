@@ -40,12 +40,14 @@ setTimeout(() => {
 let bootComplete = false;
 setTimeout(() => { bootComplete = true; }, 9800);
 
-function handleBootKey() {
+function handleBootAdvance() {
   if (!bootComplete) return;
-  document.removeEventListener('keydown', handleBootKey);
+  document.removeEventListener('keydown', handleBootAdvance);
+  document.removeEventListener('click',   handleBootAdvance);
   const screen = document.querySelector('.screen');
   screen.style.animation = 'crtOff 0.65s cubic-bezier(0.4, 0, 1, 1) forwards';
   setTimeout(() => { window.location.href = 'menu.html'; }, 620);
 }
 
-document.addEventListener('keydown', handleBootKey);
+document.addEventListener('keydown', handleBootAdvance);
+document.addEventListener('click',   handleBootAdvance);

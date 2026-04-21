@@ -46,7 +46,7 @@
   body::after {
     content: '';
     position: fixed; inset: 0;
-    background: radial-gradient(ellipse at center, transparent 45%, rgba(0,0,0,0.92) 100%);
+    background: radial-gradient(ellipse at center, transparent 75%, rgba(0,0,0,0.5) 100%);
     pointer-events: none; z-index: 999;
   }
 
@@ -224,14 +224,20 @@
     if (raw) report = JSON.parse(raw)
   } catch(e) {}
 
-  if (!report || !report.streetDeath) {
+  if (!report) {
     window.location.href = 'menu.html'
     return
   }
 
-  var shiftNum  = report.shiftNumber  || 1
-  var descRaw   = report.streetDeathDesc || 'NO RECORD ON FILE.'
-  var descLines = descRaw.split('\n').filter(function(l) { return l.trim() !== '' })
+  var isMeltdown = !!report.meltdownOccurred
+  var isStreet   = !!report.streetDeath
+
+  if (!isMeltdown && !isStreet) {
+    window.location.href = 'menu.html'
+    return
+  }
+
+  var shiftNum = report.shiftNumber || 1
 
   /* ── Build sequence ────────────────────────────────────────────── */
   var SEQ = []
@@ -240,31 +246,63 @@
     SEQ.push({ text: text, cls: cls, charMs: charMs, preMs: preMs })
   }
 
-  s('// SHIFT ' + shiftNum + '  —  EMPLOYMENT TERMINAL', 'line-header', 22, 900)
-  s('', 'spacer-sm', 0, 100)
-  s('STATUS:  NON-RETURN', 'line-status', 70, 500)
-  s('', 'spacer', 0, 200)
+  if (isMeltdown) {
 
-  descLines.forEach(function(line, i) {
-    s(line, 'line-death', 42, i === 0 ? 0 : 120)
-  })
+    s('// SHIFT ' + shiftNum + '  —  EMPLOYMENT TERMINAL', 'line-header', 22, 900)
+    s('', 'spacer-sm', 0, 100)
+    s('STATUS:  TERMINATED', 'line-status', 70, 500)
+    s('', 'spacer', 0, 200)
 
-  /* rule is injected via JS after desc, not via SEQ */
+    s('Containment event logged. Unit 4 shutdown initiated.',       'line-death', 38, 0  )
+    s('Incident attributed to operator failure. File referred.',    'line-death', 38, 140)
+    s('Employment contract cancelled with immediate effect.',       'line-death', 38, 140)
+    s('',                                                           'spacer-sm',   0, 240)
+    s('Treatment fund frozen pending administrative review.',       'line-death', 38, 0  )
+    s('Mira\'s next appointment has been cancelled.',              'line-death', 38, 140)
+    s('No further contact expected from the facility.',            'line-death', 38, 140)
 
-  s('', 'spacer-sm', 0, 800)
-  s('OUTSTANDING WAGES        0 UNITS',          'line-record', 16, 0  )
-  s('DEPENDENTS ON FILE       NO CONTACT MADE',  'line-record', 16, 55 )
-  s('REASON CODE              UNHOUSED',         'line-record', 16, 55 )
-  s('', 'spacer', 0, 600)
-  s('// OPERATOR FILE 7B — RECORD CLOSED',      'line-seal',   22, 0  )
-  s('// THIS POSITION WILL BE FILLED.',          'line-seal',   22, 180)
+    /* rule separator injected after desc — ruleInjectedAfter computed below */
+
+    s('', 'spacer-sm', 0, 700)
+    s('OUTSTANDING WAGES        0 UNITS',         'line-record', 16, 0  )
+    s('TREATMENT FUND           FROZEN',          'line-record', 16, 55 )
+    s('REASON CODE              OPERATIONAL FAILURE', 'line-record', 16, 55)
+    s('', 'spacer', 0, 600)
+    s('// OPERATOR FILE OP.18 — RECORD CLOSED',  'line-seal',   22, 0  )
+    s('// THIS POSITION WILL BE FILLED.',        'line-seal',   22, 180)
+
+  } else {
+
+    /* Street death ─────────────────────────────────────────────── */
+    var descRaw   = report.streetDeathDesc || 'NO RECORD ON FILE.'
+    var descLines = descRaw.split('\n').filter(function(l) { return l.trim() !== '' })
+
+    s('// SHIFT ' + shiftNum + '  —  EMPLOYMENT TERMINAL', 'line-header', 22, 900)
+    s('', 'spacer-sm', 0, 100)
+    s('STATUS:  NON-RETURN', 'line-status', 70, 500)
+    s('', 'spacer', 0, 200)
+
+    descLines.forEach(function(line, i) {
+      s(line, 'line-death', 42, i === 0 ? 0 : 120)
+    })
+
+    s('', 'spacer-sm', 0, 800)
+    s('OUTSTANDING WAGES        0 UNITS',          'line-record', 16, 0  )
+    s('DEPENDENTS ON FILE       NO CONTACT MADE',  'line-record', 16, 55 )
+    s('REASON CODE              UNHOUSED',         'line-record', 16, 55 )
+    s('', 'spacer', 0, 600)
+    s('// OPERATOR FILE 7B — RECORD CLOSED',      'line-seal',   22, 0  )
+    s('// THIS POSITION WILL BE FILLED.',          'line-seal',   22, 180)
+
+  }
 
   /* ── Typewriter engine ─────────────────────────────────────────── */
   var stage     = document.getElementById('stage')
   var cursorEl  = null
   var ruleEl    = null
   var idx       = 0
-  var ruleInjectedAfter = descLines.length + 2   // after desc lines + header + spacer
+  /* Rule appears just before the first record line — computed from SEQ */
+  var ruleInjectedAfter = SEQ.findIndex(function(item) { return item.cls === 'line-record' }) - 1
 
   function removeCursor() {
     if (cursorEl && cursorEl.parentNode) {

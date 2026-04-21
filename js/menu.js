@@ -36,10 +36,9 @@ function menuCase() {
 function updatePrefixes(hasContinue) {
   var offset = hasContinue ? 0 : -1   // 02 hidden → shift everything down 1
   document.getElementById('prefix-manual')       .textContent = pad(3 + offset)
-  document.getElementById('prefix-records')      .textContent = pad(4 + offset)
-  document.getElementById('prefix-operatorfile') .textContent = pad(5 + offset)
-  document.getElementById('prefix-settings')     .textContent = pad(6 + offset)
-  document.getElementById('prefix-exit')         .textContent = pad(7 + offset)
+  document.getElementById('prefix-operatorfile') .textContent = pad(4 + offset)
+  document.getElementById('prefix-settings')     .textContent = pad(5 + offset)
+  document.getElementById('prefix-exit')         .textContent = pad(6 + offset)
 }
 function pad(n) { return n < 10 ? '0' + n : '' + n }
 
@@ -130,6 +129,66 @@ document.getElementById('reset-confirm-yes').addEventListener('click', onNewGame
 document.getElementById('reset-confirm-no') .addEventListener('click', onNewGameCancel)
 
 paintMenu()
+paintSnapshot()
+
+/* ── Populate status snapshot from last shift report ────────────── */
+function paintSnapshot() {
+  var snap = document.getElementById('status-snapshot')
+  if (!snap) return
+
+  /* No save → keep hidden */
+  if (!_hasSave) return
+
+  snap.style.display = ''
+
+  /* Try to read the last shift report */
+  var report = null
+  try { report = JSON.parse(localStorage.getItem('thermalShiftReport')) } catch(e) {}
+
+  /* Money bar — always available from save */
+  var totalMoney  = _save.totalMoney  || 0
+  var targetMoney = _save.targetMoney || 2400
+  var fundPct     = Math.min(100, Math.round(totalMoney / targetMoney * 100))
+  var fundBar     = document.getElementById('snap-bar-fund')
+  if (fundBar) {
+    fundBar.style.width = fundPct + '%'
+    fundBar.className   = 'snap-fill' + (fundPct < 30 ? ' warn' : '')
+  }
+
+  if (!report) return   /* Save exists but no shift played yet — dashes stay */
+
+  /* Status → CSS class helpers */
+  function cls(st) {
+    return st !== 'ok' ? 'snap-val snap-warn' : 'snap-val snap-ok'
+  }
+  function barCls(st) {
+    return 'snap-fill' + (st !== 'ok' ? ' warn' : '')
+  }
+
+  /* TEMPERATURE  — gaugeMax 120°C */
+  var tempVal = report.finalTemp           || 0
+  var tempSt  = report.finalTempStatus     || 'ok'
+  var tempBar = document.getElementById('snap-bar-temp')
+  var tempEl  = document.getElementById('snap-val-temp')
+  if (tempBar) { tempBar.style.width = Math.min(100, Math.round(tempVal / 120 * 100)) + '%'; tempBar.className = barCls(tempSt) }
+  if (tempEl)  { tempEl.textContent = tempVal.toFixed(1) + '°C'; tempEl.className = cls(tempSt) }
+
+  /* PRESSURE  — gaugeMax 100% */
+  var presVal = report.finalPressure       || 0
+  var presSt  = report.finalPressureStatus || 'ok'
+  var presBar = document.getElementById('snap-bar-pressure')
+  var presEl  = document.getElementById('snap-val-pressure')
+  if (presBar) { presBar.style.width = Math.min(100, Math.round(presVal)) + '%'; presBar.className = barCls(presSt) }
+  if (presEl)  { presEl.textContent = presVal.toFixed(1) + '%'; presEl.className = cls(presSt) }
+
+  /* POWER  — gaugeMax 100% */
+  var powVal  = report.finalPower          || 0
+  var powSt   = report.finalPowerStatus    || 'ok'
+  var powBar  = document.getElementById('snap-bar-power')
+  var powEl   = document.getElementById('snap-val-power')
+  if (powBar) { powBar.style.width = Math.min(100, Math.round(powVal)) + '%'; powBar.className = barCls(powSt) }
+  if (powEl)  { powEl.textContent = powVal.toFixed(1) + '%'; powEl.className = cls(powSt) }
+}
 
 /* ═══════════════════════════════════════════════════════════════════
    SETTINGS OVERLAY
