@@ -71,6 +71,56 @@
     100% { transform: scaleY(1);    filter: brightness(1); opacity: 1; }
   }
 
+  /* Sleep transition — black-screen interstitial between shifts.
+     The terminal CRT-off finishes first; this overlay drops in
+     immediately after with three staggered atmospheric lines. */
+  #sleep-transition {
+    position: fixed;
+    inset: 0;
+    background: #000;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    font-family: 'Share Tech Mono', monospace;
+    color: var(--phosphor, #a8ff3e);
+    animation: sleepFadeIn 0.4s ease-out;
+  }
+  @keyframes sleepFadeIn {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+  .sleep-line {
+    opacity: 0;
+    animation: sleepLineIn 0.5s ease-out forwards;
+    text-shadow: 0 0 8px rgba(168,255,62,0.4);
+  }
+  .sleep-line-a {
+    font-size: 12px;
+    letter-spacing: 6px;
+    color: var(--phosphor-dim, #4a7a1a);
+    animation-delay: 0.2s;
+  }
+  .sleep-line-b {
+    font-family: 'VT323', monospace;
+    font-size: 32px;
+    letter-spacing: 5px;
+    color: var(--phosphor, #a8ff3e);
+    animation-delay: 0.55s;
+  }
+  .sleep-line-c {
+    font-size: 11px;
+    letter-spacing: 5px;
+    color: var(--phosphor-mid, #6a9a2a);
+    animation-delay: 0.95s;
+  }
+  @keyframes sleepLineIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
   @keyframes crtOff {
     0%   { transform: scaleY(1);    filter: brightness(1); opacity: 1; }
     8%   { transform: scaleY(1);    filter: brightness(3) saturate(0); opacity: 1; }
@@ -638,6 +688,60 @@
   /* ── FILES PANEL ─────────────────────────────────────────────── */
   #panel-files { overflow: hidden; }
 
+  /* ── STATISTICS PANEL ─────────────────────────────────────────── */
+  #panel-stats { overflow: hidden; }
+  .stats-wrap {
+    display: flex; flex-direction: column; height: 100%;
+    padding: 14px 18px; gap: 10px;
+  }
+  .stats-header {
+    display: flex; flex-direction: column; gap: 2px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 8px;
+  }
+  .stats-header-title {
+    font-size: 12px; letter-spacing: 4px;
+    color: var(--phosphor); text-shadow: 0 0 6px rgba(168,255,62,0.4);
+  }
+  .stats-header-note {
+    font-size: 9px; letter-spacing: 3px; color: var(--phosphor-dim);
+  }
+  .stats-grid {
+    flex: 1; overflow-y: auto;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 6px 24px;
+    padding: 10px 4px; align-content: start;
+  }
+  .stats-grid::-webkit-scrollbar { width: 4px; }
+  .stats-grid::-webkit-scrollbar-thumb { background: var(--border); }
+  .stat-row {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: 6px 10px;
+    border-bottom: 1px dotted rgba(74,122,26,0.35);
+    font-family: 'Share Tech Mono', monospace;
+  }
+  .stat-label {
+    font-size: 11px; letter-spacing: 2px; color: var(--phosphor-mid, #6a9a2a);
+  }
+  .stat-val {
+    font-family: 'VT323', monospace; font-size: 22px; letter-spacing: 2px;
+    color: var(--phosphor); text-shadow: 0 0 6px rgba(168,255,62,0.35);
+  }
+  .stat-val.warn { color: var(--amber); text-shadow: 0 0 6px rgba(255,184,48,0.4); }
+  .stat-val.crit { color: var(--red-alert); text-shadow: 0 0 6px rgba(255,58,58,0.5); }
+  .stat-section {
+    grid-column: 1 / -1;
+    font-size: 10px; letter-spacing: 4px;
+    color: var(--phosphor-dim); margin-top: 8px;
+    border-top: 1px dashed var(--border); padding-top: 8px;
+  }
+  .stats-footer {
+    flex-shrink: 0;
+    font-size: 9px; letter-spacing: 3px;
+    color: var(--phosphor-dim);
+    border-top: 1px solid var(--border);
+    padding-top: 6px; text-align: center;
+  }
+
   .files-wrap {
     flex: 1;
     display: flex;
@@ -738,6 +842,54 @@
     font-size: 9px;
     letter-spacing: 1px;
     color: #3a5a1a;
+  }
+
+  /* ── Sprint I.3 — Memorial entries ────────────────────────────
+     Deliberately restrained: no hover, no badge, no glow.
+     Phosphor-dim so they read as "filed paperwork" not "trophies".
+     The choice line is amber-dim — the only part the eye is
+     supposed to catch. */
+  .memorial-section-header {
+    border-top: 1px solid var(--border);
+    margin: 14px 0 6px;
+    padding-top: 8px;
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: var(--phosphor-dim);
+  }
+  .memorial-entry {
+    padding: 10px 12px;
+    margin-bottom: 4px;
+    border: 1px solid #1a2a08;
+    background: #06090300;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    animation: fadeIn 0.6s ease-out both;
+    cursor: default;
+  }
+  .memorial-entry:hover { border-color: #233608; }
+  .memorial-name {
+    font-family: 'VT323', monospace;
+    font-size: 17px;
+    letter-spacing: 2px;
+    color: #6a8a3a;
+  }
+  .memorial-meta {
+    font-size: 9px;
+    letter-spacing: 1px;
+    color: #3a5a1a;
+    font-style: italic;
+  }
+  .memorial-cause {
+    font-size: 10px;
+    letter-spacing: 1px;
+    color: #7a5a1a;
+    margin-top: 4px;
+  }
+  .memorial-cause-label {
+    color: #3a5a1a;
+    margin-right: 6px;
   }
 
   .file-badge {
@@ -1088,9 +1240,132 @@
   .news-feed::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
 
   .news-item {
-    padding: 16px 2px 14px 0;
+    padding: 16px 10px 14px 10px;
+    margin: 0 -10px;
     animation: fadeSlideIn 0.35s both;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    border: 1px solid transparent;
+    border-radius: 2px;
   }
+  .news-item:hover {
+    background: rgba(168,255,62,0.04);
+    border-color: var(--phosphor-dim);
+  }
+  .news-item:hover .news-headline {
+    text-shadow: 0 0 10px rgba(168,255,62,0.45);
+  }
+  .news-item::after {
+    content: '  [ READ ▶ ]';
+    display: inline-block;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 2px;
+    color: var(--phosphor-dim);
+    margin-top: 6px;
+    opacity: 0;
+    transition: opacity 0.18s;
+  }
+  .news-item:hover::after { opacity: 1; }
+
+  /* ── News reader overlay ──────────────────────────────────────── */
+  #news-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(4,6,2,0.85);
+    z-index: 4000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadeSlideIn 0.2s both;
+  }
+  .news-reader {
+    width: 70%;
+    max-width: 780px;
+    max-height: 82vh;
+    background: var(--panel-bg);
+    border: 1px solid var(--phosphor-dim);
+    box-shadow: 0 0 18px rgba(168,255,62,0.15), inset 0 0 40px rgba(0,0,0,0.6);
+    display: flex;
+    flex-direction: column;
+  }
+  .news-reader-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 2px;
+    color: var(--phosphor-dim);
+  }
+  .news-reader-close {
+    cursor: pointer;
+    color: var(--amber);
+    padding: 2px 8px;
+    border: 1px solid transparent;
+    transition: border-color 0.15s;
+  }
+  .news-reader-close:hover { border-color: var(--amber); }
+  .news-reader-body {
+    padding: 24px 32px 28px 32px;
+    overflow-y: auto;
+    flex: 1;
+    /* CRT phosphor-themed scrollbar matching the rest of the UI */
+    scrollbar-width: thin;
+    scrollbar-color: var(--phosphor-dim) transparent;
+  }
+  .news-reader-body::-webkit-scrollbar {
+    width: 6px;
+  }
+  .news-reader-body::-webkit-scrollbar-track {
+    background: rgba(168,255,62,0.03);
+    border-left: 1px solid var(--border);
+  }
+  .news-reader-body::-webkit-scrollbar-thumb {
+    background: var(--phosphor-dim);
+    box-shadow: inset 0 0 4px rgba(168,255,62,0.4);
+    border-radius: 0;
+  }
+  .news-reader-body::-webkit-scrollbar-thumb:hover {
+    background: var(--phosphor-mid, #6a9a2a);
+    box-shadow: inset 0 0 6px rgba(168,255,62,0.6);
+  }
+  .news-reader-src {
+    font-size: 10px;
+    letter-spacing: 4px;
+    color: #6a9a2a;
+    margin-bottom: 14px;
+  }
+  .news-reader-hed {
+    font-family: 'VT323', monospace;
+    font-size: 34px;
+    line-height: 1.15;
+    color: var(--phosphor);
+    text-shadow: 0 0 8px rgba(168,255,62,0.3);
+    margin-bottom: 20px;
+    letter-spacing: 1px;
+  }
+  .news-reader-meta {
+    display: flex;
+    gap: 20px;
+    font-size: 10px;
+    color: var(--phosphor-dim);
+    letter-spacing: 2px;
+    padding-bottom: 16px;
+    border-bottom: 1px dashed var(--border);
+    margin-bottom: 20px;
+  }
+  .news-reader-body-text {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 14px;
+    line-height: 1.85;
+    color: #bbe06a;
+    letter-spacing: 0.4px;
+    white-space: pre-wrap;
+  }
+  .news-reader-body-text p { margin-bottom: 14px; }
 
   .news-source {
     font-size: 9px;
@@ -1254,18 +1529,28 @@
   <!-- TABS -->
   <div class="tab-row" role="tablist">
     <button class="tab active" data-tab="messages" id="tab-messages" role="tab">
-      <span class="tab-key">[1]</span>MESSAGES
+      <span class="tab-key">[1]</span><span data-i18n="files.tab.messages">MESSAGES</span><span class="tab-badge" id="tab-messages-badge">!</span>
     </button>
     <button class="tab" data-tab="news" id="tab-news" role="tab">
-      <span class="tab-key">[2]</span>NEWS
+      <span class="tab-key">[2]</span><span data-i18n="files.tab.news">NEWS</span><span class="tab-badge" id="tab-news-badge">!</span>
     </button>
     <button class="tab" data-tab="bank" id="tab-bank" role="tab">
-      <span class="tab-key">[3]</span>BANK
+      <span class="tab-key">[3]</span><span data-i18n="files.tab.bank">BANK</span>
     </button>
     <button class="tab" data-tab="files" id="tab-files" role="tab">
-      <span class="tab-key">[4]</span>FILES<span class="tab-badge" id="tab-files-badge"></span>
+      <span class="tab-key">[4]</span><span data-i18n="files.tab.files">FILES</span><span class="tab-badge" id="tab-files-badge"></span>
+    </button>
+    <button class="tab" data-tab="stats" id="tab-stats" role="tab">
+      <span class="tab-key">[5]</span><span data-i18n="files.tab.stats">STATS</span>
     </button>
     <div class="tab-spacer"></div>
+    <!-- Procedure manual — opens the same overlay as the in-shift button.
+         Lets the operator study procedures between shifts. The [H]
+         label is updated dynamically by the wire script (reflects the
+         player's current keybind). -->
+    <button class="tab" id="ht-manual-btn" type="button" title="Procedure Manual" data-hover-sfx>
+      <span class="tab-key" id="ht-manual-key">[H]</span><span data-i18n="files.tab.manual">MANUAL</span>
+    </button>
   </div>
 
   <!-- CONTENT -->
@@ -1298,11 +1583,23 @@
     <div class="tab-panel" id="panel-files" role="tabpanel">
       <div class="files-wrap">
         <div class="files-header">
-          <span class="files-header-title">// ENCRYPTED ARCHIVE — UNIT 4 PERSONNEL</span>
-          <span class="files-header-note">ACCESS RESTRICTED — AUTHORIZATION REQUIRED</span>
+          <span class="files-header-title">// UNIT 4 — TERMINAL ARCHIVE</span>
+          <span class="files-header-note">BRIEFINGS OPEN — OPERATOR LOGS RESTRICTED</span>
         </div>
         <div class="files-list" id="files-list"><!-- built by JS --></div>
         <div class="files-footer" id="files-footer"></div>
+      </div>
+    </div>
+
+    <!-- ── STATISTICS panel — aggregate of saved + per-shift archives ── -->
+    <div class="tab-panel" id="panel-stats" role="tabpanel">
+      <div class="stats-wrap">
+        <div class="stats-header">
+          <span class="stats-header-title">// CAREER RECORD — UNIT 4 / NIGHT ROTATION</span>
+          <span class="stats-header-note">OPERATOR-PRIVATE — DOES NOT APPEAR ON FACILITY ARCHIVE</span>
+        </div>
+        <div class="stats-grid" id="stats-grid"><!-- built by JS --></div>
+        <div class="stats-footer" id="stats-footer"></div>
       </div>
     </div>
 
@@ -1312,7 +1609,7 @@
   <!-- ACTION BAR -->
   <div class="action-bar">
     <div class="action-hint" id="action-hint">// REVIEW ALL TABS</div>
-    <button class="action-btn" id="btn-sleep" disabled>[ SLEEP — NEXT SHIFT ]</button>
+    <button class="action-btn" id="btn-sleep" disabled data-i18n="home.btnSleep">[ SLEEP — NEXT SHIFT ]</button>
   </div>
 
 </div>
@@ -1331,6 +1628,25 @@
 
     <div class="log-body" id="log-body"><!-- injected by JS --></div>
 
+  </div>
+</div>
+
+<!-- ══ NEWS READER OVERLAY ═══════════════════════════════════════ -->
+<div id="news-overlay" style="display:none">
+  <div class="news-reader">
+    <div class="news-reader-head">
+      <span id="news-reader-filename">// ARCHIVED DISPATCH</span>
+      <span class="news-reader-close" id="news-reader-close">[ CLOSE — ESC ]</span>
+    </div>
+    <div class="news-reader-body">
+      <div class="news-reader-src"  id="news-reader-src"></div>
+      <div class="news-reader-hed"  id="news-reader-hed"></div>
+      <div class="news-reader-meta">
+        <span id="news-reader-stamp"></span>
+        <span id="news-reader-id"></span>
+      </div>
+      <div class="news-reader-body-text" id="news-reader-body"></div>
+    </div>
   </div>
 </div>
 
@@ -1358,6 +1674,10 @@
 </div>
 
 <script src="../js/saveSystem.js"></script>
+<script src="../js/hoverSfx.js"></script>
+<script src="../js/i18n.js"></script>
+<script src="../js/keybinds.js"></script>
+<script src="../js/achievements.js"></script>
 <script>
 /* ═════════════════════════════════════════════════════════════════
    THERMAL — Home Terminal (skeleton)
@@ -1378,7 +1698,7 @@
   document.getElementById('hdr-shift').textContent = _shiftNum
 
   /* ── Tab navigation ──────────────────────────────────────────── */
-  var TAB_IDS = ['messages', 'news', 'bank', 'files']
+  var TAB_IDS = ['messages', 'news', 'bank', 'files', 'stats']
   var _visited = { messages: true, news: false, bank: false, files: false }
   var _activeTab = 'messages'
 
@@ -1403,7 +1723,25 @@
       panel.classList.toggle('active', isActive)
     })
 
+    _refreshTabBadges()
     _refreshSleepGate()
+  }
+
+  /* ── Tab alert badges ────────────────────────────────────────── */
+  var _msgDecisionPending = false
+  function _refreshTabBadges() {
+    var msgBadge  = document.getElementById('tab-messages-badge')
+    var newsBadge = document.getElementById('tab-news-badge')
+    /* NEWS: until player opens the tab at least once */
+    if (newsBadge) {
+      var showNews = !_visited.news && _activeTab !== 'news'
+      newsBadge.classList.toggle('visible', showNews)
+    }
+    /* MESSAGES: only when Elena is actually waiting on a decision */
+    if (msgBadge) {
+      var showMsg = _msgDecisionPending && !_msgDecided && _activeTab !== 'messages'
+      msgBadge.classList.toggle('visible', showMsg)
+    }
   }
 
   TAB_IDS.forEach(function(t) {
@@ -1417,6 +1755,7 @@
     else if (e.key === '2') setTab('news')
     else if (e.key === '3') setTab('bank')
     else if (e.key === '4') setTab('files')
+    else if (e.key === '5') setTab('stats')
   })
 
   /* ── Sleep button gating ─────────────────────────────────────── */
@@ -1435,8 +1774,15 @@
 
   window.addEventListener('thermalMsgDecision', function() {
     _msgDecided = true
+    _msgDecisionPending = false
     if (_bankBuilt) buildBankPanel()
+    _refreshTabBadges()
     _refreshSleepGate()
+  })
+
+  window.addEventListener('thermalMsgDecisionShown', function() {
+    _msgDecisionPending = true
+    _refreshTabBadges()
   })
 
   function _allVisited() {
@@ -1468,6 +1814,7 @@
     }
   }
   _refreshSleepGate()
+  _refreshTabBadges()
 
   /* ── Sleep → transition ──────────────────────────────────────── */
   function crtOffAndNavigate(url) {
@@ -1519,14 +1866,63 @@
       s.gameOver = true
       s.gameOverReason = 'street'
       if (window.saveSystem) window.saveSystem.saveGame(s)
+      /* Capture predecessor record so the next operator (next run)
+         finds OP18's final shift in their FILES tab. Survives
+         resetGame() because it's stored under a separate key. */
+      try {
+        var allDecrypted = false
+        try {
+          var dec = JSON.parse(localStorage.getItem('thermalDecryptedFiles') || '[]')
+          allDecrypted = ['kowalski','reznov','deleted'].every(function (k) { return dec.indexOf(k) !== -1 })
+        } catch (e) {}
+        var roster = {}
+        try { roster = JSON.parse(localStorage.getItem('thermalWorkerRoster')||'{}') } catch (e) {}
+        if (window.saveSystem && window.saveSystem.writePredecessorLog) {
+          window.saveSystem.writePredecessorLog({
+            shiftsCompleted: (s.shiftNumber || _shiftNum) - 1,
+            totalMoney:      s.totalMoney   || 0,
+            targetMoney:     s.targetMoney  || 2400,
+            gameOverReason:  'street',
+            streetDeathDesc: desc,
+            discoveredAll:   allDecrypted,
+            finalRadiation:  s.lastShiftRadiation || 0,
+            casualties:      (roster.dead || []).length,
+            totalCritSeconds: 0,
+            timestamp: Date.now()
+          })
+        }
+      } catch (e) {}
       crtOffAndNavigate('death.html')
       return
     }
 
     /* Normal → home terminal already handled; proceed to next shift */
     try { localStorage.setItem('thermalShiftNumber', String(s ? s.shiftNumber : _shiftNum)) } catch (e) {}
-    crtOffAndNavigate('game.html')
+    sleepTransitionToNextShift()
   })
+
+  /* Sleep transition — between-shift atmospheric beat. CRT off,
+     then a black screen with "TIME PASSES" + arrival timestamp,
+     then navigate. Total ~2.4s — long enough to register, short
+     enough not to feel intrusive. */
+  function sleepTransitionToNextShift() {
+    var t = document.querySelector('.terminal')
+    if (t) t.style.animation = 'crtOff 0.65s cubic-bezier(0.4, 0, 1, 1) forwards'
+    /* Build the overlay AFTER crtOff so we don't fade with it. */
+    setTimeout(function () {
+      var sleepOv = document.createElement('div')
+      sleepOv.id = 'sleep-transition'
+      var T = (window.i18n && window.i18n.t) ? window.i18n.t : function (k) { return k }
+      sleepOv.innerHTML =
+        '<div class="sleep-line sleep-line-a">' + T('sleep.timePasses') + '</div>' +
+        '<div class="sleep-line sleep-line-b">' + T('sleep.unit4Rotation') + '</div>' +
+        '<div class="sleep-line sleep-line-c">' + T('sleep.assumingPost') + '</div>'
+      document.body.appendChild(sleepOv)
+      /* Hold for 3.0s then navigate — gives the player time to read
+         all three lines + a beat of stillness before the shift starts. */
+      setTimeout(function () { window.location.href = 'game.html' }, 3000)
+    }, 620)
+  }
 
   /* ── Real-world clock in header ──────────────────────────────── */
   function _fmtClock() {
@@ -1660,6 +2056,42 @@
 
     bodyEl.innerHTML = ''
 
+    /* ── Performance summary header (if available) ─────────────── */
+    var summary = shiftLog.summary
+    if (summary) {
+      var sumHdr = document.createElement('div')
+      sumHdr.className = 'log-entry-header'
+      sumHdr.textContent = 'SHIFT ' + sn + ' — PERFORMANCE SUMMARY'
+      bodyEl.appendChild(sumHdr)
+      function _row(label, val, cls) {
+        var r = document.createElement('div')
+        r.className = 'log-line'
+        r.innerHTML =
+          '<span class="log-ts"></span>' +
+          '<span class="log-text' + (cls ? ' ' + cls : '') + '">' +
+            label.padEnd(28, ' ') + ' ' + val +
+          '</span>'
+        bodyEl.appendChild(r)
+      }
+      _row('Base pay:',          '$' + (summary.basePay || 0))
+      if (summary.erBonus > 0)
+        _row('ER efficiency bonus:', '+$' + summary.erBonus, 'hi')
+      _row('Total pay:',         '$' + (summary.totalPay || 0), 'hi')
+      _row('ERs resolved:',      String(summary.ersResolved || 0))
+      _row('Correct decisions:', String(summary.correctDecisions || 0))
+      _row('Wrong decisions:',   String(summary.wrongDecisions || 0))
+      _row('Missed anomalies:',  String(summary.missedAnomalies || 0))
+      _row('Critical seconds:',  (summary.totalCritSeconds || 0) + 's')
+      _row('Final radiation:',   (summary.radiationReached || 0).toFixed(2) + ' mSv')
+      _row('External vents:',    String(summary.ventCount || 0))
+      if (summary.meltdownOccurred)
+        _row('Outcome:',         'MELTDOWN', 'lo')
+      var blank = document.createElement('div')
+      blank.className = 'log-line'
+      blank.innerHTML = '<span class="log-ts"></span><span class="log-text"> </span>'
+      bodyEl.appendChild(blank)
+    }
+
     var entries = shiftLog.entries || []
     if (entries.length === 0) {
       var empty = document.createElement('div')
@@ -1751,6 +2183,100 @@
     var footerEl = document.getElementById('files-footer')
     if (!listEl) return
 
+    /* ── ALWAYS-OPEN files at the top of the list ─────────────────
+       BRIEFING + OP17_HANDOVER are readable from shift 1 with no
+       hacking required. They orient the new operator to the ER
+       mechanic and warn them about the manual being unreliable.
+       OP18_NOTE.LOG appears once the player has decrypted ALL three
+       operator logs — it's the player's own self-written record,
+       a payoff entry for completing the discovery loop. */
+    var ALWAYS_OPEN = [
+      { key: 'briefing', name: 'BRIEFING_OP18.LOG',  meta: 'FACILITY MANAGEMENT — ORIENTATION FOR OP.18' },
+      { key: 'op17',     name: 'OP17_HANDOVER.LOG',  meta: 'OP.17 — HANDOVER NOTE — UNIT 4 / NIGHT ROTATION' }
+    ]
+    /* Predecessor record from the LAST run survives resetGame() —
+       if it exists, surface it as another always-open file so this
+       run's operator finds out what happened to the previous one. */
+    if (window.saveSystem && window.saveSystem.loadPredecessorLog) {
+      var prev = window.saveSystem.loadPredecessorLog()
+      if (prev) {
+        ALWAYS_OPEN.push({
+          key:  'predecessor',
+          name: 'PREVIOUS_OP_FINAL.LOG',
+          meta: 'OPERATOR: [PREVIOUS] — RECOVERED — NOT AUTHORIZED'
+        })
+      }
+    }
+    var allThree = ['kowalski','reznov','deleted'].every(function (k) {
+      return decrypted.indexOf(k) !== -1
+    })
+    if (allThree) {
+      ALWAYS_OPEN.push({
+        key:  'op18note',
+        name: 'OP18_NOTE.LOG',
+        meta: 'PERSONAL — SELF-AUTHORED — TO THE NEXT OPERATOR'
+      })
+    }
+    ALWAYS_OPEN.forEach(function (f, i) {
+      var div = document.createElement('div')
+      div.className = 'file-entry unlocked'
+      div.style.animationDelay = (i * 0.04) + 's'
+      div.setAttribute('data-always', f.key)
+      div.innerHTML =
+        '<div class="file-entry-left">' +
+          '<div class="file-name">' + f.name + '</div>' +
+          '<div class="file-meta">' + f.meta + '</div>' +
+        '</div>' +
+        '<div class="file-entry-right"><span class="file-badge decrypted">[OPEN]</span></div>'
+      listEl.appendChild(div)
+    })
+
+    /* ── Sprint I.3 — MEMORIAL ────────────────────────────────────
+       Render every worker the player has killed across all shifts.
+       Persistent across a run (thermalMemorial localStorage). Each
+       entry shows the choice label that put them there — the player
+       has to look at what they decided. No hover affordance, no
+       "open" button — the entry isn't a file. It's a name. */
+    try {
+      var memorial = JSON.parse(localStorage.getItem('thermalMemorial') || '[]')
+      if (memorial.length > 0) {
+        var _t = (window.i18n && window.i18n.t) ? window.i18n.t : function(k,f){ return f }
+        var memHeader = document.createElement('div')
+        memHeader.className = 'memorial-section-header'
+        memHeader.textContent = _t('memorial.sectionHeader',
+          '// MEMORIAL — UNIT 4 CASUALTIES')
+        listEl.appendChild(memHeader)
+        memorial.forEach(function(m, mi) {
+          var row = document.createElement('div')
+          row.className = 'memorial-entry'
+          row.style.animationDelay = (mi * 0.05) + 's'
+          /* Compose lines defensively — older saves may miss fields. */
+          var name  = (m.name || '——').toString()
+          var age   = (typeof m.age === 'number') ? m.age : '——'
+          var role  = (m.role || '——').toString()
+          var ship  = (typeof m.shiftDied === 'number') ? m.shiftDied : 0
+          var cause = (m.choiceLabel || '[ UNKNOWN ]').toString()
+          var dose  = (typeof m.doseAtDeath === 'number') ? m.doseAtDeath.toFixed(2) : '?.??'
+          row.innerHTML =
+            '<div class="memorial-name">' + name + '</div>' +
+            '<div class="memorial-meta">' + age + ' &middot; ' + role +
+              ' &middot; ' + _t('memorial.lineDied', 'died shift') + ' ' + ship +
+              ' &middot; ' + dose + ' Sv</div>' +
+            '<div class="memorial-cause">' +
+              '<span class="memorial-cause-label">' +
+                _t('memorial.lineCause', '// CAUSE OF DEATH ON RECORD:') +
+              '</span>' + cause + '</div>'
+          listEl.appendChild(row)
+        })
+      }
+    } catch(e) { /* corrupt memorial — silently skip */ }
+
+    /* Visual separator between always-open + the encrypted archive */
+    var sep0 = document.createElement('div')
+    sep0.style.cssText = 'border-top:1px solid var(--border);margin:14px 0 6px;font-size:9px;letter-spacing:3px;color:var(--phosphor-dim);'
+    sep0.textContent = '// ENCRYPTED ARCHIVE — UNIT 4 PERSONNEL'
+    listEl.appendChild(sep0)
+
     var availCount = 0
     var decryptCount = 0
 
@@ -1819,11 +2345,13 @@
       })
     }
 
-    /* Footer */
+    /* Footer — count includes the 2 always-open briefing/handover files. */
     if (footerEl) {
-      footerEl.textContent = '// 18 FILES — ' +
-        (18 - decryptCount) + ' ENCRYPTED — ' +
-        decryptCount + ' ACCESSIBLE — ' +
+      var totalFiles = 18 + ALWAYS_OPEN.length
+      var openFiles  = ALWAYS_OPEN.length + decryptCount
+      footerEl.textContent = '// ' + totalFiles + ' FILES — ' +
+        (totalFiles - openFiles) + ' ENCRYPTED — ' +
+        openFiles + ' ACCESSIBLE — ' +
         anomalyArchive.length + ' SHIFT LOGS'
     }
 
@@ -1833,6 +2361,22 @@
       if (!entry) return
       var idx = parseInt(entry.getAttribute('data-shiftlog'), 10)
       openShiftLog(anomalyArchive[idx])
+    }, true)
+
+    /* Click handler for always-open files (BRIEFING / OP17_HANDOVER /
+       OP18_NOTE / PREVIOUS_OP_FINAL) — no hacking, opens the log
+       reader directly. Also fires achievements for narrative beats. */
+    listEl.addEventListener('click', function (e) {
+      var entry = e.target.closest('[data-always]')
+      if (!entry) return
+      var key = entry.getAttribute('data-always')
+      if (window.openLogReader) window.openLogReader(key)
+      if (window.achievements) {
+        try {
+          if (key === 'predecessor') window.achievements.unlock('ACH_CHAIR_EMPTY')
+          if (key === 'op18note')    window.achievements.unlock('ACH_OP18')
+        } catch (e) {}
+      }
     }, true)
 
     /* Tab badge: show [!] if any available-but-not-decrypted file exists */
@@ -1850,6 +2394,106 @@
         _badgeCleared = true
       }
     })
+  })()
+
+  /* ── STATS PANEL — aggregates across save + per-shift archive ── */
+  ;(function buildStatsPanel() {
+    var grid    = document.getElementById('stats-grid')
+    var footer  = document.getElementById('stats-footer')
+    if (!grid) return
+
+    function row(label, val, cls) {
+      var d = document.createElement('div')
+      d.className = 'stat-row'
+      d.innerHTML =
+        '<span class="stat-label">' + label + '</span>' +
+        '<span class="stat-val' + (cls ? ' ' + cls : '') + '">' + val + '</span>'
+      return d
+    }
+    function section(label) {
+      var d = document.createElement('div')
+      d.className = 'stat-section'
+      d.textContent = label
+      return d
+    }
+
+    function rebuild() {
+      grid.innerHTML = ''
+
+      var s = (window.saveSystem ? window.saveSystem.loadGame() : null) || {}
+      var archive = []
+      try { archive = JSON.parse(localStorage.getItem('thermalAnomalyLog') || '[]') } catch (e) {}
+      var roster = {}
+      try { roster = JSON.parse(localStorage.getItem('thermalWorkerRoster') || '{}') } catch (e) {}
+      var dec = []
+      try { dec = JSON.parse(localStorage.getItem('thermalDecryptedFiles') || '[]') } catch (e) {}
+
+      /* Aggregate from per-shift summaries (added in Phase 3.4). */
+      var totals = {
+        ersResolved: 0, erBonus: 0, basePay: 0,
+        correct: 0, wrong: 0, missed: 0,
+        critSec: 0, vents: 0, meltdowns: 0
+      }
+      archive.forEach(function (sh) {
+        var u = sh.summary
+        if (!u) return
+        totals.ersResolved += u.ersResolved      || 0
+        totals.erBonus     += u.erBonus          || 0
+        totals.basePay     += u.basePay          || 0
+        totals.correct     += u.correctDecisions || 0
+        totals.wrong       += u.wrongDecisions   || 0
+        totals.missed      += u.missedAnomalies  || 0
+        totals.critSec     += u.totalCritSeconds || 0
+        totals.vents       += u.ventCount        || 0
+        if (u.meltdownOccurred) totals.meltdowns++
+      })
+
+      /* ── CAREER ── */
+      grid.appendChild(section('// CAREER'))
+      grid.appendChild(row('Current shift',     '#' + (s.shiftNumber || 1)))
+      grid.appendChild(row('Shifts logged',     String(archive.length)))
+      grid.appendChild(row('Total earned',      '$' + (s.totalMoney || 0)))
+      grid.appendChild(row('Target',            '$' + (s.targetMoney || 2400)))
+      grid.appendChild(row('Quick-fix bonus',   '+$' + totals.erBonus))
+      grid.appendChild(row('Base pay sum',      '$' + totals.basePay))
+
+      /* ── ER PERFORMANCE ── */
+      grid.appendChild(section('// ER PERFORMANCE'))
+      grid.appendChild(row('ERs resolved',      String(totals.ersResolved)))
+      grid.appendChild(row('Logs decrypted',    dec.length + ' / 3'))
+      var avgEr = archive.length ? (totals.ersResolved / archive.length).toFixed(1) : '—'
+      grid.appendChild(row('ERs per shift',     avgEr))
+
+      /* ── ANOMALIES ── */
+      grid.appendChild(section('// ANOMALIES'))
+      grid.appendChild(row('Correct calls',     String(totals.correct)))
+      grid.appendChild(row('Wrong calls',       String(totals.wrong), totals.wrong > 5 ? 'warn' : ''))
+      grid.appendChild(row('Missed',            String(totals.missed), totals.missed > 3 ? 'crit' : ''))
+
+      /* ── SAFETY ── */
+      grid.appendChild(section('// SAFETY'))
+      grid.appendChild(row('Critical seconds',  totals.critSec + 's', totals.critSec > 60 ? 'warn' : ''))
+      grid.appendChild(row('External vents',    String(totals.vents), totals.vents > 3 ? 'warn' : ''))
+      grid.appendChild(row('Meltdowns survived',String(totals.meltdowns), totals.meltdowns > 0 ? 'crit' : ''))
+      grid.appendChild(row('Worker casualties', String((roster.dead || []).length), (roster.dead || []).length > 0 ? 'crit' : ''))
+      grid.appendChild(row('Dispatches handled',String(roster.dispatches || 0)))
+
+      /* ── HOUSING ── */
+      grid.appendChild(section('// HOUSING'))
+      grid.appendChild(row('Shifts since rent', String(s.shiftsWithoutRent || 0), (s.shiftsWithoutRent || 0) >= 2 ? 'crit' : ''))
+      grid.appendChild(row('Eviction status',   s.evicted ? 'EVICTED' : 'HOUSED', s.evicted ? 'crit' : ''))
+      grid.appendChild(row('Manual revision',   s.manualRev || '2018.04'))
+
+      if (footer) {
+        footer.textContent = '// RECORD COMPILED FROM ' + archive.length + ' SHIFT ARCHIVE(S) — UPDATED EVERY VIEW'
+      }
+    }
+
+    /* Rebuild on tab click so the stats are always fresh. */
+    var tabBtn = document.getElementById('tab-stats')
+    if (tabBtn) tabBtn.addEventListener('click', rebuild)
+    /* Initial build so first-time view is populated. */
+    rebuild()
   })()
 
   /* ── Ambient log ticker ──────────────────────────────────────── */
@@ -2019,6 +2663,170 @@
       items.push(makeSevereGuaranteed())
     }
 
+    // ── Inject vent-based news (cumulative across all shifts) ─────
+    // These appear regardless of sensor radiation (player vented it away).
+    // Language is deliberately indirect — no mention of the facility.
+
+    var totalVents = _save ? (_save.totalExternalVents || 0) : 0
+    var totalRads  = _save ? (_save.totalExternalRads  || 0) : 0
+
+    if (totalVents >= 1) {
+      var vl = loc()
+      var ventMinor = [
+        { src: 'WEATHER SERVICE',
+          hed: 'ANOMALOUS PARTICULATE READINGS DETECTED NEAR ' + vl.toUpperCase(),
+          body: 'Automated monitoring stations near ' + vl + ' logged elevated particulate matter readings on two occasions this week. Officials have stated the readings are within thresholds and attribute the data to seasonal wind patterns.' },
+        { src: 'ENVIRONMENTAL BOARD',
+          hed: vl.toUpperCase() + ' RIVER WATCH NOTES IRREGULAR WATER TEMPERATURE',
+          body: 'Volunteer monitoring group reporting irregular thermal readings along a ' + rnd(3,8) + 'km stretch of river near ' + vl + '. Regional environmental office says it is reviewing the data. No advisory has been issued.' },
+      ]
+      items.push(pick(ventMinor))
+    }
+
+    if (totalVents >= 3) {
+      var vl2 = loc(), vn2 = rnd(3, 9)
+      var ventModerate = [
+        { src: 'HEALTH NOTICE',
+          hed: vn2 + ' CHILDREN IN ' + vl2.toUpperCase() + ' REFERRED FOR SPECIALIST EVALUATION',
+          body: vn2 + ' children from the ' + vl2 + ' district have been referred for specialist evaluation following routine school health screenings. Parents have expressed concern. District health officials say precautionary assessments are standard procedure.' },
+        { src: 'REGIONAL BULLETIN',
+          hed: 'SOIL CONTAMINATION INQUIRY OPENED IN ' + vl2.toUpperCase() + ' DISTRICT',
+          body: 'The regional environmental agency has opened a preliminary inquiry into soil sample irregularities reported by farmers in the ' + vl2 + ' district. Officials say the inquiry is routine and that no public health risk has been confirmed.' },
+        { src: 'LOCAL NEWS',
+          hed: 'FAMILIES IN ' + vl2.toUpperCase() + ' SEEK ANSWERS AFTER CLUSTER OF ILLNESSES',
+          body: 'Several families in ' + vl2 + ' have informally organised after noticing what they describe as an unusual pattern of illness among children in the same neighbourhood. Local authorities have declined to comment pending an internal review.' },
+      ]
+      items.push(pick(ventModerate))
+      items = shuffle(items)
+    }
+
+    if (totalVents >= 6 || totalRads >= 8.0) {
+      var vl3 = loc(), vn3 = rnd(8, 18)
+      var ventSevere = [
+        { src: 'REGIONAL BULLETIN',
+          hed: vn3 + ' RESIDENTS OF ' + vl3.toUpperCase() + ' HOSPITALISED — CAUSE UNDETERMINED',
+          body: vn3 + ' residents from the ' + vl3 + ' area have been admitted to regional medical facilities over a six-week period, presenting with a range of symptoms including fatigue, skin lesions, and blood abnormalities. The regional health authority says epidemiological analysis is ongoing. No official cause has been announced.' },
+        { src: 'ENVIRONMENTAL BOARD',
+          hed: 'INDEPENDENT RESEARCHERS REQUEST ACCESS TO INDUSTRIAL RECORDS NEAR ' + vl3.toUpperCase(),
+          body: 'A group of independent environmental researchers has filed a formal request to access operational discharge records from industrial facilities in the ' + vl3 + ' region. The request is pending administrative review. No facilities have been named publicly.' },
+      ]
+      items.unshift(pick(ventSevere))   /* put at top — hard to miss */
+    }
+
+    if (totalVents >= 10 || totalRads >= 16.0) {
+      var vl4 = loc()
+      items.unshift({
+        src: 'REGIONAL BULLETIN',
+        hed: 'MORTALITY RATE IN ' + vl4.toUpperCase() + ' DISTRICT RISES FOR THIRD CONSECUTIVE YEAR',
+        body: 'Newly released mortality statistics show the ' + vl4 + ' district has recorded above-average death rates for the third year running, with a notable concentration among children under twelve and adults over fifty. Regional health officials have not linked the trend to any specific cause. Families in the area say they have been asking questions for years.'
+      })
+    }
+
+    // ── Faz 2/E — LAST-SHIFT CONTINUITY ──────────────────────────
+    //    Inject deniable articles that mirror what the player did
+    //    on the PREVIOUS shift. Read from save.lastShiftDecisions
+    //    (written by game.js endShift). Distinct from cumulative
+    //    vent news above — these reflect only the single most
+    //    recent shift, so each morning's paper echoes last night's
+    //    decisions. Tone matches the rest of the news pool:
+    //    bureaucratic, never names the facility.
+    var _lsd = (_save && _save.lastShiftDecisions) ? _save.lastShiftDecisions : null
+    if (_lsd) {
+      /* Missed anomalies → unexplained illness/sensor cluster
+         article. Player failed to call real events → community pays. */
+      if ((_lsd.missedAnomalies || 0) >= 2) {
+        var ml = loc(), mn = rnd(4, 11)
+        items.push(pick([
+          { src: 'HEALTH NOTICE',
+            hed: 'PATIENT CLUSTER REPORTED IN ' + ml.toUpperCase() + ' AS DOCTORS REQUEST GUIDANCE',
+            body: 'Physicians at ' + ml + ' regional hospital have flagged a cluster of ' + mn + ' patients presenting within the same period with overlapping symptoms. A spokesperson said the cases are under epidemiological review. No common environmental source has been identified at this time. Residents have been advised to continue normal activity pending further information.' },
+          { src: 'LOCAL NEWS',
+            hed: 'FAMILIES IN ' + ml.toUpperCase() + ' SAY ROUTINE COMPLAINTS WERE NOT INVESTIGATED',
+            body: 'Several households in ' + ml + ' have stated, in informal community meetings, that complaints filed in recent weeks regarding fatigue and skin irritation were acknowledged but not investigated. A district official said all submitted reports are processed in order of receipt. No timeline has been published.' }
+        ]))
+      }
+
+      /* False alarms (high wrong-decision count) → regulator review
+         of "over-cautious shift behaviour". Bureaucratic punishment
+         for being too jumpy, mirroring the facility's preference
+         for silence. */
+      if ((_lsd.falseAlarms || 0) >= 3) {
+        items.push({
+          src: 'INTERNAL MEMO',
+          hed: 'SHIFT REPORTING REVIEW SCHEDULED — UNNECESSARY ESCALATIONS UNDER ASSESSMENT',
+          body: 'The Procedure Office has confirmed that a periodic review of recent shift reports will be conducted, with particular attention to escalations subsequently downgraded by daytime supervisors. Operators are reminded that the established reporting thresholds exist to balance plant safety with continuity of operations. A summary of findings will be circulated to shift staff in due course.'
+        })
+      }
+
+      /* Peak rad ≥ 3.0 (this shift alone) → monitoring-station spike
+         article. Adds immediacy on top of the cumulative vent pool. */
+      if ((_lsd.peakRad || 0) >= 3.0) {
+        var pl = loc()
+        items.push({
+          src: 'WEATHER SERVICE',
+          hed: 'MONITORING STATION NEAR ' + pl.toUpperCase() + ' LOGS BRIEF READING SPIKE',
+          body: 'An automated environmental monitoring station outside ' + pl + ' registered a short-duration reading above its normal operating range during the overnight period. The agency has stated the event is consistent with routine atmospheric variation and that the affected station has been cleared for continued service. No advisory is in effect.'
+        })
+      }
+
+      /* Worker death this shift → industrial-statistics article that
+         never names the deceased. Heaviest continuity hit — pushed
+         to top of feed so the player can't miss it. */
+      if ((_lsd.workerDeaths || 0) >= 1) {
+        items.unshift({
+          src: 'REGIONAL BULLETIN',
+          hed: 'INDUSTRIAL FATALITY STATISTICS INCLUDE UNIDENTIFIED FACILITY WORKER',
+          body: 'The quarterly industrial fatality bulletin includes a single addition this period, listed as an unidentified worker from a regional facility. No employer has been named and next-of-kin notifications are recorded as complete. A spokesperson for the labour office stated that statistical disclosures of this type are routine and do not imply any unusual workplace conditions. Inquiries from the press have been referred to the responsible facility.'
+        })
+      }
+    }
+
+    // ── MANUAL REVISION 2018.05 — shift 6+, fires once. HQ claims to
+    //    have pushed a procedure revision in response to operator
+    //    feedback. The actual prescriptions in the manual are
+    //    unchanged. The rev footer just bumps from 2018.04 to 2018.05.
+    //    The article + Elena message + footer change together build
+    //    the institutional-indifference theme: the system claims to
+    //    have heard you and changed nothing.
+    if (_shiftNum >= 6 && _save && !_save.revision2018_05Pushed) {
+      items.unshift({
+        src: 'INTERNAL MEMO',
+        hed: 'PROCEDURE MANUAL REVISION 2018.05 NOW IN EFFECT — ALL OPERATORS',
+        body: 'The Procedure Office has formally issued REVISION 2018.05 of the Unit 4 Operating Manual, effective immediately. The revision incorporates operator feedback collected over the previous review cycle. Operators are reminded that procedure compliance is mandatory and that the current revision supersedes all prior copies, marginalia, and operator-authored corrections. ' +
+              'Specific changes have not been enumerated in this notice. Operators with questions are referred to their immediate supervisors. ' +
+              'A note on next-of-kin: paperwork associated with operator vacancies has been streamlined. The new form (NOK-7B) is available from the personnel office on request.'
+      })
+      try {
+        _save.revision2018_05Pushed = true
+        _save.manualRev = '2018.05'
+        if (window.saveSystem) window.saveSystem.saveGame(_save)
+      } catch (e) {}
+    }
+
+    // ── OP.17 fate reveal — appears once, between shifts 3 and 5.
+    //    The previous operator (whose handover note the player has been
+    //    reading from day one) has died alone in his apartment. The
+    //    article is deliberately small and dispassionate. The player
+    //    is meant to do the math themselves: that's the chair I am
+    //    sitting in. No one will write a different article about me.
+    if (_shiftNum >= 3 && _shiftNum <= 5 && _save && !_save.op17NewsSeen) {
+      items.unshift({
+        src: 'LOCAL NEWS',
+        hed: 'POWER PLANT TECHNICIAN FOUND UNRESPONSIVE IN APARTMENT',
+        body: 'A night-shift technician employed at a regional power facility was found unresponsive in their apartment earlier this week by a building superintendent conducting a wellness check. Emergency services were called but no resuscitation was attempted. The deceased had completed a routine medical clearance within the past quarter and was, according to coworkers, in apparent good health. ' +
+              'The employer issued a brief statement noting that the position has been listed as vacant and that operational continuity has not been affected. ' +
+              'The deceased is not being named at the request of next of kin. The cause of death is pending the coroner’s review. A spokesperson for the regional health authority said that there is no reason to believe the matter is connected to the workplace.'
+      })
+      try {
+        _save.op17NewsSeen = true
+        if (window.saveSystem) window.saveSystem.saveGame(_save)
+      } catch (e) {}
+      /* Achievement: VOLUNTARY — encountered the OP.17 fate article */
+      if (window.achievements) {
+        try { window.achievements.unlock('ACH_VOLUNTARY') } catch (e) {}
+      }
+    }
+
     // ── Render ───────────────────────────────────────────────────
 
     var feed = document.getElementById('news-feed')
@@ -2028,6 +2836,8 @@
       var div = document.createElement('div')
       div.className = 'news-item'
       div.style.animationDelay = (idx * 0.14) + 's'
+      div.setAttribute('role', 'button')
+      div.setAttribute('tabindex', '0')
 
       var srcEl = document.createElement('div')
       srcEl.className = 'news-source'
@@ -2051,6 +2861,19 @@
       div.appendChild(tsEl)
       feed.appendChild(div)
 
+      /* Click → open reader overlay with full article */
+      var articleId = 'DISPATCH-' + String(_shiftNum).padStart(3, '0') + '-' +
+                      String(idx + 1).padStart(2, '0')
+      div.addEventListener('click', function() {
+        openNewsReader(item, stamp, articleId)
+      })
+      div.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          openNewsReader(item, stamp, articleId)
+        }
+      })
+
       if (idx < items.length - 1) {
         var hr = document.createElement('hr')
         hr.className = 'news-divider'
@@ -2059,11 +2882,179 @@
     })
   })()
 
+  /* ── News reader overlay control ─────────────────────────────── */
+  /* Pools of filler content used to flesh out the briefing. Kept short
+     and deliberately bureaucratic — consistent with the game's tone. */
+  var BYLINE_POOL = [
+    'M. KRASNOV, STATE PRESS SERVICE',
+    'L. VASILEVSKI, REGIONAL WIRE',
+    'A. DORONIN, CONTRIBUTOR',
+    'I. YERMAKOV, BUREAU CORRESPONDENT',
+    'D. BELOV, DISTRICT DESK',
+  ]
+  var LOCALES = [
+    'FILED — PRIPYAT MUNICIPAL OFFICE',
+    'FILED — DISTRICT 7 PRESS BUREAU',
+    'FILED — REGIONAL MEDIA CENTER',
+    'FILED — LOCAL BROADCAST ANNEX',
+  ]
+  var CONTEXT_LINES = {
+    'LOCAL NEWS': [
+      'District officials declined to provide further comment when contacted by this bureau, citing an ongoing internal review.',
+      'Residents familiar with the matter said they had noticed changes in recent weeks but had been advised not to share details publicly.',
+      'A follow-up briefing has been scheduled, though no firm date has been posted to the district bulletin.',
+    ],
+    'REGIONAL BULLETIN': [
+      'The regional authority has not responded to repeated requests for clarification. Independent verification has not been possible at the time of filing.',
+      'Community representatives have asked for a public meeting. None has yet been confirmed.',
+      'Parallel reports from neighbouring districts suggest the pattern is not isolated, though no central statement has been issued.',
+    ],
+    'STATE BROADCAST': [
+      'Ministry spokespersons reiterated that all protocols remain within expected operational parameters.',
+      'Further details are expected in subsequent broadcasts. Citizens are reminded that uncorroborated rumours should not be repeated.',
+      'Routine monitoring continues. No deviation from normal operating standards has been officially acknowledged.',
+    ]
+  }
+  var EDITORIAL_NOTES = [
+    '// EDITORIAL NOTE — This dispatch was cleared for distribution by the regional press bureau. Content has been reviewed against current reporting guidelines.',
+    '// EDITORIAL NOTE — Corrections or clarifications should be submitted to the bureau desk within forty-eight hours of filing.',
+    '// EDITORIAL NOTE — Additional context may appear in later editions as it becomes available for publication.',
+  ]
+
+  function _pick(arr, seed) {
+    /* Stable-ish pick based on the numeric digits in seed string. */
+    var h = 0
+    for (var i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) | 0
+    return arr[Math.abs(h) % arr.length]
+  }
+
+  function openNewsReader(item, stamp, articleId) {
+    var ov = document.getElementById('news-overlay')
+    if (!ov) return
+    document.getElementById('news-reader-src').textContent   = item.src
+    document.getElementById('news-reader-hed').textContent   = item.hed
+    document.getElementById('news-reader-stamp').textContent = 'FILED ' + stamp
+    document.getElementById('news-reader-id').textContent    = 'REF ' + articleId
+
+    var host = document.getElementById('news-reader-body')
+    host.innerHTML = ''
+
+    /* ── Byline / dateline block ───────────────────────────────── */
+    var byline = document.createElement('p')
+    byline.style.color = 'var(--phosphor-dim)'
+    byline.style.fontSize = '11px'
+    byline.style.letterSpacing = '1.5px'
+    byline.style.marginBottom = '18px'
+    byline.style.borderLeft = '2px solid var(--border)'
+    byline.style.paddingLeft = '10px'
+    byline.textContent =
+      'BY ' + _pick(BYLINE_POOL, articleId) + '   ·   ' + _pick(LOCALES, articleId + item.src)
+    host.appendChild(byline)
+
+    /* ── Opening "LEAD" paragraph (stylised first sentence) ─────── */
+    var bodyText = item.body || ''
+    var sentences = bodyText.split(/(?<=[.!?])\s+/).filter(function(s){ return s.length })
+    if (sentences.length) {
+      var lead = document.createElement('p')
+      lead.style.fontSize = '15px'
+      lead.style.color = 'var(--phosphor)'
+      lead.style.marginBottom = '16px'
+      lead.style.fontWeight = 'normal'
+      lead.textContent = sentences[0]
+      host.appendChild(lead)
+    }
+
+    /* ── Remaining body split every 2 sentences for readability ── */
+    var buf = []
+    for (var s = 1; s < sentences.length; s++) {
+      buf.push(sentences[s])
+      if (buf.length >= 2 || s === sentences.length - 1) {
+        var p = document.createElement('p')
+        p.textContent = buf.join(' ')
+        host.appendChild(p)
+        buf = []
+      }
+    }
+
+    /* ── Context / continuation paragraph ─────────────────────── */
+    var pool = CONTEXT_LINES[item.src] || CONTEXT_LINES['LOCAL NEWS']
+    var ctx = document.createElement('p')
+    ctx.textContent = _pick(pool, articleId)
+    host.appendChild(ctx)
+
+    /* ── Secondary follow-up (adds weight to the piece) ───────── */
+    var ctx2 = document.createElement('p')
+    var altPool = pool.filter(function(x){ return x !== ctx.textContent })
+    ctx2.textContent = _pick(altPool.length ? altPool : pool, articleId + 'x')
+    host.appendChild(ctx2)
+
+    /* ── Editorial note footer ─────────────────────────────────── */
+    var hr = document.createElement('div')
+    hr.style.cssText = 'border-top:1px dashed var(--border); margin:22px 0 14px 0;'
+    host.appendChild(hr)
+
+    var note = document.createElement('p')
+    note.style.color = 'var(--phosphor-dim)'
+    note.style.fontSize = '11px'
+    note.style.letterSpacing = '1px'
+    note.style.lineHeight = '1.6'
+    note.textContent = _pick(EDITORIAL_NOTES, articleId)
+    host.appendChild(note)
+
+    /* Jump scroll to top each time */
+    host.parentElement.scrollTop = 0
+
+    ov.style.display = ''
+    /* Mark NEWS tab as visited since they read an article */
+    _visited.news = true
+    _refreshTabBadges()
+    _refreshSleepGate()
+  }
+  function closeNewsReader() {
+    var ov = document.getElementById('news-overlay')
+    if (ov) ov.style.display = 'none'
+  }
+  document.getElementById('news-reader-close').addEventListener('click', closeNewsReader)
+  document.getElementById('news-overlay').addEventListener('click', function(e) {
+    if (e.target.id === 'news-overlay') closeNewsReader()
+  })
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeNewsReader()
+  })
+
 })()
 </script>
 <script src="../js/messaging.js"></script>
 <script src="../js/hacking.js"></script>
 <script src="../js/log-reader.js"></script>
+
+<!-- Procedure manual — same overlay as in-shift. Self-injects CSS+DOM
+     so we only need the JSON loader and the script tag here. -->
+<script>
+  /* Load error-codes.json (same pattern as game.html). */
+  try {
+    var _ePath = require('path').join(__dirname, '../config/error-codes.json')
+    window.ER_CODES = JSON.parse(require('fs').readFileSync(_ePath, 'utf8'))
+  } catch (e) {
+    console.warn('[ER_CODES] home-terminal could not load error-codes.json:', e)
+    window.ER_CODES = { codes: [] }
+  }
+</script>
+<script src="../js/manual-overlay.js"></script>
+<script>
+  /* Wire the MANUAL tab — keep [KEY] label in sync with current bind. */
+  ;(function wireHtManualBtn() {
+    var btn = document.getElementById('ht-manual-btn')
+    var lbl = document.getElementById('ht-manual-key')
+    if (!btn) return
+    var k = (window.keybinds ? window.keybinds.label('manual') : 'H')
+    if (lbl) lbl.textContent = '[' + k + ']'
+    btn.setAttribute('title', 'Procedure Manual (' + k + ')')
+    btn.addEventListener('click', function () {
+      if (window.manualOverlay) window.manualOverlay.toggle()
+    })
+  })()
+</script>
 
 </body>
 </html>

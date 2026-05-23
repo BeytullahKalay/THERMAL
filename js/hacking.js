@@ -176,6 +176,15 @@
     if (dec.indexOf(_state.fileKey) === -1) dec.push(_state.fileKey)
     saveDecrypted(dec)
 
+    /* Achievement triggers — first KOWALSKI hack + all-three combo */
+    if (window.achievements) {
+      try {
+        if (_state.fileKey === 'kowalski') window.achievements.unlock('ACH_CAUGHT_THE_LIE')
+        var allThree = ['kowalski','reznov','deleted'].every(function (k) { return dec.indexOf(k) !== -1 })
+        if (allThree) window.achievements.unlock('ACH_THREE_OPS')
+      } catch (e) {}
+    }
+
     setTimeout(function () {
       var key = _state.fileKey
       closeHack()

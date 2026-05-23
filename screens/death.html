@@ -231,13 +231,27 @@
 
   var isMeltdown = !!report.meltdownOccurred
   var isStreet   = !!report.streetDeath
+  /* WIN epilogue — read save (not report), because the WIN flag is
+     set in updateShift() AFTER the report is written. */
+  var isWin = false
+  try {
+    var _sv = (window.saveSystem ? window.saveSystem.loadGame() : null)
+    isWin = !!(_sv && _sv.gameOver && _sv.gameOverReason === 'win')
+  } catch(e) {}
 
-  if (!isMeltdown && !isStreet) {
+  if (!isMeltdown && !isStreet && !isWin) {
     window.location.href = 'menu.html'
     return
   }
 
   var shiftNum = report.shiftNumber || 1
+
+  /* ── Read memorial so epilogues can name the dead ──────────────── */
+  var _mem = []
+  try { _mem = JSON.parse(localStorage.getItem('thermalMemorial') || '[]') } catch(e) {}
+  var _memCount = _mem.length
+  var _firstDead = _memCount > 0 ? _mem[0] : null
+  var _lastDead  = _memCount > 0 ? _mem[_memCount - 1] : null
 
   /* ── Build sequence ────────────────────────────────────────────── */
   var SEQ = []
@@ -267,11 +281,17 @@
     s('OUTSTANDING WAGES        0 UNITS',         'line-record', 16, 0  )
     s('TREATMENT FUND           FROZEN',          'line-record', 16, 55 )
     s('REASON CODE              OPERATIONAL FAILURE', 'line-record', 16, 55)
+    /* Memorial-aware tail: if anyone died on the operator's watch
+       across this run, name the last one here. Reads as a small
+       indignity layered on top of the bureaucratic shutdown. */
+    if (_lastDead) {
+      s('CO-WORKER CASUALTIES     ' + _memCount + ' ON RECORD', 'line-record', 16, 55)
+    }
     s('', 'spacer', 0, 600)
     s('// OPERATOR FILE OP.18 — RECORD CLOSED',  'line-seal',   22, 0  )
     s('// THIS POSITION WILL BE FILLED.',        'line-seal',   22, 180)
 
-  } else {
+  } else if (isStreet) {
 
     /* Street death ─────────────────────────────────────────────── */
     var descRaw   = report.streetDeathDesc || 'NO RECORD ON FILE.'
@@ -290,9 +310,66 @@
     s('OUTSTANDING WAGES        0 UNITS',          'line-record', 16, 0  )
     s('DEPENDENTS ON FILE       NO CONTACT MADE',  'line-record', 16, 55 )
     s('REASON CODE              UNHOUSED',         'line-record', 16, 55 )
+    if (_lastDead) {
+      s('CO-WORKER CASUALTIES     ' + _memCount + ' ON RECORD', 'line-record', 16, 55)
+    }
     s('', 'spacer', 0, 600)
     s('// OPERATOR FILE 7B — RECORD CLOSED',      'line-seal',   22, 0  )
     s('// THIS POSITION WILL BE FILLED.',          'line-seal',   22, 180)
+
+  } else {
+
+    /* WIN epilogue ──────────────────────────────────────────────
+       The bureaucratic frame stays — this is still the facility
+       speaking. But the lines are about going home, Mira, and
+       silence. No triumph. The player got what they came for and
+       the cost is what it is. Reading time ~2 minutes. */
+
+    s('// SHIFT ' + shiftNum + '  —  EMPLOYMENT TERMINAL', 'line-header', 22, 900)
+    s('', 'spacer-sm', 0, 100)
+    s('STATUS:  WAGE THRESHOLD MET', 'line-status', 70, 500)
+    s('', 'spacer', 0, 200)
+
+    s('Final shift completed. Treatment fund threshold reached.',         'line-death', 38, 0  )
+    s('Wages cleared to operator account. No outstanding balance.',       'line-death', 38, 140)
+    s('Position OP.18 logged as voluntarily concluded.',                  'line-death', 38, 140)
+    s('',                                                                 'spacer-sm',   0, 240)
+    s('06:14 — The corridor lights are already dimming for handoff.',     'line-death', 38, 0  )
+    s('You sign the log. You leave the badge on the desk.',               'line-death', 38, 140)
+    s('Nobody looks up.',                                                 'line-death', 38, 200)
+    s('',                                                                 'spacer-sm',   0, 800)
+    s('// 09:40 — REGIONAL HOSPITAL — WING 4',                            'line-header', 22, 700)
+    s('',                                                                 'spacer-sm',   0, 200)
+    s('Mira is awake. She asks if you have to go back tonight.',          'line-death', 38, 0  )
+    s('You tell her no.',                                                 'line-death', 38, 280)
+    s('The duty doctor signs a chart, attaches a note:',                  'line-death', 38, 280)
+    s('"Response variable. Improvement uncertain. Continue cycle."',      'line-death', 42, 240)
+    s('',                                                                 'spacer-sm',   0, 500)
+    s('You sit in the corridor until the cleaning shift starts.',         'line-death', 38, 0  )
+
+    /* Memorial closing — if anyone died, name them here. Quiet.
+       No verdict, no apology, just the record speaking. */
+    if (_firstDead) {
+      s('', 'spacer-sm', 0, 700)
+      s('// FILED — UNIT 4 PERSONNEL — RECORDS SECTION',                  'line-header', 22, 500)
+      s('', 'spacer-sm', 0, 100)
+      if (_memCount === 1) {
+        s(_firstDead.name + ' is listed as deceased.',                    'line-death', 38, 0)
+        s('Cause of death on record: ' + _firstDead.choiceLabel,          'line-death', 38, 180)
+      } else {
+        s(_memCount + ' co-workers are listed as deceased.',              'line-death', 38, 0)
+        s('Last entry: ' + _lastDead.name + ' — ' + _lastDead.choiceLabel,'line-death', 38, 180)
+      }
+      s('Their treatment funds were not pursued.',                        'line-death', 38, 220)
+    }
+
+    s('', 'spacer', 0, 700)
+    s('OUTSTANDING WAGES        0 UNITS',           'line-record', 16, 0  )
+    s('TREATMENT FUND           DISBURSED',          'line-record', 16, 55 )
+    s('REASON CODE              CONTRACT FULFILLED', 'line-record', 16, 55)
+    s('', 'spacer', 0, 600)
+    s('// OPERATOR FILE OP.18 — RECORD CLOSED',     'line-seal',   22, 0  )
+    s('// THE POSITION HAS BEEN FILLED.',           'line-seal',   22, 180)
 
   }
 

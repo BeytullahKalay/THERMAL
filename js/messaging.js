@@ -88,14 +88,46 @@
     return (h < 10 ? '0' + h : h) + ':' + (m < 10 ? '0' + m : m)
   }
 
-  function makeBlock(text, ts) {
+  function makeBlock(text, ts, instant) {
     var el = document.createElement('div')
     el.className = 'msg-block'
     el.innerHTML =
       '<div class="msg-sender">ELENA:</div>' +
-      '<div class="msg-text">'  + text + '</div>' +
+      '<div class="msg-text"></div>' +
       '<div class="msg-timestamp">' + ts + '</div>'
+    var textEl = el.querySelector('.msg-text')
+    if (instant) {
+      textEl.textContent = text
+    } else {
+      /* Text is rendered lazily by typeInto (playMessages) so the
+         per-character tick fires. Stash for later retrieval. */
+      textEl.__pendingText = text
+    }
     return el
+  }
+
+  /* ── Per-character typewriter with audible tick ─────────────────
+     Used by playMessages for fresh Elena lines. Replays (replay-
+     Messages) render instantly — no replay-typewriter. */
+  function typeInto(textEl, text, onDone) {
+    var i = 0
+    function step() {
+      if (i >= text.length) { if (onDone) onDone(); return }
+      var ch = text.charAt(i)
+      textEl.textContent = textEl.textContent + ch
+      if (ch !== ' ' && ch !== '\n' && ch !== '\t' &&
+          window.hoverSfx && typeof window.hoverSfx.type === 'function') {
+        try { window.hoverSfx.type() } catch(e){}
+      }
+      scrollBottom()
+      i++
+      var delay = 32
+      if (ch === '.' || ch === '?' || ch === '!') delay = 240
+      else if (ch === ',' || ch === ';' || ch === ':') delay = 150
+      else if (ch === ' ') delay = 38
+      setTimeout(step, delay)
+    }
+    step()
   }
 
   function makeTyping() {
@@ -141,7 +173,11 @@
             })
           })
           scrollBottom()
-          setTimeout(next, 300)
+          /* Typewriter the pending text into the block, then advance
+             to the next message once the line is fully rendered. */
+          var textEl = block.querySelector('.msg-text')
+          var pending = textEl && textEl.__pendingText ? textEl.__pendingText : ''
+          typeInto(textEl, pending, function() { setTimeout(next, 300) })
         }, typingMs)
       }, gapMs)
     }
@@ -152,12 +188,12 @@
   function replayMessages(existing) {
     var ts = existing.timestamp || nowTime()
     messages.forEach(function(msg) {
-      var b = makeBlock(msg, ts)
+      var b = makeBlock(msg, ts, true)   // instant: no typewriter on replay
       b.style.opacity = '1'
       logEl.appendChild(b)
     })
     if (existing.responseMsg) {
-      var b2 = makeBlock(existing.responseMsg, ts)
+      var b2 = makeBlock(existing.responseMsg, ts, true)
       b2.style.opacity = '1'
       logEl.appendChild(b2)
     }
@@ -173,6 +209,7 @@
   function showDecision() {
     var enough = money >= MONTHLY_NEED
     decisionRowEl.innerHTML = ''
+    try { window.dispatchEvent(new CustomEvent('thermalMsgDecisionShown')) } catch(e) {}
 
     var pairs = enough
       ? [['[ SEND ALL ]',            'send_all' ],
@@ -248,8 +285,14 @@
        SEND ALL or SEND WHAT   → +1  (nothing kept for self) */
     if (action === 'keep_some' || action === 'no_send') {
       s.shiftsWithoutRent = 0
+      s.consecSendHome    = 0
     } else {
       s.shiftsWithoutRent = (s.shiftsWithoutRent || 0) + 1
+      s.consecSendHome    = (s.consecSendHome    || 0) + 1
+      /* Achievement: SOUP IN FRIDGE — sent money home 5 shifts in a row. */
+      if (s.consecSendHome >= 5 && window.achievements) {
+        try { window.achievements.unlock('ACH_SOUP_IN_FRIDGE') } catch (e) {}
+      }
     }
 
     /* elenaToneLevel adjustment */
@@ -290,11 +333,17 @@
           })
         })
         scrollBottom()
-        setTimeout(function() {
-          endedEl.style.display = ''
-          setStatus('OFFLINE', false)
-          scrollBottom()
-        }, 600)
+        /* Typewriter Elena's response — per-char tick. OFFLINE status
+           only drops once the line has fully played out. */
+        var rTextEl  = b.querySelector('.msg-text')
+        var rPending = rTextEl && rTextEl.__pendingText ? rTextEl.__pendingText : ''
+        typeInto(rTextEl, rPending, function() {
+          setTimeout(function() {
+            endedEl.style.display = ''
+            setStatus('OFFLINE', false)
+            scrollBottom()
+          }, 600)
+        })
       }, typingMs)
     }, 500)
   }
@@ -302,6 +351,63 @@
   function _notifyDecision() {
     try { window.dispatchEvent(new CustomEvent('thermalMsgDecision')) } catch(e) {}
   }
+
+  /* Senaryo — Family letters from deceased workers. ────────────
+     For every memorial entry that hasn't been read yet, prepend a
+     short family-voice letter above Elena's conversation. Marked
+     letterSeen=true once shown — each letter surfaces exactly once.
+     Rendered statically (no typewriter): these aren't live, they
+     arrived earlier in the day. */
+  var FAMILY_LETTER_TEMPLATES = [
+    'he used to play piano. the girls are too young to understand yet.',
+    'she wrote her sister every sunday. i don\'t know what to tell her.',
+    'he was the youngest of four. our mother is still alive.',
+    'she kept a small garden in the village. she talked about retiring after this year.',
+    'he sent us a postcard from the river last summer. the kids keep asking when he\'s coming.',
+    'we hadn\'t seen him in eight months. he said he was saving up.',
+    'she was supposed to come home for her father\'s birthday next week.'
+  ]
+  function _pickLetterTemplate(seed) {
+    var h = 0
+    for (var i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) | 0
+    return FAMILY_LETTER_TEMPLATES[Math.abs(h) % FAMILY_LETTER_TEMPLATES.length]
+  }
+  function _renderFamilyLetters() {
+    var mem = []
+    try { mem = JSON.parse(localStorage.getItem('thermalMemorial') || '[]') } catch(e){ return }
+    if (!mem || mem.length === 0) return
+    var changed = false
+    /* Iterate oldest → newest so reading order matches deaths chronology */
+    for (var idx = 0; idx < mem.length; idx++) {
+      var m = mem[idx]
+      if (!m || m.letterSeen) continue
+      var name = (m.name || '——').toString()
+      /* "Last-name family" — strip first-name initial if present */
+      var family = name.replace(/\s*[A-Z]\.\s*$/, '').toUpperCase()
+      var body = _pickLetterTemplate(name + idx)
+      var block = document.createElement('div')
+      block.className = 'msg-block family-letter'
+      block.style.cssText =
+        'border-left: 2px solid #5a3a1a; padding-left: 10px; opacity: 0.78; margin-bottom: 14px;'
+      block.innerHTML =
+        '<div class="msg-sender" style="color:#7a5a1a;letter-spacing:2px;">' +
+          '// FAMILY OF ' + family + ' — FILED, NOT LIVE' +
+        '</div>' +
+        '<div class="msg-text" style="font-style:italic;color:#7a8a5a;">' +
+          body +
+        '</div>' +
+        '<div class="msg-timestamp" style="color:#3a5a1a;">' +
+          '// notified before your return' +
+        '</div>'
+      logEl.appendChild(block)
+      mem[idx].letterSeen = true
+      changed = true
+    }
+    if (changed) {
+      try { localStorage.setItem('thermalMemorial', JSON.stringify(mem)) } catch(e){}
+    }
+  }
+  _renderFamilyLetters()
 
   /* ── Init ─────────────────────────────────────────────────────── */
   var existing = loadDecision()

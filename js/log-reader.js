@@ -25,6 +25,108 @@
 
   var LOGS = {
 
+    /* ── BRIEFING (always open — orients the new operator) ─────── */
+    briefing: {
+      filename: 'BRIEFING_OP18.LOG',
+      meta:     'FROM: FACILITY MANAGEMENT — TO: OP.18 (NEW HIRE) — UNIT 4 / NIGHT ROTATION',
+      entries: [
+        {
+          header: 'WELCOME — UNIT 4 NIGHT ROTATION',
+          lines: [
+            { ts: '', text: 'Operator,' },
+            { ts: '', text: 'You have been assigned the night rotation on Unit 4. Read this briefing in full before your first shift.' },
+            { ts: '', text: '' },
+            { ts: '', text: '// SHIFT BASICS', cls: 'hi' },
+            { ts: '', text: 'Shift runs 22:00 → 06:00. Three reactor systems must be kept inside their safe envelopes: TEMPERATURE, PRESSURE, POWER.' },
+            { ts: '', text: 'Each system has 0–10 resource units; total resources are fixed — raising one drops another. Allocate carefully.' },
+            { ts: '', text: 'A system that stays CRITICAL for 120 cumulative seconds will trigger meltdown and end the shift.' },
+            { ts: '', text: '' },
+            { ts: '', text: '// ERROR CODES (ER-XXXX)', cls: 'hi' },
+            { ts: '', text: 'Unit 4 emits cryptic 4-digit error codes when a subsystem destabilizes. The reactor degrades faster while one is unresolved — work fast.' },
+            { ts: '', text: 'Each code has a prescribed fix: a POWER value, a PRESSURE value, a VALVE click sequence, and a SURVEY tone sequence. All four must hold simultaneously to clear the code.' },
+            { ts: '', text: 'Look up the prescription in the PROCEDURE MANUAL — press [{KEY:manual}] at any time to open it. The manual is also accessible from this terminal between shifts.', cls: 'hi' },
+            { ts: '', text: '' },
+            { ts: '', text: '// ON THE MANUAL', cls: 'lo' },
+            { ts: '', text: 'A note from the previous operators: the procedure manual was last revised in 2018. Some prescriptions have not aged well.', cls: 'lo' },
+            { ts: '', text: 'If a fix sequence makes a system worse instead of better, abort it. Do NOT keep applying a procedure that is clearly wrong.', cls: 'hi' },
+            { ts: '', text: 'Cross-reference the operator log archive in the FILES tab when you suspect a discrepancy. The previous operators logged the corrections they discovered.' },
+            { ts: '', text: '' },
+            { ts: '', text: '// OTHER DUTIES', cls: 'hi' },
+            { ts: '', text: 'You will receive periodic radio calls from field maintenance crews (DISPATCH). Keep their dose exposure low — workers do die out there.' },
+            { ts: '', text: 'You will be paid per shift based on safe operation. Shift pay covers rent at home; missing rent for three shifts means eviction. Eviction means street.' },
+            { ts: '', text: '' },
+            { ts: '', text: '// CONTROLS', cls: 'hi' },
+            { ts: '', text: '[{KEY:manual}]   open Procedure Manual' },
+            { ts: '', text: '[{KEY:pause}] pause' },
+            { ts: '', text: '[{KEY:speed1}]/[{KEY:speed2}]/[{KEY:speed3}]  game speed' },
+            { ts: '', text: '' },
+            { ts: '', text: 'Good luck. Try not to think about why this position keeps opening up.', cls: 'lo' },
+            { ts: '', text: '— Personnel Office, Unit 4', cls: 'lo' },
+          ]
+        }
+      ]
+    },
+
+    /* ── OP18 SELF-NOTE (auto-revealed after all 3 lies are discovered)
+       This is "you" writing back to the chain of operators. Appears
+       in FILES once thermalDecryptedFiles contains all of kowalski,
+       reznov, and deleted. Players who never decrypt all three never
+       see it — it's a payoff for completing the discovery loop. */
+    op18note: {
+      filename: 'OP18_NOTE.LOG',
+      meta:     'OPERATOR: OP.18 (you) — PERSONAL — NOT FILED',
+      entries: [
+        {
+          header: 'PERSONAL NOTE',
+          lines: [
+            { ts: '', text: 'Whoever reads this,' },
+            { ts: '', text: '' },
+            { ts: '', text: 'I have now read OP.14, OP.15, and what is left of OP.16.' },
+            { ts: '', text: 'They were right. The manual is wrong about ER-3505, ER-7782, and ER-9031. Three out of ten. Always those three.', cls: 'hi' },
+            { ts: '', text: 'I do not think anyone is going to fix the manual. I do not think anyone is going to be allowed to fix the manual.' },
+            { ts: '', text: '' },
+            { ts: '', text: 'I have written my own corrections in the margin of my copy. They will go with me when I leave.', cls: 'lo' },
+            { ts: '', text: 'I am writing this so the next person knows: the chair is the same chair, the manual is the same manual, the procedure office is the same procedure office. The only thing that has changed is the operator.' },
+            { ts: '', text: '' },
+            { ts: '', text: 'Look at KOWALSKI shift 12. Look at REZNOV shift 8. The fragment from OP.16 is in the deleted file — they did not get all of it.', cls: 'hi' },
+            { ts: '', text: 'Trust the operators. Do not trust the book.', cls: 'hi' },
+            { ts: '', text: '' },
+            { ts: '', text: 'If you are reading this, I am gone, or I will be soon. Either way, the chair is yours now.', cls: 'lo' },
+            { ts: '', text: '— OP.18', cls: 'lo' },
+          ]
+        }
+      ]
+    },
+
+    /* ── OP17 HANDOVER (always open — your immediate predecessor) ── */
+    op17: {
+      filename: 'OP17_HANDOVER.LOG',
+      meta:     'FROM: OP.17 — TO: OP.18 — HANDOVER NOTE — UNIT 4 / NIGHT ROTATION',
+      entries: [
+        {
+          header: 'HANDOVER',
+          lines: [
+            { ts: '', text: 'OP.18,' },
+            { ts: '', text: 'I do not know you, but you are inheriting my chair. A few things they will not tell you in the briefing.' },
+            { ts: '', text: '' },
+            { ts: '', text: 'The error codes are coming faster than they used to. I logged at most one per shift in my first month. By my last month it was three or four. Be ready.', cls: 'lo' },
+            { ts: '', text: '' },
+            { ts: '', text: 'The procedure manual is correct for most codes. It is not correct for all of them. I am not going to tell you which ones — figure it out, or you will not learn how to spot the next one.', cls: 'hi' },
+            { ts: '', text: 'When you suspect the manual, look at the operator log cabinet. KOWALSKI (OP.14) and REZNOV (OP.15) wrote down what worked. Their files are encrypted; the encryption is weak.' },
+            { ts: '', text: 'There is also an OP.16 file. It has been deleted. Do not ask why. Look at it anyway.', cls: 'lo' },
+            { ts: '', text: '' },
+            { ts: '', text: 'A few personal notes:' },
+            { ts: '', text: '— The radiation meter on B-rack drifts upward at night. It is not real drift, but the trend can hide a real spike. Watch the second decimal.' },
+            { ts: '', text: '— Workers on dispatch will lie to you about their dose. Round up.' },
+            { ts: '', text: '— Whatever you do, do not stay past 06:00. The shift end is the only thing in this building that comes on time.' },
+            { ts: '', text: '' },
+            { ts: '', text: 'I am leaving the rotation. I am told it is voluntary.', cls: 'lo' },
+            { ts: '', text: '— OP.17', cls: 'lo' },
+          ]
+        }
+      ]
+    },
+
     /* ── KOWALSKI ─────────────────────────────────────────────── */
     kowalski: {
       filename: 'KOWALSKI_OP14.LOG',
@@ -56,7 +158,12 @@
             { ts: '',      text: 'Previous reports marked reviewed. No corrective action on record.' },
             { ts: '',      text: 'Spoke to floor supervisor. He said instrumentation drifts at night.' },
             { ts: '',      text: 'Instrumentation does not drift.', cls: 'hi' },
-            { ts: '02:20', text: 'Filed written complaint. Kept a copy.' },
+            { ts: '01:30', text: 'ER-3505 fired again. Manual prescribes ascending valve cycle: V1, V2, V3, V4.', cls: 'lo' },
+            { ts: '',      text: 'Tried it. Loop got worse. Margin closing fast.' },
+            { ts: '',      text: 'Reversed on instinct. V4 first, then V3, V1, V2. Loop steadied in seconds.', cls: 'hi' },
+            { ts: '',      text: 'Sealed it with the tone pair backwards too — C4 then A1. Manual says A1 then C4.', cls: 'hi' },
+            { ts: '',      text: 'Held POWER at 3, PRESSURE at 1 like the book says. Those numbers were correct at least.' },
+            { ts: '02:20', text: 'Filed written complaint. Manual is wrong on the sequence. Kept a copy.' },
             { ts: '06:00', text: 'Shift end.' },
           ]
         },
@@ -121,8 +228,13 @@
           header: 'SHIFT 8',
           lines: [
             { ts: '22:00', text: 'Routine start. Pressure holding. Temperature nominal.' },
-            { ts: '01:22', text: 'Minor coolant fluctuation. Self-corrected. No action required.' },
-            { ts: '06:00', text: 'Shift complete.' },
+            { ts: '00:55', text: 'Bus harmonic alarm — ER-7782. Manual prescribes raising POWER to 8 to overcome.', cls: 'lo' },
+            { ts: '',      text: 'Tried it. Generator started shaking inside thirty seconds. Almost scrammed.' },
+            { ts: '',      text: 'Killed allocation down to 2 instead. Vented V3 → V2 → V4. Held PRESSURE at 5.', cls: 'hi' },
+            { ts: '',      text: 'Survey panel: double-strike D3. Cleared in eleven seconds.', cls: 'hi' },
+            { ts: '',      text: 'The manual would have killed me. Power 8 is the worst possible answer.' },
+            { ts: '03:40', text: 'Wrote a procedure revision request. Filed it before logging off.' },
+            { ts: '06:00', text: 'Shift complete. Awaiting response.' },
           ]
         },
         {
@@ -207,13 +319,88 @@
           label: '// NOTE — FROM OP.15 LOG — DAY FOLLOWING DELETION:',
           ts: '02:31',
           msg: 'New arrangement has been implemented.'
+        },
+        null,
+        {
+          note: true,
+          label: '// FRAGMENT — RECOVERED FROM DISK SLACK / SECTOR 0x7C:',
+          ts: '— —',
+          msg: '...containment seal resonance keeps coming back. Manual says drop PRESSURE to 3 — that cracks it wider. Held at 7. Valves V4 → V4 → V2, alternate works only if you double-open V4. Single C4 pulse on the survey panel locks it. POWER stays at 5. Took twenty seconds last shift...'
+        },
+        null,
+        {
+          note: true,
+          label: '// MARGIN NOTE — KOWALSKI LOG, SHIFT 27 (UNRELATED ENTRY):',
+          ts: '04:08',
+          msg: 'Briefly spoke with OP.16 in the corridor before he started. Told him to ignore the manual on ER-9031. He laughed. He has not been here long enough to know it isn’t funny.'
         }
       ]
     },
 
   }
 
+  /* ── Build the predecessor entry dynamically from saved record.
+        Returns a log definition or null if no predecessor exists.
+        Lives outside LOGS because it depends on saveSystem (loaded
+        AFTER log-reader on home-terminal — but openLogReader is the
+        only consumer and runs at click time, so saveSystem is ready). */
+  function _buildPredecessorLog() {
+    if (!(window.saveSystem && window.saveSystem.loadPredecessorLog)) return null
+    var p = window.saveSystem.loadPredecessorLog()
+    if (!p) return null
+
+    var reasonText = ({
+      meltdown: 'CONTAINMENT FAILURE — REACTOR MELTDOWN — UNIT 4',
+      street:   'EVICTION — DEATH OF EXPOSURE',
+      win:      'EMPLOYMENT TERMINATED — DEBT SETTLED',
+      unknown:  'STATUS UNKNOWN — RECORD INCOMPLETE'
+    })[p.gameOverReason] || 'STATUS UNKNOWN'
+
+    var ln = []
+    ln.push({ ts: '', text: 'Recovered fragment from terminal cache. Author did not return for the next shift.', cls: 'lo' })
+    ln.push({ ts: '', text: '' })
+    ln.push({ ts: '', text: '// FINAL TALLY', cls: 'hi' })
+    ln.push({ ts: '', text: 'Shifts completed:        ' + (p.shiftsCompleted || 0) })
+    ln.push({ ts: '', text: 'Money earned:            $' + (p.totalMoney || 0) + ' / $' + (p.targetMoney || 2400) })
+    ln.push({ ts: '', text: 'Casualties on dispatch:  ' + (p.casualties || 0) })
+    ln.push({ ts: '', text: 'Final radiation:         ' + (p.finalRadiation != null ? p.finalRadiation.toFixed(2) : '—') + ' mSv' })
+    ln.push({ ts: '', text: 'Total critical seconds:  ' + (p.totalCritSeconds || 0) + 's' })
+    ln.push({ ts: '', text: '' })
+    ln.push({ ts: '', text: '// CAUSE OF VACANCY', cls: 'hi' })
+    ln.push({ ts: '', text: reasonText, cls: 'lo' })
+    if (p.streetDeathDesc) ln.push({ ts: '', text: p.streetDeathDesc, cls: 'lo' })
+    ln.push({ ts: '', text: '' })
+
+    if (p.discoveredAll) {
+      ln.push({ ts: '', text: '// AUTHOR\'S MARGIN', cls: 'hi' })
+      ln.push({ ts: '', text: 'They knew. They decrypted KOWALSKI, REZNOV, and what was left of OP.16. They left a note for whoever came next.', cls: 'hi' })
+      ln.push({ ts: '', text: 'They left it for you.' })
+    } else {
+      ln.push({ ts: '', text: '// AUTHOR\'S MARGIN', cls: 'hi' })
+      ln.push({ ts: '', text: 'They did not decrypt the operator log cabinet. They went without learning what the operators before them knew.', cls: 'lo' })
+      ln.push({ ts: '', text: 'You should not make the same mistake.' })
+    }
+    ln.push({ ts: '', text: '' })
+    ln.push({ ts: '', text: '— PREVIOUS OPERATOR (DESIGNATION REDACTED)', cls: 'lo' })
+
+    return {
+      filename: 'PREVIOUS_OP_FINAL.LOG',
+      meta:     'OPERATOR: [PREVIOUS] — RECOVERED FROM TERMINAL CACHE — NOT AUTHORIZED',
+      entries: [{ header: 'FINAL SHIFT — RECOVERED', lines: ln }]
+    }
+  }
+
   /* ── Render helpers ──────────────────────────────────────────── */
+  /* Replace {KEY:action} tokens with the current bound key label.
+     Used so BRIEFING text and any future log copy can reference
+     hotkeys without hardcoding [H] etc. */
+  function _subKeys(text) {
+    if (!text || text.indexOf('{KEY:') === -1) return text
+    return text.replace(/\{KEY:([a-zA-Z0-9_]+)\}/g, function (_, action) {
+      return (window.keybinds && window.keybinds.label) ? window.keybinds.label(action) : action.toUpperCase()
+    })
+  }
+
   function renderLogEntry(entry) {
     var div = document.createElement('div')
     div.className = 'log-entry'
@@ -233,7 +420,7 @@
 
       var txt = document.createElement('span')
       txt.className   = 'log-text' + (line.cls ? ' ' + line.cls : '')
-      txt.textContent = line.text
+      txt.textContent = _subKeys(line.text)
 
       row.appendChild(ts)
       row.appendChild(txt)
@@ -281,6 +468,11 @@
 
   /* ── Open ────────────────────────────────────────────────────── */
   function openLogReader(key) {
+    /* Predecessor log is built dynamically from saved record. */
+    if (key === 'predecessor') {
+      var pdef = _buildPredecessorLog()
+      if (pdef) { LOGS.predecessor = pdef }
+    }
     var def = LOGS[key]
     if (!def) return
 

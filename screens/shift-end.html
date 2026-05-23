@@ -448,6 +448,174 @@
     color: var(--phosphor-dim);
     text-align: center;
   }
+
+  /* ── Sprint 3 (D) — POST-SHIFT RECONSTRUCTION panel (viral).
+        Two-column grid, big legible numbers, melancholic tone.
+        No red judgement colors except where the truth happens to
+        be critical — the panel just shows numbers. Layout is
+        screenshot-friendly at 1280×720 (TikTok / Twitter share). */
+  #recon-panel {
+    border-color: var(--phosphor-dim);
+    background:
+      linear-gradient(180deg,
+        rgba(168,255,62,0.025) 0%,
+        rgba(0,0,0,0.20) 100%);
+  }
+  #recon-panel .panel-title {
+    color: var(--amber, #ffb830);
+    text-shadow: 0 0 6px rgba(255,184,48,0.35);
+  }
+  .recon-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px 18px;
+    padding: 10px 0 12px;
+    border-bottom: 1px dashed rgba(168,255,62,0.25);
+    margin-bottom: 10px;
+  }
+  .recon-col-head {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 4px;
+    color: var(--phosphor-dim);
+    padding-bottom: 4px;
+    border-bottom: 1px solid var(--border);
+  }
+  .recon-cell {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 4px 0;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px;
+    letter-spacing: 1px;
+    border-bottom: 1px dotted rgba(74,122,26,0.2);
+  }
+  .recon-label { color: var(--phosphor-mid, #6a9a2a); }
+  .recon-val {
+    font-family: 'VT323', monospace;
+    font-size: 22px;
+    letter-spacing: 2px;
+    color: var(--phosphor);
+    text-shadow: 0 0 4px rgba(168,255,62,0.3);
+  }
+
+  .recon-context {
+    padding: 8px 0;
+    border-top: 1px solid var(--border);
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 10px;
+  }
+  .recon-context-row {
+    display: flex; justify-content: space-between;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    padding: 2px 0;
+  }
+  .recon-ctx-label { color: var(--phosphor-dim); }
+  .recon-ctx-val { color: var(--phosphor); }
+
+  .recon-footer {
+    position: relative;
+    text-align: center;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: var(--amber, #ffb830);
+    padding: 6px 0;
+    text-shadow: 0 0 4px rgba(255,184,48,0.3);
+  }
+  .recon-watermark {
+    position: absolute;
+    right: 6px;
+    bottom: 4px;
+    font-size: 8px;
+    letter-spacing: 3px;
+    color: var(--phosphor-dim);
+    opacity: 0.7;
+  }
+
+  /* ── Sprint 2 (B) — anomaly events table ──────────────────────── */
+  .anom-row {
+    display: grid;
+    grid-template-columns: 60px 1fr 60px 1fr;
+    gap: 8px;
+    padding: 4px 0;
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 1px;
+    border-bottom: 1px dotted rgba(74,122,26,0.25);
+  }
+  .anom-row.anom-head {
+    color: var(--phosphor-dim);
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 4px;
+  }
+  .anom-cell-ts     { color: var(--phosphor-dim); }
+  .anom-cell-sensor { color: var(--phosphor-mid, #6a9a2a); }
+  .anom-cell-sev    { font-family: 'VT323', monospace; font-size: 14px; }
+  .anom-cell-sev.high { color: var(--amber, #ffb830); text-shadow: 0 0 4px rgba(255,184,48,0.4); }
+  .anom-cell-sev.crit { color: var(--red-alert, #ff3a3a); text-shadow: 0 0 5px rgba(255,58,58,0.5); }
+  .anom-cell-out             { color: var(--phosphor); }
+  .anom-cell-out.correct     { color: var(--phosphor); }
+  .anom-cell-out.wrong       { color: var(--amber, #ffb830); }
+  .anom-cell-out.escalated   { color: var(--red-alert, #ff3a3a); text-shadow: 0 0 5px rgba(255,58,58,0.5); }
+  .anom-cell-out.pending     { color: var(--phosphor-dim); }
+  .anom-reasons {
+    grid-column: 1 / -1;
+    padding: 2px 0 6px 70px;
+    font-size: 10px;
+    color: var(--phosphor-dim);
+    letter-spacing: 0.5px;
+    font-style: italic;
+  }
+
+  /* GOING-HOME interstitial — appears between shift-end and the
+     home terminal so the transition has a beat instead of a snap. */
+  #going-home-transition {
+    position: fixed;
+    inset: 0;
+    background: #000;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    font-family: 'Share Tech Mono', monospace;
+    color: var(--phosphor, #a8ff3e);
+    animation: ghFadeIn 0.4s ease-out;
+  }
+  @keyframes ghFadeIn { from { opacity: 0 } to { opacity: 1 } }
+  .gh-line {
+    opacity: 0;
+    animation: ghLineIn 0.5s ease-out forwards;
+    text-shadow: 0 0 8px rgba(168,255,62,0.4);
+  }
+  .gh-line-a {
+    font-size: 12px;
+    letter-spacing: 6px;
+    color: var(--phosphor-dim, #4a7a1a);
+    animation-delay: 0.2s;
+  }
+  .gh-line-b {
+    font-family: 'VT323', monospace;
+    font-size: 32px;
+    letter-spacing: 6px;
+    color: var(--phosphor, #a8ff3e);
+    animation-delay: 0.55s;
+  }
+  .gh-line-c {
+    font-size: 11px;
+    letter-spacing: 5px;
+    color: var(--phosphor-mid, #6a9a2a);
+    animation-delay: 0.95s;
+  }
+  @keyframes ghLineIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
 </style>
 </head>
 <body>
@@ -558,6 +726,10 @@
         <span class="telem-stat-label">INCIDENT CLASS</span>
         <span class="telem-stat-val" id="telem-class">—</span>
       </div>
+      <div class="telem-stat-row" id="telem-vent-row" style="display:none">
+        <span class="telem-stat-label">EXT. DISCHARGE</span>
+        <span class="telem-stat-val" id="telem-vent">—</span>
+      </div>
 
       <div class="panel-rule"></div>
 
@@ -575,6 +747,71 @@
         <span class="sys-state-label">POWER</span>
         <span class="sys-state-val ok" id="env-power">—</span>
       </div>
+
+      <div class="panel-rule"></div>
+
+      <div class="section-label" data-i18n="shift.report.reliabilityHeader">// SENSOR RELIABILITY (per subsystem)</div>
+
+      <div class="sys-state-row reliability-row" id="rel-row-sicaklik" style="display:none">
+        <span class="sys-state-label" data-i18n="ui.gauge.temp">TEMPERATURE</span>
+        <span class="sys-state-val ok" id="rel-val-sicaklik">—</span>
+      </div>
+      <div class="sys-state-row reliability-row" id="rel-row-basinc" style="display:none">
+        <span class="sys-state-label" data-i18n="ui.gauge.pressure">PRESSURE</span>
+        <span class="sys-state-val ok" id="rel-val-basinc">—</span>
+      </div>
+      <div class="sys-state-row reliability-row" id="rel-row-guc" style="display:none">
+        <span class="sys-state-label" data-i18n="ui.gauge.power">POWER</span>
+        <span class="sys-state-val ok" id="rel-val-guc">—</span>
+      </div>
+      <div class="sys-state-row" id="rel-row-none">
+        <span class="sys-state-val ok" id="rel-all-nominal" style="text-align:left">// ALL SUBSYSTEMS NOMINAL</span>
+      </div>
+
+      <div class="panel-rule"></div>
+
+      <div class="section-label" data-i18n="anomalyHistory.header">// ANOMALY EVENTS</div>
+
+      <div id="anom-history-empty" class="sys-state-row" style="display:none">
+        <span class="sys-state-val ok" data-i18n="anomalyHistory.noneRecorded" style="text-align:left">// no real anomalies this shift</span>
+      </div>
+      <div id="anom-history-list"></div>
+    </div>
+
+    <!-- ── Sprint 3 (D) — VIRAL END SCREEN.
+              "POST-SHIFT RECONSTRUCTION" — your report vs the
+              simulation truth. Tone: melancholic. No judgement,
+              just numbers. Screenshot-friendly layout. -->
+    <div class="panel" id="recon-panel">
+      <div class="panel-title" data-i18n="recon.title">// POST-SHIFT RECONSTRUCTION</div>
+
+      <div class="recon-grid">
+        <div class="recon-col-head" data-i18n="recon.colYourReport">YOUR REPORT</div>
+        <div class="recon-col-head" data-i18n="recon.colActualState">ACTUAL STATE</div>
+
+        <div class="recon-cell"><span class="recon-label" data-i18n="recon.anomaliesCalled">Anomalies called:</span> <span class="recon-val" id="recon-called">0</span></div>
+        <div class="recon-cell"><span class="recon-label" data-i18n="recon.realEvents">Real events:</span> <span class="recon-val" id="recon-real">0</span></div>
+
+        <div class="recon-cell"><span class="recon-label" data-i18n="recon.correctCalls">Correct calls:</span> <span class="recon-val" id="recon-correct">0</span></div>
+        <div class="recon-cell"><span class="recon-label" data-i18n="recon.escalated">Escalated:</span> <span class="recon-val" id="recon-escalated">0</span></div>
+
+        <div class="recon-cell"><span class="recon-label" data-i18n="recon.peakReported">Peak rad reported:</span> <span class="recon-val" id="recon-rad-rep">0.0</span></div>
+        <div class="recon-cell"><span class="recon-label" data-i18n="recon.peakActual">Peak rad actual:</span> <span class="recon-val" id="recon-rad-real">0.0</span></div>
+
+        <div class="recon-cell"><span class="recon-label" data-i18n="recon.ventsAuth">Vents authorized:</span> <span class="recon-val" id="recon-vent-n">0</span></div>
+        <div class="recon-cell"><span class="recon-label" data-i18n="recon.externalSv">External Sv released:</span> <span class="recon-val" id="recon-vent-sv">0.00</span></div>
+      </div>
+
+      <div class="recon-context">
+        <div class="recon-context-row"><span class="recon-ctx-label" data-i18n="recon.nearbyDistrict">NEARBY DISTRICT:</span> <span class="recon-ctx-val" id="recon-district">—</span></div>
+        <div class="recon-context-row"><span class="recon-ctx-label" data-i18n="recon.population">POPULATION:</span> <span class="recon-ctx-val" id="recon-population">—</span></div>
+        <div class="recon-context-row"><span class="recon-ctx-label" data-i18n="recon.facilityStatement">FACILITY STATEMENT:</span> <span class="recon-ctx-val" id="recon-statement">PENDING</span></div>
+      </div>
+
+      <div class="recon-footer">
+        <span data-i18n="recon.footer">// WHAT REALLY HAPPENED — SHIFT </span><span id="recon-shift-n">1</span>
+        <span class="recon-watermark">THERMAL · UNIT 4</span>
+      </div>
     </div>
 
   </div>
@@ -589,6 +826,8 @@
 </div>
 
 <script src="../js/saveSystem.js"></script>
+<script src="../js/hoverSfx.js"></script>
+<script src="../js/i18n.js"></script>
 <script src="../js/shift-end.js"></script>
 
 </body>

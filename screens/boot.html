@@ -72,10 +72,13 @@
     background: var(--bg);
     display: flex;
     flex-direction: column;
-    padding: 48px 80px;
+    /* Responsive padding so the bottom progress + footer stay visible
+       at small windowed resolutions (1280×720, 1366×768). */
+    padding: clamp(16px, 4vh, 48px) clamp(24px, 5vw, 80px);
     animation: powerOn 1.2s ease-out forwards;
     position: relative;
     transform-origin: center center;
+    overflow: hidden;
   }
 
   /* CRT turn-off: flash bright → collapse to horizontal line → black */
@@ -109,16 +112,18 @@
     to { top: 100vh; }
   }
 
-  /* BIOS HEADER */
+  /* BIOS HEADER — scales down on shorter windows so the title is
+     never half-clipped at 720p. */
   .bios-header {
-    margin-bottom: 32px;
+    margin-bottom: clamp(10px, 3vh, 32px);
     opacity: 0;
     animation: fadeIn 0.3s 1s forwards;
+    flex-shrink: 0;
   }
 
   .bios-title {
     font-family: 'VT323', monospace;
-    font-size: 20px;
+    font-size: clamp(14px, 2.4vh, 20px);
     letter-spacing: 4px;
     color: var(--phosphor);
     text-shadow: 0 0 8px var(--phosphor);
@@ -126,7 +131,7 @@
   }
 
   .bios-sub {
-    font-size: 10px;
+    font-size: clamp(8px, 1.4vh, 10px);
     letter-spacing: 2px;
     color: var(--phosphor-dim);
   }
@@ -134,25 +139,31 @@
   .bios-divider {
     height: 1px;
     background: linear-gradient(90deg, var(--phosphor-dim), transparent);
-    margin-top: 12px;
+    margin-top: clamp(6px, 1.5vh, 12px);
   }
 
-  /* BOOT LOG */
+  /* BOOT LOG — flexes to fill remaining space; lines auto-scroll
+     to bottom so the newest entry is always visible regardless of
+     viewport height. */
   .boot-log {
-    flex: 1;
+    flex: 1 1 0;
     display: flex;
     flex-direction: column;
     gap: 0;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
+    min-height: 0;
   }
+  .boot-log::-webkit-scrollbar { width: 0; }   /* hide scrollbar visually */
 
   .boot-line {
-    font-size: 11px;
+    font-size: clamp(9px, 1.4vh, 11px);
     letter-spacing: 1px;
-    line-height: 1.9;
+    line-height: clamp(1.4, 2vh, 1.9);
     opacity: 0;
     white-space: nowrap;
     overflow: hidden;
+    flex-shrink: 0;
   }
 
   .boot-line.ok .tag { color: var(--phosphor); }
@@ -225,25 +236,27 @@
   /* WARNING BLOCK */
   .warn-block {
     border: 1px solid rgba(255,184,48,0.3);
-    padding: 8px 14px;
+    padding: clamp(4px, 1vh, 8px) 14px;
     background: rgba(255,184,48,0.04);
     margin-top: 4px;
     opacity: 0;
     animation: lineIn 0.05s 5.9s forwards;
+    flex-shrink: 0;
   }
 
   .warn-block-text {
-    font-size: 10px;
+    font-size: clamp(8px, 1.3vh, 10px);
     letter-spacing: 1px;
     color: rgba(255,184,48,0.7);
-    line-height: 1.8;
+    line-height: clamp(1.4, 2vh, 1.8);
   }
 
   /* PROGRESS BAR SECTION */
   .progress-section {
-    margin-top: 28px;
+    margin-top: clamp(10px, 3vh, 28px);
     opacity: 0;
     animation: fadeIn 0.4s 6.1s forwards;
+    flex-shrink: 0;
   }
 
   .progress-label {
@@ -557,6 +570,29 @@
 </div>
 
 <script src="../js/boot.js"></script>
+<script>
+  /* Auto-scroll the boot-log to keep the most-recently-revealed line
+     in view at small windowed heights (1280×720 etc). Boot lines all
+     exist in the DOM but fade in via staggered CSS animations, so we
+     poll for the last visible one and scroll it into view. */
+  ;(function () {
+    var log = document.querySelector('.boot-log')
+    if (!log) return
+    var poll = setInterval(function () {
+      var lines = log.querySelectorAll('.boot-line')
+      var lastVisible = null
+      for (var i = 0; i < lines.length; i++) {
+        var op = parseFloat(getComputedStyle(lines[i]).opacity || '0')
+        if (op > 0.05) lastVisible = lines[i]
+      }
+      if (lastVisible) {
+        log.scrollTop = log.scrollHeight   // anchor bottom
+      }
+    }, 250)
+    /* Stop polling after the boot sequence wraps (~10s). */
+    setTimeout(function () { clearInterval(poll) }, 12000)
+  })()
+</script>
 
 </body>
 </html>

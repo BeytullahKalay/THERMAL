@@ -147,7 +147,9 @@
     gap: 0;
     position: relative;
     z-index: 10;
-    padding: 40px 0;
+    /* Top padding leaves room under the fixed top-bar (32px). */
+    padding: clamp(40px, 6vh, 56px) 0 clamp(16px, 4vh, 40px);
+    overflow: hidden;
   }
 
   /* TOP STATUS BAR */
@@ -185,26 +187,28 @@
     50% { opacity: 0; }
   }
 
-  /* LOGO / TITLE */
+  /* LOGO / TITLE — responsive so the THERMAL banner doesn't escape
+     the top frame on smaller windowed resolutions (1280×720). */
   .logo-block {
     text-align: center;
-    margin-bottom: 48px;
+    margin-bottom: clamp(16px, 5vh, 48px);
   }
 
   .logo-eyebrow {
-    font-size: 10px;
+    font-size: clamp(8px, 1.4vh, 10px);
     letter-spacing: 6px;
     color: var(--phosphor-dim);
-    margin-bottom: 12px;
+    margin-bottom: clamp(6px, 1.5vh, 12px);
     opacity: 0;
     animation: fadeUp 0.6s 0.2s forwards;
   }
 
   .logo-main {
     font-family: 'VT323', monospace;
-    font-size: 96px;
+    /* 96px at >800px tall, scales down via vh. At 720p ≈ 70px. */
+    font-size: clamp(48px, 9.5vh, 96px);
     line-height: 0.9;
-    letter-spacing: 12px;
+    letter-spacing: clamp(6px, 1.2vh, 12px);
     color: var(--phosphor);
     text-shadow:
       0 0 20px var(--phosphor),
@@ -563,11 +567,22 @@
 
   .settings-panel {
     width: 460px;
+    /* Cap to viewport so the APPLY button is always reachable on
+       small windowed resolutions. Inner sections scroll if needed. */
+    max-height: 88vh;
+    overflow-y: auto;
+    overflow-x: hidden;
     border: 1px solid var(--border);
     background: var(--panel-bg);
     padding: 28px 32px;
     position: relative;
     box-shadow: 0 0 40px rgba(168, 255, 62, 0.05), inset 0 0 30px rgba(0,0,0,0.4);
+  }
+  .settings-panel::-webkit-scrollbar { width: 6px; }
+  .settings-panel::-webkit-scrollbar-track { background: transparent; }
+  .settings-panel::-webkit-scrollbar-thumb {
+    background: rgba(168,255,62,0.2);
+    border-radius: 3px;
   }
 
   .settings-panel::before {
@@ -682,6 +697,140 @@
   .settings-option.selected .opt-label { color: var(--phosphor); }
   .settings-option:hover .opt-label { color: var(--phosphor); }
 
+  /* ── LANGUAGE picker hint ──────────────────────────────────── */
+  .lang-note {
+    margin-top: 8px;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--phosphor-dim);
+    text-align: right;
+  }
+
+  /* ── CONTROLS section (keybindings) ───────────────────────────── */
+  .settings-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .control-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 14px;
+    border: 1px solid var(--border);
+    background: var(--panel-bg);
+    font-family: 'Share Tech Mono', monospace;
+  }
+  .control-label {
+    font-size: 12px;
+    letter-spacing: 2px;
+    color: var(--phosphor-mid, #6a9a2a);
+  }
+  .control-row.protected .control-label::after {
+    content: ' (locked)';
+    font-size: 10px;
+    color: var(--phosphor-dim);
+    margin-left: 6px;
+  }
+  .control-key-btn {
+    font-family: 'VT323', monospace;
+    font-size: 18px;
+    letter-spacing: 3px;
+    color: var(--phosphor, #a8ff3e);
+    background: transparent;
+    border: 1px solid var(--border);
+    padding: 4px 16px;
+    min-width: 80px;
+    text-align: center;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .control-key-btn:hover {
+    border-color: var(--phosphor);
+    background: rgba(168,255,62,0.08);
+  }
+  .control-key-btn.capturing {
+    border-color: var(--amber, #ffb830);
+    color: var(--amber, #ffb830);
+    background: rgba(255,184,48,0.12);
+    animation: ctrlCaptPulse 0.9s ease-in-out infinite alternate;
+  }
+  .control-row.protected .control-key-btn {
+    cursor: not-allowed;
+    color: var(--phosphor-dim);
+    opacity: 0.7;
+  }
+  .control-row.protected .control-key-btn:hover {
+    border-color: var(--border);
+    background: transparent;
+  }
+  @keyframes ctrlCaptPulse {
+    from { box-shadow: 0 0 0 rgba(255,184,48,0); }
+    to   { box-shadow: 0 0 12px rgba(255,184,48,0.6); }
+  }
+  .controls-reset-row {
+    margin-top: 10px;
+    text-align: right;
+  }
+  .controls-reset-btn {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--phosphor-dim);
+    background: transparent;
+    border: 1px solid var(--border);
+    padding: 4px 12px;
+    cursor: pointer;
+  }
+  .controls-reset-btn:hover {
+    border-color: var(--phosphor);
+    color: var(--phosphor);
+    background: rgba(168,255,62,0.06);
+  }
+
+  /* ── Rebind capture modal ─────────────────────────────────────── */
+  #rebind-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 9000;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0,0,0,0.78);
+  }
+  #rebind-overlay.active { display: flex; }
+  .rebind-panel {
+    width: min(360px, 86vw);
+    background: #0b0f05;
+    border: 1px solid var(--amber, #ffb830);
+    box-shadow:
+      0 0 22px rgba(255,184,48,0.35),
+      inset 0 0 14px rgba(255,184,48,0.08);
+    padding: 28px 32px;
+    text-align: center;
+    font-family: 'Share Tech Mono', monospace;
+    color: var(--phosphor);
+  }
+  .rebind-title {
+    font-size: 13px;
+    letter-spacing: 6px;
+    color: var(--amber, #ffb830);
+    margin-bottom: 14px;
+  }
+  .rebind-action {
+    font-family: 'VT323', monospace;
+    font-size: 28px;
+    letter-spacing: 4px;
+    color: var(--phosphor);
+    margin-bottom: 16px;
+    text-shadow: 0 0 8px rgba(168,255,62,0.4);
+  }
+  .rebind-hint {
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: var(--phosphor-dim);
+  }
+
   .opt-tag {
     font-size: 9px;
     letter-spacing: 1px;
@@ -697,6 +846,79 @@
   #res-section.disabled .settings-section-title::after {
     content: ' — TAM EKRANDA UYGULANAMAZ';
     color: rgba(255,184,48,0.5);
+  }
+
+  /* ── SOUND MIXER SLIDERS ───────────────────────────────────────── */
+  .settings-sliders {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .slider-row {
+    display: grid;
+    grid-template-columns: 1fr 140px 38px;
+    align-items: center;
+    gap: 12px;
+    padding: 6px 10px;
+    border: 1px solid transparent;
+    transition: border-color 0.1s, background 0.1s;
+  }
+  .slider-row:hover {
+    border-color: var(--phosphor-dim);
+    background: rgba(168,255,62,0.03);
+  }
+  .slider-label {
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    color: #7aaa3a;
+  }
+  .slider-row:hover .slider-label { color: var(--phosphor); }
+
+  /* Horizontal phosphor slider — custom track + thumb */
+  .slider-input {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 14px;
+    background: transparent;
+    cursor: pointer;
+  }
+  .slider-input::-webkit-slider-runnable-track {
+    height: 2px;
+    background: var(--phosphor-dim);
+    border: 0;
+  }
+  .slider-input::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 8px;
+    height: 14px;
+    margin-top: -6px;
+    background: var(--phosphor);
+    border: 0;
+    box-shadow: 0 0 6px var(--phosphor);
+    cursor: pointer;
+  }
+  .slider-input::-moz-range-track {
+    height: 2px;
+    background: var(--phosphor-dim);
+    border: 0;
+  }
+  .slider-input::-moz-range-thumb {
+    width: 8px;
+    height: 14px;
+    background: var(--phosphor);
+    border: 0;
+    box-shadow: 0 0 6px var(--phosphor);
+    border-radius: 0;
+    cursor: pointer;
+  }
+  .slider-value {
+    font-family: 'VT323', monospace;
+    font-size: 15px;
+    color: var(--phosphor);
+    text-align: right;
+    text-shadow: 0 0 4px var(--phosphor);
   }
 
   /* ── OPERATOR FILE OVERLAY ──────────────────────────────────────── */
@@ -883,25 +1105,25 @@
 
     <!-- Status snapshot -->
     <div class="status-snapshot" id="status-snapshot" style="display:none">
-      <div class="snapshot-title">// LAST SHIFT STATUS</div>
+      <div class="snapshot-title" data-i18n="snapshot.title">// LAST SHIFT STATUS</div>
       <div class="snapshot-rows">
         <div class="snapshot-row">
-          <span class="snap-label">TEMPERATURE</span>
+          <span class="snap-label" data-i18n="ui.gauge.temp">TEMPERATURE</span>
           <div class="snap-bar"><div class="snap-fill" id="snap-bar-temp" style="width:0%"></div></div>
           <span class="snap-val" id="snap-val-temp">—</span>
         </div>
         <div class="snapshot-row">
-          <span class="snap-label">PRESSURE</span>
+          <span class="snap-label" data-i18n="ui.gauge.pressure">PRESSURE</span>
           <div class="snap-bar"><div class="snap-fill" id="snap-bar-pressure" style="width:0%"></div></div>
           <span class="snap-val" id="snap-val-pressure">—</span>
         </div>
         <div class="snapshot-row">
-          <span class="snap-label">POWER</span>
+          <span class="snap-label" data-i18n="ui.gauge.power">POWER</span>
           <div class="snap-bar"><div class="snap-fill" id="snap-bar-power" style="width:0%"></div></div>
           <span class="snap-val" id="snap-val-power">—</span>
         </div>
         <div class="snapshot-row" style="border-top:1px solid var(--border); padding-top:6px; margin-top:2px;">
-          <span class="snap-label">TREATMENT FUND</span>
+          <span class="snap-label" data-i18n="snapshot.treatmentFund">TREATMENT FUND</span>
           <div class="snap-bar"><div class="snap-fill" id="snap-bar-fund" style="width:0%"></div></div>
           <span class="snap-val snap-ok" id="menu-money-progress">0 / 2400</span>
         </div>
@@ -920,7 +1142,7 @@
 
       <div class="menu-item" id="menu-item-newgame" style="display:none">
         <span class="menu-prefix">02</span>
-        <span class="menu-label">NEW GAME</span>
+        <span class="menu-label" data-i18n="menu.primary.newGame">NEW GAME</span>
         <span class="menu-arrow">▶</span>
       </div>
 
@@ -928,27 +1150,33 @@
 
       <div class="menu-item" id="menu-item-manual">
         <span class="menu-prefix" id="prefix-manual">03</span>
-        <span class="menu-label">SAFE OPERATION MANUAL</span>
+        <span class="menu-label" data-i18n="menu.manual">SAFE OPERATION MANUAL</span>
         <span class="menu-arrow">▶</span>
       </div>
 
       <div class="menu-item" id="menu-item-operatorfile">
         <span class="menu-prefix" id="prefix-operatorfile">04</span>
-        <span class="menu-label locked">OPERATOR FILE</span>
-        <span class="menu-lock">// LOCKED</span>
+        <span class="menu-label locked" data-i18n="menu.operatorFile">OPERATOR FILE</span>
+        <span class="menu-lock" data-i18n="menu.locked">// LOCKED</span>
       </div>
 
       <div class="menu-divider"></div>
 
       <div class="menu-item" id="menu-item-settings">
         <span class="menu-prefix" id="prefix-settings">05</span>
-        <span class="menu-label">SETTINGS</span>
+        <span class="menu-label" data-i18n="menu.settings">SETTINGS</span>
+        <span class="menu-arrow">▶</span>
+      </div>
+
+      <div class="menu-item" id="menu-item-credits">
+        <span class="menu-prefix" id="prefix-credits">06</span>
+        <span class="menu-label" data-i18n="menu.credits">CREDITS</span>
         <span class="menu-arrow">▶</span>
       </div>
 
       <div class="menu-item" id="menu-item-exit">
-        <span class="menu-prefix" id="prefix-exit">06</span>
-        <span class="menu-label danger">EXIT</span>
+        <span class="menu-prefix" id="prefix-exit">07</span>
+        <span class="menu-label danger" data-i18n="menu.exit">EXIT</span>
         <span class="menu-arrow">▶</span>
       </div>
 
@@ -956,11 +1184,9 @@
 
     <!-- Last shift excerpt -->
     <div class="last-shift">
-      <div class="last-shift-title">// LAST ENTRY</div>
-      <div class="last-shift-entry">
-        <span class="ts">02:14</span>Awaiting operator intervention.<br>
-        <span class="ts">02:15</span><span class="conflict">⚠ Camera 1 conflicts with log.</span><br>
-        <span class="ts">02:31</span>Shift closed with errors.<span class="cursor"></span>
+      <div class="last-shift-title" data-i18n="snapshot.lastEntry">// LAST ENTRY</div>
+      <div class="last-shift-entry" id="last-shift-entry">
+        <span class="ts">——</span>No data.<span class="cursor"></span>
       </div>
     </div>
 
@@ -1005,22 +1231,22 @@
   <div class="settings-panel">
 
     <div class="settings-header">
-      <div class="settings-title">// SYSTEM SETTINGS</div>
-      <div class="settings-close" id="settings-close">[ CLOSE ]</div>
+      <div class="settings-title" data-i18n="settings.title">// SYSTEM SETTINGS</div>
+      <div class="settings-close" id="settings-close" data-i18n="settings.close">[ CLOSE ]</div>
     </div>
     <div class="settings-rule"></div>
 
     <!-- WINDOW MODE -->
     <div class="settings-section">
-      <div class="settings-section-title">WINDOW MODE</div>
+      <div class="settings-section-title" data-i18n="settings.windowMode">WINDOW MODE</div>
       <div class="settings-options" id="mode-list">
         <div class="settings-option selected" data-mode="windowed">
           <span class="opt-selector">▶</span>
-          <span class="opt-label">WINDOWED</span>
+          <span class="opt-label" data-i18n="settings.windowed">WINDOWED</span>
         </div>
         <div class="settings-option" data-mode="fullscreen">
           <span class="opt-selector"> </span>
-          <span class="opt-label">FULLSCREEN</span>
+          <span class="opt-label" data-i18n="settings.fullscreen">FULLSCREEN</span>
         </div>
       </div>
     </div>
@@ -1029,16 +1255,83 @@
 
     <!-- RESOLUTION -->
     <div class="settings-section" id="res-section">
-      <div class="settings-section-title">DISPLAY RESOLUTION</div>
+      <div class="settings-section-title" data-i18n="settings.resolution">DISPLAY RESOLUTION</div>
       <div class="settings-options" id="res-list">
         <!-- populated by JS -->
       </div>
     </div>
 
-    <div class="settings-footer">
-      <div class="settings-apply-btn" id="settings-apply">▶ APPLY</div>
+    <div class="settings-thin-rule"></div>
+
+    <!-- SOUND MIXER -->
+    <div class="settings-section" id="sound-section">
+      <div class="settings-section-title" data-i18n="settings.sound">SOUND MIXER</div>
+      <div class="settings-sliders">
+        <div class="slider-row" data-cat="master">
+          <span class="slider-label" data-i18n="sound.master">MASTER</span>
+          <input type="range" class="slider-input" min="0" max="100" step="1" value="100">
+          <span class="slider-value">100</span>
+        </div>
+        <div class="slider-row" data-cat="ui">
+          <span class="slider-label" data-i18n="sound.ui">UI (HOVER / CLICK / LOG / TYPE)</span>
+          <input type="range" class="slider-input" min="0" max="100" step="1" value="90">
+          <span class="slider-value">90</span>
+        </div>
+        <div class="slider-row" data-cat="alerts">
+          <span class="slider-label" data-i18n="sound.alerts">ALERTS (WARN / ALARM)</span>
+          <input type="range" class="slider-input" min="0" max="100" step="1" value="100">
+          <span class="slider-value">100</span>
+        </div>
+        <div class="slider-row" data-cat="ambience">
+          <span class="slider-label" data-i18n="sound.ambience">AMBIENCE (SPARK / STATIC)</span>
+          <input type="range" class="slider-input" min="0" max="100" step="1" value="80">
+          <span class="slider-value">80</span>
+        </div>
+        <div class="slider-row" data-cat="transition">
+          <span class="slider-label" data-i18n="sound.transition">TRANSITION (CRT ON / OFF)</span>
+          <input type="range" class="slider-input" min="0" max="100" step="1" value="90">
+          <span class="slider-value">90</span>
+        </div>
+      </div>
     </div>
 
+    <div class="settings-thin-rule"></div>
+
+    <!-- LANGUAGE — locale picker. Changes via window.i18n.setLang() -->
+    <div class="settings-section" id="language-section">
+      <div class="settings-section-title" data-i18n="settings.language">LANGUAGE</div>
+      <div class="settings-options" id="language-list">
+        <!-- rows injected by menu.js from window.i18n.LANGS -->
+      </div>
+      <div class="lang-note" data-i18n="lang.label">// CHANGES APPLY ON NEXT SCREEN</div>
+    </div>
+
+    <div class="settings-thin-rule"></div>
+
+    <!-- CONTROLS — keybindings, rebindable -->
+    <div class="settings-section" id="controls-section">
+      <div class="settings-section-title" data-i18n="settings.controls">CONTROLS</div>
+      <div class="settings-controls" id="controls-list">
+        <!-- rows injected by menu.js from window.keybinds.META -->
+      </div>
+      <div class="controls-reset-row">
+        <button type="button" class="controls-reset-btn" id="controls-reset" data-i18n="settings.reset">[ RESET TO DEFAULTS ]</button>
+      </div>
+    </div>
+
+    <div class="settings-footer">
+      <div class="settings-apply-btn" id="settings-apply" data-i18n="settings.apply">▶ APPLY</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══ KEYBIND CAPTURE MODAL ═════════════════════════════════════ -->
+<div id="rebind-overlay">
+  <div class="rebind-panel">
+    <div class="rebind-title" data-i18n="rebind.title">// PRESS A KEY</div>
+    <div class="rebind-action" id="rebind-action">—</div>
+    <div class="rebind-hint" data-i18n="rebind.cancel">[Esc] cancel — modifier keys not supported</div>
   </div>
 </div>
 
@@ -1104,6 +1397,46 @@
 </div>
 
 <script src="../js/saveSystem.js"></script>
+<script src="../js/hoverSfx.js"></script>
+<script>
+/* Sound-mixer wiring: seed each slider from the saved volumes, then
+   live-update the gain + persist on every input event. Slight debounce
+   on audio preview so dragging the knob doesn't spam sounds. */
+(function() {
+  if (!window.hoverSfx || !window.hoverSfx.getVolumes) return
+  var saved = window.hoverSfx.getVolumes()
+  var rows = document.querySelectorAll('.slider-row')
+  var previewAt = 0
+  rows.forEach(function(row) {
+    var cat = row.getAttribute('data-cat')
+    var input = row.querySelector('.slider-input')
+    var val = row.querySelector('.slider-value')
+    if (!(cat in saved) || !input || !val) return
+    var pct = Math.round(saved[cat] * 100)
+    input.value = pct
+    val.textContent = pct
+    input.addEventListener('input', function() {
+      var v = parseInt(input.value, 10) || 0
+      val.textContent = v
+      window.hoverSfx.setVolume(cat, v / 100)
+      /* Audible preview so the user hears the level change. Pick a
+         sound representative of this category. */
+      var now = Date.now()
+      if (now - previewAt < 140) return
+      previewAt = now
+      try {
+        if      (cat === 'ui')         window.hoverSfx.click()
+        else if (cat === 'alerts')     window.hoverSfx.warn()
+        else if (cat === 'ambience')   window.hoverSfx.spark()
+        else if (cat === 'transition') window.hoverSfx.crtOn()
+        else                           window.hoverSfx.click()   /* master */
+      } catch (e) {}
+    })
+  })
+})()
+</script>
+<script src="../js/i18n.js"></script>
+<script src="../js/keybinds.js"></script>
 <script src="../js/menu.js"></script>
 
 </body>

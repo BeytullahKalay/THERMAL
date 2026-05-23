@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>THERMAL — CREDITS</title>
+<style>
+  :root {
+    --phosphor: #a8ff3e;
+    --phosphor-dim: #4a7a1a;
+    --phosphor-mid: #6a9a2a;
+    --amber: #ffb830;
+    --bg: #080a04;
+    --border: #1e2e0c;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+
+  html, body {
+    background: var(--bg);
+    height: 100vh;
+    overflow: hidden;
+    cursor: crosshair;
+    font-family: 'VT323', 'Share Tech Mono', monospace;
+    color: var(--phosphor);
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+  }
+
+  /* CRT scanlines */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      rgba(0,0,0,0.18) 0px,
+      rgba(0,0,0,0.18) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+    pointer-events: none;
+    z-index: 1000;
+  }
+
+  /* CRT vignette */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.75) 100%);
+    pointer-events: none;
+    z-index: 999;
+  }
+
+  .scan-roll {
+    position: fixed;
+    left: 0; right: 0;
+    height: 120px;
+    background: linear-gradient(180deg,
+      transparent 0%,
+      rgba(168,255,62,0.03) 45%,
+      rgba(168,255,62,0.06) 50%,
+      rgba(168,255,62,0.03) 55%,
+      transparent 100%
+    );
+    animation: scanRoll 9s linear infinite;
+    z-index: 1;
+    pointer-events: none;
+  }
+  @keyframes scanRoll {
+    from { top: -120px; }
+    to   { top: 100vh; }
+  }
+
+  @keyframes powerOn {
+    0%   { transform: scaleY(0.01); filter: brightness(8) saturate(0); opacity: 0.6; }
+    12%  { transform: scaleY(0.01); filter: brightness(12) saturate(0); opacity: 1; }
+    24%  { transform: scaleY(1);    filter: brightness(2);              opacity: 1; }
+    36%  { transform: scaleY(1);    filter: brightness(0.75);           opacity: 1; }
+    50%  { transform: scaleY(1);    filter: brightness(1.3);            opacity: 1; }
+    70%  { transform: scaleY(1);    filter: brightness(1);              opacity: 1; }
+    100% { transform: scaleY(1);    filter: brightness(1);              opacity: 1; }
+  }
+
+  @keyframes crtOff {
+    0%   { transform: scaleY(1);    filter: brightness(1); opacity: 1; }
+    8%   { transform: scaleY(1);    filter: brightness(3) saturate(0); opacity: 1; }
+    22%  { transform: scaleY(0.04); filter: brightness(8); opacity: 1; }
+    55%  { transform: scaleY(0.02); filter: brightness(3); opacity: 1; }
+    100% { transform: scaleY(0.01); filter: brightness(0); opacity: 0; }
+  }
+
+  .frame {
+    width: min(720px, 92vw);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 36px;
+    animation: powerOn 0.9s cubic-bezier(0, 0, 0.4, 1) forwards,
+               flicker 6s 0.9s infinite;
+    transform-origin: center center;
+  }
+
+  @keyframes flicker {
+    0%, 97%, 100% { opacity: 1; }
+    98%           { opacity: 0.88; }
+    99%           { opacity: 0.96; }
+  }
+
+  .frame.crt-off {
+    animation: crtOff 0.65s cubic-bezier(0.4, 0, 1, 1) forwards;
+  }
+
+  @keyframes fadeIn { to { opacity: 1; } }
+
+  /* Header block */
+  .header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 22px;
+    width: 100%;
+    opacity: 0;
+    animation: fadeIn 0.6s 0.9s forwards;
+  }
+
+  .logo {
+    width: min(28vw, 220px);
+    filter:
+      drop-shadow(0 0 8px rgba(168,255,62,0.45))
+      drop-shadow(0 0 22px rgba(168,255,62,0.18));
+  }
+
+  .title {
+    font-size: 56px;
+    letter-spacing: 18px;
+    text-shadow: 0 0 12px rgba(168,255,62,0.55);
+  }
+
+  .subtitle {
+    font-size: 14px;
+    letter-spacing: 8px;
+    color: var(--phosphor-dim);
+    text-shadow: 0 0 6px rgba(168,255,62,0.25);
+  }
+
+  /* Credits list */
+  .credits-list {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+    width: 100%;
+    max-width: 560px;
+  }
+
+  .credit-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 24px;
+    opacity: 0;
+    animation: fadeIn 0.5s forwards;
+  }
+
+  .credit-role {
+    font-size: 13px;
+    letter-spacing: 4px;
+    color: var(--phosphor-dim);
+    flex-shrink: 0;
+  }
+
+  .credit-dots {
+    flex: 1;
+    border-bottom: 1px dotted var(--border);
+    transform: translateY(-4px);
+    opacity: 0.5;
+  }
+
+  .credit-name {
+    font-size: 18px;
+    letter-spacing: 3px;
+    color: var(--phosphor);
+    text-shadow: 0 0 6px rgba(168,255,62,0.35);
+    flex-shrink: 0;
+  }
+
+  /* Bottom note + back button */
+  .footer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+    width: 100%;
+    opacity: 0;
+    animation: fadeIn 0.6s 2.4s forwards;
+  }
+
+  .thanks {
+    font-size: 12px;
+    letter-spacing: 6px;
+    color: var(--phosphor-mid);
+    text-align: center;
+  }
+
+  .presents {
+    font-size: 11px;
+    letter-spacing: 5px;
+    color: var(--phosphor-dim);
+  }
+
+  .back-btn {
+    font-family: inherit;
+    font-size: 16px;
+    letter-spacing: 5px;
+    color: var(--phosphor);
+    background: transparent;
+    border: 1px solid var(--border);
+    padding: 10px 28px;
+    cursor: pointer;
+    margin-top: 6px;
+    text-shadow: 0 0 6px rgba(168,255,62,0.35);
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+  }
+
+  .back-btn:hover {
+    border-color: var(--phosphor);
+    background: rgba(168,255,62,0.08);
+  }
+
+  /* Version footer */
+  .version {
+    position: fixed;
+    bottom: 14px;
+    left: 0; right: 0;
+    text-align: center;
+    font-size: 10px;
+    letter-spacing: 4px;
+    color: var(--phosphor-dim);
+    z-index: 2;
+  }
+</style>
+</head>
+<body>
+
+<div class="scan-roll"></div>
+
+<div class="frame" id="frame">
+
+  <div class="header">
+    <img class="logo" src="../MildlyEpicLogo2.png" alt="Mildly Epic Interactive">
+    <div class="title">THERMAL</div>
+    <div class="subtitle">A MILDLY EPIC INTERACTIVE PRODUCTION</div>
+  </div>
+
+  <div class="credits-list" id="credits-list">
+    <!-- rows injected by JS -->
+  </div>
+
+  <div class="footer">
+    <div class="thanks" data-i18n="credits.thanks">// THANK YOU FOR PLAYING</div>
+    <div class="presents" data-i18n="credits.build">BUILD 0.1.0 — PRE-ALPHA</div>
+    <button class="back-btn" id="back-btn" data-hover-sfx data-i18n="common.back">[ BACK ]</button>
+  </div>
+
+</div>
+
+<div class="version">MILDLY EPIC INTERACTIVE — UNIT 4 TERMINAL — YEAR 4</div>
+
+<script src="../js/hoverSfx.js"></script>
+<script src="../js/i18n.js"></script>
+<script>
+  var ROLES = [
+    'DESIGN & DIRECTION',
+    'PROGRAMMING',
+    'WRITING & NARRATIVE',
+    'UI / VISUAL DESIGN',
+    'SOUND DESIGN',
+    'QUALITY ASSURANCE',
+    'SPECIAL THANKS'
+  ]
+  var NAME = 'BEYTULLAH KALAY'
+
+  var list = document.getElementById('credits-list')
+  ROLES.forEach(function(role, i) {
+    var row = document.createElement('div')
+    row.className = 'credit-row'
+    row.style.animationDelay = (1.1 + i * 0.14) + 's'
+    row.innerHTML =
+      '<span class="credit-role">' + role + '</span>' +
+      '<span class="credit-dots"></span>' +
+      '<span class="credit-name">' + NAME + '</span>'
+    list.appendChild(row)
+  })
+
+  /* ── Exit transition ─────────────────────────────────────── */
+  var exiting = false
+  function goBack() {
+    if (exiting) return
+    exiting = true
+    var frame = document.getElementById('frame')
+    if (frame) frame.classList.add('crt-off')   // fires crtOff sfx via animationstart
+    setTimeout(function() {
+      window.location.href = 'menu.html'
+    }, 620)
+  }
+
+  /* Defensive hover/click sfx — if the global pointerover listener in
+     hoverSfx.js hasn't matched this button for any reason, wire it
+     explicitly so the credits back button never feels dead. */
+  var backBtn = document.getElementById('back-btn')
+  backBtn.addEventListener('mouseenter', function() {
+    if (window.hoverSfx && window.hoverSfx.play) window.hoverSfx.play()
+  })
+  backBtn.addEventListener('click', function() {
+    if (window.hoverSfx && window.hoverSfx.click) window.hoverSfx.click()
+    goBack()
+  })
+  window.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') {
+      if (window.hoverSfx && window.hoverSfx.click) window.hoverSfx.click()
+      goBack()
+    }
+  })
+</script>
+
+</body>
+</html>

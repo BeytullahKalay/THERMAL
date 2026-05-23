@@ -1,0 +1,64 @@
+{
+  "_comment": "THERMAL — Previous Operator Logs. 2 open from start (briefing packet), 3 hackable via home-terminal FILES hack mini-game. Each log contains the TRUE fix recipe for its referenced ER-code, embedded in a personal-diary entry written bürokratik-cold or subjectively degraded depending on the operator. Do not explain the fix mechanically — it must read as a passing observation the operator made on the floor.",
+
+  "logs": [
+    {
+      "id":        "BRIEFING_001",
+      "unlocked":  true,
+      "author":    "FACILITY",
+      "title":     "NIGHT SHIFT BRIEFING — GENERAL",
+      "entries": [
+        { "date": "—", "text": "Welcome to Unit 4. Night shift covers 22:00–06:00 local. Primary duty: maintain all three system gauges inside SAFE band. Consult MANUAL for documented fault codes. Log any deviations at end of shift. Unit 4 operates under supervised telemetry; do not contact other stations." }
+      ]
+    },
+    {
+      "id":        "OP17_FRAGMENT",
+      "unlocked":  true,
+      "author":    "OP.17",
+      "title":     "OP.17 — PARTIAL LOG (4 SHIFTS)",
+      "entries": [
+        { "date": "SHIFT 01", "text": "Routine night. Two pressure oscillations, both cleared via V2→V4 vent. Manual prescription matched. Clean." },
+        { "date": "SHIFT 03", "text": "Core stagnation alarm, ER-4419. Manual was correct — full tone sweep A1-B2-C4 closed it immediately. Logged for continuity." },
+        { "date": "SHIFT 04", "text": "Transferred. No further entries." }
+      ]
+    },
+    {
+      "id":        "KOWALSKI_OP14",
+      "unlocked":  false,
+      "hackable":  true,
+      "author":    "KOWALSKI, OP.14",
+      "title":     "KOWALSKI — 31 SHIFTS",
+      "entries": [
+        { "date": "SHIFT 06", "text": "ER-3505 again. Third time this month. Manual says ascending valve cycle V1-V2-V3-V4 but the loop never settles that way. Tried descending tonight out of frustration — V4 V3 V1 V2 — and it locked clean. Tones reversed too, C4 before A1." },
+        { "date": "SHIFT 09", "text": "Filed the discrepancy with supervision. No response." },
+        { "date": "SHIFT 17", "text": "Filed again. Told to follow manual. I follow the thing that works." },
+        { "date": "SHIFT 29", "text": "The anomalies repeat. I am certain now that the manual is" }
+      ]
+    },
+    {
+      "id":        "REZNOV_OP15",
+      "unlocked":  false,
+      "hackable":  true,
+      "author":    "REZNOV, OP.15",
+      "title":     "REZNOV — 47 SHIFTS",
+      "entries": [
+        { "date": "SHIFT 04", "text": "First bus harmonic alarm. ER-7782. Manual instructs raising power to 8. Did so. Alarm persisted 40 seconds, then dropped power to 2 on instinct — cleared instantly. The manual entry is inverted." },
+        { "date": "SHIFT 22", "text": "Procedure followed. Parameters nominal." },
+        { "date": "SHIFT 33", "text": "Procedure followed. Parameters nominal." },
+        { "date": "SHIFT 40", "text": "Procedure followed. Parameters nominal." },
+        { "date": "SHIFT 47", "text": "Procedure followed. Parameters nominal." }
+      ]
+    },
+    {
+      "id":        "DELETED_OP16",
+      "unlocked":  false,
+      "hackable":  true,
+      "author":    "[DELETED]",
+      "title":     "OP.16 — RECORD REMOVED",
+      "entries": [
+        { "date": "—", "text": "[ENTRY RECOVERED FROM DELETED PARTITION]" },
+        { "date": "SHIFT ??", "text": "ER-9031 manual is wrong about pressure. You do not lower it, you raise it. Hold at 7. Double-pulse V4 before V2. The manual version melts the seal on the second pass. I don't know why they haven't corrected the document. I am going to ask tom" }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>THERMAL — DEMO END</title>
+<style>
+  :root {
+    --phosphor: #a8ff3e;
+    --phosphor-dim: #4a7a1a;
+    --phosphor-mid: #6a9a2a;
+    --amber: #ffb830;
+    --red-alert: #ff3a3a;
+    --bg: #080a04;
+    --panel-bg: #0b0f05;
+    --border: #1e2e0c;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+  html, body {
+    background: var(--bg);
+    height: 100vh;
+    overflow: hidden;
+    cursor: crosshair;
+    font-family: 'Share Tech Mono', monospace;
+    color: var(--phosphor);
+  }
+  body {
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 40px 20px;
+  }
+
+  /* CRT scanlines + vignette — match rest of the game */
+  body::before {
+    content: ''; position: fixed; inset: 0;
+    background: repeating-linear-gradient(
+      0deg, rgba(0,0,0,0.18) 0px, rgba(0,0,0,0.18) 1px,
+      transparent 1px, transparent 3px);
+    pointer-events: none; z-index: 1000;
+  }
+  body::after {
+    content: ''; position: fixed; inset: 0;
+    background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.75) 100%);
+    pointer-events: none; z-index: 999;
+  }
+
+  @keyframes powerOn {
+    0%   { transform: scaleY(0.01); filter: brightness(8) saturate(0); opacity: 0.6; }
+    12%  { transform: scaleY(0.01); filter: brightness(12) saturate(0); opacity: 1; }
+    24%  { transform: scaleY(1);    filter: brightness(2);              opacity: 1; }
+    36%  { transform: scaleY(1);    filter: brightness(0.75);           opacity: 1; }
+    100% { transform: scaleY(1);    filter: brightness(1);              opacity: 1; }
+  }
+  @keyframes crtOff {
+    0%   { transform: scaleY(1);    filter: brightness(1); opacity: 1; }
+    8%   { transform: scaleY(1);    filter: brightness(3) saturate(0); opacity: 1; }
+    22%  { transform: scaleY(0.04); filter: brightness(8); opacity: 1; }
+    100% { transform: scaleY(0.01); filter: brightness(0); opacity: 0; }
+  }
+
+  .frame {
+    width: min(720px, 92vw);
+    display: flex; flex-direction: column; gap: 20px;
+    animation: powerOn 0.9s cubic-bezier(0, 0, 0.4, 1) forwards;
+    transform-origin: center center;
+  }
+  .frame.crt-off {
+    animation: crtOff 0.65s cubic-bezier(0.4, 0, 1, 1) forwards;
+  }
+
+  @keyframes fadeIn { to { opacity: 1; } }
+
+  .header {
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 16px;
+    text-align: center;
+  }
+  .eyebrow {
+    font-size: 11px; letter-spacing: 5px;
+    color: var(--amber);
+    margin-bottom: 6px;
+    opacity: 0;
+    animation: fadeIn 0.5s 0.7s forwards;
+  }
+  .title {
+    font-family: 'VT323', monospace;
+    font-size: 56px; letter-spacing: 14px;
+    color: var(--phosphor);
+    text-shadow: 0 0 12px rgba(168,255,62,0.55);
+    opacity: 0;
+    animation: fadeIn 0.6s 1s forwards;
+  }
+  .subtitle {
+    font-size: 12px; letter-spacing: 5px;
+    color: var(--phosphor-mid);
+    margin-top: 8px;
+    opacity: 0;
+    animation: fadeIn 0.6s 1.4s forwards;
+  }
+
+  .body-text {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 14px; line-height: 1.7;
+    color: var(--phosphor);
+    padding: 14px 18px;
+    border: 1px dashed rgba(168,255,62,0.3);
+    background: rgba(168,255,62,0.03);
+    opacity: 0;
+    animation: fadeIn 0.7s 1.8s forwards;
+  }
+  .body-text p { margin-bottom: 10px; }
+  .body-text p:last-child { margin-bottom: 0; }
+  .hi { color: var(--phosphor); text-shadow: 0 0 6px rgba(168,255,62,0.4); }
+  .lo { color: var(--amber); }
+
+  .stats {
+    display: flex; justify-content: space-around; gap: 18px;
+    padding: 12px 16px;
+    border: 1px solid var(--border);
+    background: var(--panel-bg);
+    opacity: 0;
+    animation: fadeIn 0.6s 2.4s forwards;
+  }
+  .stat {
+    text-align: center;
+  }
+  .stat-label {
+    font-size: 9px; letter-spacing: 3px; color: var(--phosphor-mid);
+  }
+  .stat-val {
+    font-family: 'VT323', monospace;
+    font-size: 24px; color: var(--phosphor);
+    text-shadow: 0 0 6px rgba(168,255,62,0.4);
+    margin-top: 4px;
+  }
+
+  .footer {
+    display: flex; flex-direction: column; align-items: center;
+    gap: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+    opacity: 0;
+    animation: fadeIn 0.6s 3s forwards;
+  }
+  .pitch {
+    font-size: 13px; letter-spacing: 2px;
+    color: var(--phosphor); text-align: center;
+    line-height: 1.6;
+  }
+  .pitch .bold {
+    color: var(--phosphor);
+    text-shadow: 0 0 8px rgba(168,255,62,0.5);
+  }
+
+  .btn-row {
+    display: flex; gap: 14px;
+  }
+  .btn {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 14px; letter-spacing: 4px;
+    color: var(--phosphor); background: transparent;
+    border: 1px solid var(--phosphor-dim);
+    padding: 10px 22px;
+    cursor: pointer;
+    text-shadow: 0 0 6px rgba(168,255,62,0.35);
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .btn:hover {
+    border-color: var(--phosphor);
+    background: rgba(168,255,62,0.08);
+  }
+  .btn-wishlist {
+    border-color: var(--amber);
+    color: var(--amber);
+    text-shadow: 0 0 6px rgba(255,184,48,0.4);
+  }
+  .btn-wishlist:hover {
+    background: rgba(255,184,48,0.1);
+  }
+
+  .version {
+    position: fixed;
+    bottom: 12px; left: 0; right: 0;
+    text-align: center;
+    font-size: 9px; letter-spacing: 4px;
+    color: var(--phosphor-dim);
+    z-index: 2;
+  }
+</style>
+</head>
+<body>
+
+<div class="frame" id="frame">
+
+  <div class="header">
+    <div class="eyebrow" data-i18n="demoEnd.eyebrow">// DEMO BUILD — END OF SHIFT 1</div>
+    <div class="title">THERMAL</div>
+    <div class="subtitle" data-i18n="demoEnd.subtitle">06:00 — END OF NIGHT ROTATION</div>
+  </div>
+
+  <div class="body-text">
+    <p>You finished your first shift on Unit 4.</p>
+    <p>The procedure manual on your desk got you through it. Most of its prescriptions worked. <span class="lo">One didn't.</span> You may have noticed.</p>
+    <p>The full game continues from here — <span class="hi">decrypt the operator log archive</span> to find out which procedures lie and why. The operators before you wrote it down. They are not on the night shift anymore.</p>
+    <p>Thank you for trying THERMAL.</p>
+  </div>
+
+  <div class="stats" id="stats">
+    <div class="stat"><div class="stat-label">SHIFT</div><div class="stat-val">1</div></div>
+    <div class="stat"><div class="stat-label">CORRECT</div><div class="stat-val" id="stat-correct">0</div></div>
+    <div class="stat"><div class="stat-label">WRONG</div><div class="stat-val" id="stat-wrong">0</div></div>
+    <div class="stat"><div class="stat-label">RAD</div><div class="stat-val" id="stat-rad">0.0</div></div>
+  </div>
+
+  <div class="footer">
+    <div class="pitch">
+      <span class="bold">Wishlist THERMAL on Steam</span> to be notified at launch.<br>
+      The full game ships with 15+ error codes, 3 operator archives, and multiple endings.
+    </div>
+    <div class="btn-row">
+      <button class="btn btn-wishlist" id="btn-wishlist" data-hover-sfx data-i18n="demoEnd.wishlist">[ WISHLIST ON STEAM ]</button>
+      <button class="btn" id="btn-quit" data-hover-sfx data-i18n="demoEnd.exit">[ EXIT ]</button>
+    </div>
+  </div>
+
+</div>
+
+<div class="version">MILDLY EPIC INTERACTIVE — DEMO BUILD — TYÜRKİYE</div>
+
+<script src="../js/hoverSfx.js"></script>
+<script src="../js/i18n.js"></script>
+<script>
+  /* Pull the most recent shift report (written by game.js's endShift)
+     so the player sees their own numbers from the demo run. */
+  try {
+    var r = JSON.parse(localStorage.getItem('thermalShiftReport') || '{}')
+    if (r.correctDecisions != null) document.getElementById('stat-correct').textContent = r.correctDecisions
+    if (r.wrongDecisions   != null) document.getElementById('stat-wrong').textContent   = r.wrongDecisions
+    if (r.radiationReached != null) document.getElementById('stat-rad').textContent     = r.radiationReached.toFixed(2)
+  } catch (e) {}
+
+  /* Wishlist button — opens Steam page in default browser. Replace
+     URL with the actual Steam app URL when assigned. */
+  var STEAM_URL = 'https://store.steampowered.com/app/0000000/THERMAL/'  // TODO: replace with real app id
+  document.getElementById('btn-wishlist').addEventListener('click', function () {
+    try {
+      var shell = require('electron').shell
+      shell.openExternal(STEAM_URL)
+    } catch (e) {
+      window.open(STEAM_URL, '_blank')
+    }
+  })
+
+  document.getElementById('btn-quit').addEventListener('click', function () {
+    var f = document.getElementById('frame')
+    if (f) f.classList.add('crt-off')
+    setTimeout(function () {
+      try { window.close() } catch (e) {}
+    }, 620)
+  })
+
+  /* Esc → quit */
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') document.getElementById('btn-quit').click()
+  })
+</script>
+
+</body>
+</html>

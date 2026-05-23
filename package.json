@@ -1,12 +1,64 @@
 {
   "name": "thermal",
   "version": "0.1.0",
-  "description": "THERMAL - Night Shift Operator Terminal",
+  "description": "THERMAL - the procedure manual is wrong on purpose. A slow-horror reactor sim.",
+  "author": "Mildly Epic Interactive",
+  "license": "UNLICENSED",
   "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "start:demo": "cross-env THERMAL_DEMO=1 electron .",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder",
+    "dist:portable": "electron-builder --win portable",
+    "dist:installer": "electron-builder --win nsis",
+    "dist:demo": "cross-env THERMAL_DEMO=1 electron-builder --win portable -c.productName=\"THERMAL Demo\" -c.appId=\"com.mildlyepic.thermal.demo\" -c.extraMetadata.demoBuild=true"
   },
   "devDependencies": {
-    "electron": "^latest"
+    "electron": "^latest",
+    "electron-builder": "^24.13.3",
+    "cross-env": "^7.0.3"
+  },
+  "build": {
+    "appId": "com.mildlyepic.thermal",
+    "productName": "THERMAL",
+    "copyright": "Copyright © 2026 Mildly Epic Interactive",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "screens/**/*",
+      "js/**/*",
+      "assets/**/*",
+      "config/**/*",
+      "MildlyEpicLogo2.png",
+      "package.json",
+      "!**/*.md",
+      "!**/.DS_Store",
+      "!**/.git/**",
+      "!**/node_modules/**/test/**",
+      "!**/node_modules/**/tests/**"
+    ],
+    "win": {
+      "target": [
+        { "target": "nsis",     "arch": ["x64"] },
+        { "target": "portable", "arch": ["x64"] }
+      ],
+      "icon": "MildlyEpicLogo2.png",
+      "publisherName": "Mildly Epic Interactive"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "THERMAL",
+      "uninstallDisplayName": "THERMAL"
+    },
+    "portable": {
+      "artifactName": "THERMAL-${version}-portable.exe"
+    }
   }
 }

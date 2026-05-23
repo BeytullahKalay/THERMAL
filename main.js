@@ -2,6 +2,11 @@ const { app, BrowserWindow, ipcMain, screen, Menu } = require('electron')
 const path = require('path')
 const fs   = require('fs')
 
+/* Disable Chromium's autoplay gesture requirement so Web Audio
+   contexts can start the moment a screen loads — otherwise UI sfx
+   (hover blip, click tok) stay silent until the player first clicks. */
+app.commandLine.appendSwitch('autoplay-policy', 'no-user-gesture-required')
+
 let mainWindow
 let settingsPath
 
@@ -36,13 +41,45 @@ function createWindow() {
     fullscreen:       saved.mode === 'fullscreen',
     autoHideMenuBar:  true,
     backgroundColor:  '#080a04',
+    /* CRT UI is laid out for the chosen resolution. Letting the player
+       drag the frame breaks the layout, so we lock it. Players change
+       size via SETTINGS → DISPLAY RESOLUTION instead. We do NOT use
+       useContentSize because that subtracts window chrome from the
+       requested size — the design is calibrated against the full
+       window box (chrome is hidden via autoHideMenuBar anyway). */
+    resizable:        false,
+    maximizable:      false,
+    fullscreenable:   true,
     webPreferences: {
-      nodeIntegration:  true,
-      contextIsolation: false
+      nodeIntegration:       true,
+      contextIsolation:      false,
+      autoplayPolicy:        'no-user-gesture-required'
     }
   })
 
-  mainWindow.loadFile('screens/boot.html')
+  /* Expose a debug-mode flag to every page so the in-game F1 panel
+     and other dev surfaces can opt-in only in dev runs. Packaged
+     builds (production) get __THERMAL_DEBUG__ = false.
+     Also expose __DEMO__ for the Steam Demo build (set via
+     THERMAL_DEMO env var or package.json extraMetadata.demoBuild). */
+  const isDev = !app.isPackaged
+  let isDemo = !!process.env.THERMAL_DEMO
+  try {
+    /* electron-builder writes the package.json INTO the asar — read
+       it via require so the demoBuild flag from extraMetadata is
+       visible at runtime in production builds. */
+    const pkg = require('./package.json')
+    if (pkg && pkg.demoBuild) isDemo = true
+  } catch (e) {}
+  mainWindow.webContents.on('did-finish-load', () => {
+    mainWindow.webContents.executeJavaScript(
+      'window.__THERMAL_DEBUG__ = ' + JSON.stringify(isDev) + ';' +
+      'window.__DEMO__ = '          + JSON.stringify(isDemo) + ';',
+      true
+    ).catch(() => {})
+  })
+
+  mainWindow.loadFile('screens/splash.html')
 }
 
 app.whenReady().then(createWindow)
@@ -73,8 +110,12 @@ ipcMain.handle('apply-settings', (event, { mode, width, height }) => {
     saveSettings({ mode: 'fullscreen', width, height })
   } else {
     win.setFullScreen(false)
+    /* Temporarily allow programmatic resize, set, then re-lock so the
+       user can't drag the frame after the new size is applied. */
+    win.setResizable(true)
     win.setSize(width, height)
     win.center()
+    win.setResizable(false)
     saveSettings({ mode: 'windowed', width, height })
   }
 })

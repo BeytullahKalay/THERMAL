@@ -1,0 +1,349 @@
+{
+  "_comment": "THERMAL — Error Code Registry. Each code has (a) truePrescription = real fix, (b) manualPrescription = what the MANUAL tab says (30% are intentionally wrong). If manual is wrong, truth lives in the referenced operator log. Fix trigger: all 4 conditions simultaneously satisfied → overlay closes. During active error: linear-interp deterioration boost + screen shake on wrong input. Resources used for combo are TEMPORARY overrides; after FIXED, player rebalances manually. SURVEY tab cells act as combo-input pads during ER (all 40 cells clickable); CRM drift mini-game is NOT part of ER input.",
+
+  "_schemaComment": {
+    "power":      "0-10 integer, current POWER resource allocation",
+    "pressure":   "0-10 integer, current PRESSURE resource allocation",
+    "valveSeq":   "array of valve ids (V1-V4) in required click order; wrong click resets sequence",
+    "soundSeq":   "array of SURVEY grid cell ids (A1-E8, 5x8 grid) in required click order",
+    "manualLies": "if true, manualPrescription contradicts truth; player must consult logReference",
+    "logRef":     "operator log id that contains the real fix recipe"
+  },
+
+  "deteriorationBoost": 1.8,
+  "shakeIntensityPx":     6,
+
+  "_scheduleComment": "Auto-spawn timing for ER. firstMs is min delay before the FIRST ER of a shift; firstRnd is added randomly. After resolution, next ER waits respawnMs + random(respawnRnd). All in ms. shiftScale tightens timing on later shifts (multiplied per shift number).",
+  "schedule": {
+    "firstMs":      180000,
+    "firstRnd":     120000,
+    "respawnMs":    240000,
+    "respawnRnd":   180000,
+    "shiftScale":   0.92,
+    "_cascadeComment": "From shift `cascadeShift` onward, after each ER is resolved the next one queues with `cascadeMs + random(cascadeRnd)` instead of the normal respawn — almost no breathing room.",
+    "cascadeShift":  7,
+    "cascadeMs":     500,
+    "cascadeRnd":    2500
+  },
+
+  "codes": [
+    {
+      "id":           "ER-3505",
+      "systemTag":    "sicaklik",
+      "title":        "COOLANT LOOP PHASE DRIFT",
+      "truePrescription": {
+        "power":    3,
+        "pressure": 1,
+        "valveSeq": ["V4", "V3", "V1", "V2"],
+        "soundSeq": ["C4", "A1"]
+      },
+      "manualPrescription": {
+        "power":    3,
+        "pressure": 1,
+        "valveSeq": ["V1", "V2", "V3", "V4"],
+        "soundSeq": ["A1", "C4"]
+      },
+      "manualLies": true,
+      "logRef":     "KOWALSKI_OP14",
+      "logKey":     "kowalski",
+      "logCitation":"KOWALSKI / SHIFT 12 / OP.14",
+      "manualText": "Re-seat coolant phase by cycling valves in ascending order. Confirm with tone pair A1→C4."
+    },
+    {
+      "id":           "ER-2140",
+      "systemTag":    "basinc",
+      "title":        "SECONDARY PRESSURE OSCILLATION",
+      "truePrescription": {
+        "power":    4,
+        "pressure": 0,
+        "valveSeq": ["V2", "V4"],
+        "soundSeq": ["B2", "D3"]
+      },
+      "manualPrescription": {
+        "power":    4,
+        "pressure": 0,
+        "valveSeq": ["V2", "V4"],
+        "soundSeq": ["B2", "D3"]
+      },
+      "manualLies": false,
+      "logRef":     null,
+      "manualText": "Vent through V2 then V4. Stabilize with B2→D3 sequence. Do not raise pressure allocation."
+    },
+    {
+      "id":           "ER-7782",
+      "systemTag":    "guc",
+      "title":        "BUS HARMONIC MISMATCH",
+      "truePrescription": {
+        "power":    2,
+        "pressure": 5,
+        "valveSeq": ["V3", "V2", "V4"],
+        "soundSeq": ["D3", "D3"]
+      },
+      "manualPrescription": {
+        "power":    8,
+        "pressure": 5,
+        "valveSeq": ["V3", "V2", "V4"],
+        "soundSeq": ["D3", "D3"]
+      },
+      "manualLies": true,
+      "logRef":     "REZNOV_OP15",
+      "logKey":     "reznov",
+      "logCitation":"REZNOV / SHIFT 8 / OP.15",
+      "manualText": "Raise power to 8 to overcome harmonic. Vent V3→V2→V4. Double-strike D3."
+    },
+    {
+      "id":           "ER-4419",
+      "systemTag":    "sicaklik",
+      "title":        "CORE LOOP STAGNATION",
+      "truePrescription": {
+        "power":    6,
+        "pressure": 4,
+        "valveSeq": ["V1", "V3"],
+        "soundSeq": ["A1", "B2", "C4"]
+      },
+      "manualPrescription": {
+        "power":    6,
+        "pressure": 4,
+        "valveSeq": ["V1", "V3"],
+        "soundSeq": ["A1", "B2", "C4"]
+      },
+      "manualLies": false,
+      "logRef":     null,
+      "manualText": "Re-establish loop flow: P6 / Pr4. V1→V3. Full ascending tone sweep A1→B2→C4."
+    },
+    {
+      "id":           "ER-9031",
+      "systemTag":    "basinc",
+      "title":        "CONTAINMENT SEAL RESONANCE",
+      "truePrescription": {
+        "power":    5,
+        "pressure": 7,
+        "valveSeq": ["V4", "V4", "V2"],
+        "soundSeq": ["C4"]
+      },
+      "manualPrescription": {
+        "power":    5,
+        "pressure": 3,
+        "valveSeq": ["V4", "V2", "V4"],
+        "soundSeq": ["C4"]
+      },
+      "manualLies": true,
+      "logRef":     "DELETED_OP16",
+      "logKey":     "deleted",
+      "logCitation":"[REDACTED] / DISK FRAGMENT / OP.16",
+      "manualText": "Reduce pressure to 3. Alternate V4→V2→V4. Single C4 pulse to close resonance."
+    },
+    {
+      "id":           "ER-5508",
+      "systemTag":    "guc",
+      "title":        "GENERATOR FIELD LAG",
+      "truePrescription": {
+        "power":    7,
+        "pressure": 3,
+        "valveSeq": ["V1", "V4"],
+        "soundSeq": ["B2"]
+      },
+      "manualPrescription": {
+        "power":    7,
+        "pressure": 3,
+        "valveSeq": ["V1", "V4"],
+        "soundSeq": ["B2"]
+      },
+      "manualLies": false,
+      "logRef":     null,
+      "manualText": "Boost field: P7/Pr3. V1→V4 vent pair. Single B2 tone to re-lock."
+    },
+    {
+      "id":           "ER-1126",
+      "systemTag":    "sicaklik",
+      "title":        "HEAT EXCHANGER STUTTER",
+      "truePrescription": {
+        "power":    4,
+        "pressure": 4,
+        "valveSeq": ["V2"],
+        "soundSeq": ["A1", "A1"]
+      },
+      "manualPrescription": {
+        "power":    4,
+        "pressure": 4,
+        "valveSeq": ["V2"],
+        "soundSeq": ["A1", "A1"]
+      },
+      "manualLies": false,
+      "logRef":     null,
+      "manualText": "Balanced load P4/Pr4. Single V2 vent. Double A1 tap clears stutter."
+    },
+    {
+      "id":           "ER-6673",
+      "systemTag":    "basinc",
+      "title":        "FEEDWATER LINE TREMOR",
+      "truePrescription": {
+        "power":    3,
+        "pressure": 6,
+        "valveSeq": ["V3", "V1", "V2"],
+        "soundSeq": ["D3", "B2"]
+      },
+      "manualPrescription": {
+        "power":    3,
+        "pressure": 6,
+        "valveSeq": ["V3", "V1", "V2"],
+        "soundSeq": ["D3", "B2"]
+      },
+      "manualLies": false,
+      "logRef":     null,
+      "manualText": "P3/Pr6. V3→V1→V2 in order. Descend D3→B2 to dampen tremor."
+    },
+    {
+      "id":           "ER-8840",
+      "systemTag":    "guc",
+      "title":        "TURBINE TORQUE DRIFT",
+      "truePrescription": {
+        "power":    6,
+        "pressure": 2,
+        "valveSeq": ["V4", "V1"],
+        "soundSeq": ["C4", "D3"]
+      },
+      "manualPrescription": {
+        "power":    6,
+        "pressure": 2,
+        "valveSeq": ["V4", "V1"],
+        "soundSeq": ["C4", "D3"]
+      },
+      "manualLies": false,
+      "logRef":     null,
+      "manualText": "P6/Pr2. V4→V1 vent. C4→D3 to align torque."
+    },
+    {
+      "id":           "ER-3317",
+      "systemTag":    "sicaklik",
+      "title":        "CONDENSER BACKFLOW",
+      "truePrescription": {
+        "power":    5,
+        "pressure": 5,
+        "valveSeq": ["V2", "V3"],
+        "soundSeq": ["B2", "C4"]
+      },
+      "manualPrescription": {
+        "power":    5,
+        "pressure": 5,
+        "valveSeq": ["V2", "V3"],
+        "soundSeq": ["B2", "C4"]
+      },
+      "manualLies": false,
+      "logRef":     null,
+      "manualText": "Symmetric load P5/Pr5. V2→V3. Ascend B2→C4 to reverse backflow."
+    },
+
+    {
+      "_tierComment": "── TIER 2 — appears from shift 4+ — longer sequences, harder ──",
+
+      "id":           "ER-A101",
+      "minShift":     4,
+      "systemTag":    "sicaklik",
+      "title":        "PRIMARY EXCHANGER CASCADE",
+      "truePrescription": {
+        "power":    5,
+        "pressure": 5,
+        "valveSeq": ["V2", "V4", "V1", "V3", "V2"],
+        "soundSeq": ["A1", "B2", "C4"]
+      },
+      "manualPrescription": {
+        "power":    5,
+        "pressure": 5,
+        "valveSeq": ["V2", "V4", "V1", "V3", "V2"],
+        "soundSeq": ["A1", "B2", "C4"]
+      },
+      "manualLies": false,
+      "logRef":     null,
+      "manualText": "Cascade reset: P5/Pr5. Valve cycle V2→V4→V1→V3→V2 (note V2 repeats). Triple ascending tones A1→B2→C4 to lock."
+    },
+    {
+      "id":           "ER-A209",
+      "minShift":     4,
+      "systemTag":    "basinc",
+      "title":        "DUAL-LOOP HARMONIC LOCK",
+      "truePrescription": {
+        "power":    4,
+        "pressure": 8,
+        "valveSeq": ["V3", "V1", "V4", "V2", "V3"],
+        "soundSeq": ["D3", "B2", "D3"]
+      },
+      "manualPrescription": {
+        "power":    8,
+        "pressure": 4,
+        "valveSeq": ["V3", "V1", "V4", "V2", "V3"],
+        "soundSeq": ["D3", "B2", "D3"]
+      },
+      "manualLies": true,
+      "logRef":     "REZNOV_OP15",
+      "logKey":     "reznov",
+      "logCitation":"REZNOV / SHIFT 14 (NOT YET LOGGED) / OP.15",
+      "manualText": "Boost POWER to 8 to overcome dual-loop harmonic. Valve cycle V3→V1→V4→V2→V3. Tone pattern D3→B2→D3."
+    },
+    {
+      "id":           "ER-A317",
+      "minShift":     5,
+      "systemTag":    "guc",
+      "title":        "TURBINE PHASE INVERSION",
+      "truePrescription": {
+        "power":    9,
+        "pressure": 1,
+        "valveSeq": ["V4", "V2", "V3", "V1"],
+        "soundSeq": ["C4", "C4", "A1"]
+      },
+      "manualPrescription": {
+        "power":    9,
+        "pressure": 1,
+        "valveSeq": ["V4", "V2", "V3", "V1"],
+        "soundSeq": ["C4", "C4", "A1"]
+      },
+      "manualLies": false,
+      "logRef":     null,
+      "manualText": "P9/Pr1. Reverse-cycle V4→V2→V3→V1. Tone double-strike C4 then close A1."
+    },
+    {
+      "id":           "ER-A422",
+      "minShift":     6,
+      "systemTag":    "sicaklik",
+      "title":        "SECONDARY HEAT REJECT FAILURE",
+      "truePrescription": {
+        "power":    7,
+        "pressure": 6,
+        "valveSeq": ["V1", "V2", "V4", "V3", "V1"],
+        "soundSeq": ["B2", "C4", "B2"]
+      },
+      "manualPrescription": {
+        "power":    7,
+        "pressure": 6,
+        "valveSeq": ["V1", "V4", "V2", "V3", "V1"],
+        "soundSeq": ["B2", "C4", "B2"]
+      },
+      "manualLies": true,
+      "logRef":     "KOWALSKI_OP14",
+      "logKey":     "kowalski",
+      "logCitation":"KOWALSKI / SHIFT 19 (UNFILED) / OP.14",
+      "manualText": "P7/Pr6. Cycle V1→V4→V2→V3→V1. Tones B2→C4→B2 to bracket the reject window."
+    },
+    {
+      "id":           "ER-A506",
+      "minShift":     6,
+      "systemTag":    "guc",
+      "title":        "GRID DESYNCHRONIZATION CASCADE",
+      "truePrescription": {
+        "power":    3,
+        "pressure": 7,
+        "valveSeq": ["V2", "V3", "V4", "V1", "V2"],
+        "soundSeq": ["D3", "A1", "D3"]
+      },
+      "manualPrescription": {
+        "power":    3,
+        "pressure": 7,
+        "valveSeq": ["V2", "V3", "V4", "V1", "V2"],
+        "soundSeq": ["D3", "A1", "D3"]
+      },
+      "manualLies": false,
+      "logRef":     null,
+      "manualText": "P3/Pr7. Cycle V2→V3→V4→V1→V2. Tone bracket D3→A1→D3."
+    }
+  ]
+}

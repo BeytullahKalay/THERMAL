@@ -371,6 +371,241 @@
     background: rgba(168,255,62,0.08);
     box-shadow: 0 0 10px rgba(168,255,62,0.15);
   }
+
+  /* ── INTERFACE & CONTROLS section — static UI replicas. Match
+        the live game's CRT palette but render inert (no animations,
+        no interaction) so the manual stays a reference document. */
+  .ui-demo {
+    margin: 14px 0 18px;
+    padding: 16px 18px;
+    border: 1px dashed rgba(168,255,62,0.35);
+    background: rgba(168,255,62,0.02);
+  }
+
+  /* GAUGES */
+  .ui-gauge-row { display: flex; gap: 16px; }
+  .ui-gauge { flex: 1; }
+  .ui-gauge-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px; letter-spacing: 2px;
+    color: var(--phosphor-mid, #6a9a2a);
+    margin-bottom: 4px;
+    display: flex; justify-content: space-between;
+  }
+  .ui-gauge-val {
+    font-family: 'VT323', monospace; font-size: 16px; color: var(--phosphor);
+  }
+  .ui-gauge-bg {
+    height: 14px; background: #060a02;
+    border: 1px solid var(--border);
+    overflow: hidden;
+  }
+  .ui-gauge-fill { height: 100%; }
+  .ui-gauge-fill.ok   { background: var(--phosphor); box-shadow: 0 0 8px rgba(168,255,62,0.5); }
+  .ui-gauge-fill.warn { background: var(--amber);    box-shadow: 0 0 8px rgba(255,184,48,0.5); }
+  .ui-gauge-fill.crit { background: var(--red-alert);box-shadow: 0 0 8px rgba(255,58,58,0.6); }
+  .ui-gauge-status {
+    margin-top: 4px; font-size: 10px; letter-spacing: 3px;
+    font-family: 'Share Tech Mono', monospace;
+    color: var(--phosphor);
+  }
+  .ui-gauge-status.warn { color: var(--amber); }
+  .ui-gauge-status.crit { color: var(--red-alert); text-shadow: 0 0 6px rgba(255,58,58,0.4); }
+
+  /* ALLOCATION */
+  .ui-alloc-row { display: flex; gap: 16px; }
+  .ui-alloc { flex: 1; text-align: center; }
+  .ui-alloc-label {
+    font-size: 10px; letter-spacing: 3px;
+    color: var(--phosphor-mid, #6a9a2a);
+    margin-bottom: 6px;
+  }
+  .ui-alloc-row-inner {
+    display: flex; align-items: center; justify-content: center; gap: 10px;
+  }
+  .ui-alloc-btn {
+    width: 30px; height: 26px;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--phosphor);
+    font-family: 'VT323', monospace; font-size: 22px;
+    line-height: 1;
+  }
+  .ui-alloc-value {
+    font-family: 'VT323', monospace; font-size: 32px;
+    color: var(--phosphor);
+    text-shadow: 0 0 6px rgba(168,255,62,0.4);
+    min-width: 28px; display: inline-block;
+  }
+
+  /* VALVES */
+  .ui-valve-row { display: flex; gap: 14px; justify-content: center; }
+  .ui-valve {
+    width: 70px; padding: 10px 6px;
+    border: 1px solid var(--border);
+    background: rgba(74,122,26,0.04);
+    text-align: center;
+  }
+  .ui-valve.open {
+    border-color: var(--phosphor);
+    background: rgba(168,255,62,0.08);
+    box-shadow: 0 0 10px rgba(168,255,62,0.18);
+  }
+  .ui-valve-label {
+    font-family: 'VT323', monospace; font-size: 22px;
+    color: var(--phosphor-mid, #6a9a2a);
+    margin-bottom: 4px;
+  }
+  .ui-valve.open .ui-valve-label { color: var(--phosphor); }
+  .ui-valve-state {
+    font-size: 9px; letter-spacing: 2px;
+    color: var(--phosphor-dim, #4a7a1a);
+  }
+  .ui-valve.open .ui-valve-state { color: var(--phosphor); }
+
+  /* SURVEY GRID */
+  .ui-survey { display: flex; flex-direction: column; gap: 3px; align-items: center; }
+  .ui-sv-row { display: flex; gap: 3px; }
+  .ui-sv-cell {
+    width: 36px; height: 26px;
+    border: 1px solid var(--border);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px; letter-spacing: 1px;
+    color: var(--phosphor-mid, #6a9a2a);
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(74,122,26,0.03);
+  }
+  .ui-sv-cell.hot {
+    border-color: var(--red-alert);
+    background: rgba(255,58,58,0.15);
+    color: var(--red-alert);
+    text-shadow: 0 0 6px rgba(255,58,58,0.5);
+  }
+
+  /* CRM */
+  .ui-crm { display: flex; align-items: center; gap: 24px; }
+  .ui-crm-knobs { display: flex; gap: 18px; }
+  .ui-crm-knob {
+    width: 56px; height: 56px;
+    border: 1px solid var(--phosphor-mid, #6a9a2a);
+    border-radius: 50%; position: relative;
+    background: radial-gradient(circle at 50% 50%, rgba(168,255,62,0.08), transparent 70%);
+  }
+  .ui-crm-needle {
+    position: absolute; top: 50%; left: 50%;
+    width: 2px; height: 22px;
+    background: var(--phosphor);
+    transform-origin: 50% 0;
+    transform: translateX(-1px);
+    box-shadow: 0 0 6px rgba(168,255,62,0.6);
+  }
+  .ui-crm-knob-label {
+    position: absolute; bottom: -16px; left: 0; right: 0;
+    text-align: center;
+    font-size: 9px; letter-spacing: 2px; color: var(--phosphor-dim);
+  }
+  .ui-crm-bar-wrap { flex: 1; }
+  .ui-crm-bar {
+    height: 14px; background: #060a02;
+    border: 1px solid var(--border);
+    margin-bottom: 4px;
+  }
+  .ui-crm-bar-fill {
+    height: 100%; background: var(--phosphor);
+    box-shadow: 0 0 8px rgba(168,255,62,0.5);
+  }
+  .ui-crm-bar-label {
+    font-size: 11px; letter-spacing: 3px; color: var(--phosphor-mid, #6a9a2a);
+  }
+
+  /* DISPATCH */
+  .ui-dispatch {
+    border: 1px solid var(--border);
+    padding: 12px;
+    background: #060a02;
+  }
+  .ui-dp-header {
+    display: flex; gap: 16px; align-items: baseline;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 6px; margin-bottom: 8px;
+  }
+  .ui-dp-name {
+    font-family: 'VT323', monospace; font-size: 18px;
+    color: var(--phosphor); letter-spacing: 2px;
+  }
+  .ui-dp-role { font-size: 10px; letter-spacing: 2px; color: var(--phosphor-mid, #6a9a2a); }
+  .ui-dp-dose { margin-left: auto; font-size: 11px; letter-spacing: 1px; color: var(--phosphor-dim); }
+  .ui-dp-dose .warn { color: var(--amber); }
+  .ui-dp-line {
+    font-family: 'Share Tech Mono', monospace; font-size: 12px;
+    color: var(--phosphor); margin-bottom: 10px;
+  }
+  .ui-dp-actions { display: flex; flex-direction: column; gap: 4px; }
+  .ui-dp-btn {
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    color: var(--phosphor-mid, #6a9a2a);
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px; letter-spacing: 2px;
+  }
+
+  /* ER PANEL REPLICA */
+  .ui-er {
+    text-align: center;
+    border: 1px solid var(--red-alert);
+    padding: 18px 24px;
+    background: #0d0805;
+    box-shadow: 0 0 18px rgba(255,58,58,0.25);
+  }
+  .ui-er-tag {
+    font-size: 11px; letter-spacing: 5px;
+    color: var(--red-alert); opacity: 0.85; margin-bottom: 6px;
+  }
+  .ui-er-code {
+    font-family: 'VT323', monospace; font-size: 56px;
+    letter-spacing: 8px; color: var(--red-alert);
+    text-shadow: 0 0 12px rgba(255,58,58,0.65);
+    line-height: 1;
+  }
+  .ui-er-hint {
+    font-size: 10px; letter-spacing: 4px;
+    color: var(--phosphor-dim);
+    margin-top: 10px;
+    border-top: 1px dashed rgba(255,58,58,0.3);
+    padding-top: 8px;
+  }
+
+  /* WARNING-BLOCK paragraph (for the “manual is sometimes wrong” callout) */
+  .para.warn-block {
+    border-left: 2px solid var(--amber);
+    padding: 8px 12px;
+    background: rgba(255,184,48,0.04);
+    color: var(--phosphor);
+  }
+
+  /* KEY BINDINGS table */
+  .ui-keys {
+    display: flex; flex-direction: column; gap: 4px;
+    margin: 10px 0;
+  }
+  .ui-key-row {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 12px; letter-spacing: 1px;
+    color: var(--phosphor);
+    padding: 4px 0;
+    border-bottom: 1px dotted rgba(74,122,26,0.3);
+  }
+  .ui-key {
+    display: inline-block; min-width: 80px;
+    font-family: 'VT323', monospace; font-size: 16px;
+    color: var(--amber);
+    margin-right: 12px;
+  }
+
+  /* In-paragraph highlight */
+  .hi { color: var(--phosphor); text-shadow: 0 0 4px rgba(168,255,62,0.4); }
+  .warn { color: var(--amber); }
+  .crit { color: var(--red-alert); text-shadow: 0 0 4px rgba(255,58,58,0.4); }
 </style>
 </head>
 <body>
@@ -379,8 +614,8 @@
 
   <!-- HEADER -->
   <div class="header">
-    <div class="header-title">// SAFE OPERATION MANUAL — UNIT 4</div>
-    <div class="header-meta">REVISION 3 — NIGHT SHIFT PERSONNEL — INTERNAL DISTRIBUTION</div>
+    <div class="header-title" data-i18n="manual.header.title">// SAFE OPERATION MANUAL — UNIT 4</div>
+    <div class="header-meta" data-i18n="manual.header.meta">REVISION 3 — NIGHT SHIFT PERSONNEL — INTERNAL DISTRIBUTION</div>
   </div>
 
   <!-- BODY -->
@@ -388,21 +623,24 @@
 
     <!-- TOC -->
     <div class="toc">
-      <div class="toc-title">// CONTENTS</div>
+      <div class="toc-title" data-i18n="manual.toc.contents">// CONTENTS</div>
       <div class="toc-item active" data-section="overview">
-        <span class="toc-num">1.</span>SYSTEM OVERVIEW
+        <span class="toc-num">1.</span><span data-i18n="manual.section.overview">SYSTEM OVERVIEW</span>
+      </div>
+      <div class="toc-item" data-section="interface">
+        <span class="toc-num">2.</span><span data-i18n="manual.section.interface">INTERFACE &amp; CONTROLS</span>
       </div>
       <div class="toc-item" data-section="parameters">
-        <span class="toc-num">2.</span>NORMAL OPERATING PARAMETERS
+        <span class="toc-num">3.</span><span data-i18n="manual.section.parameters">NORMAL OPERATING PARAMETERS</span>
       </div>
       <div class="toc-item" data-section="anomaly">
-        <span class="toc-num">3.</span>ANOMALY RESPONSE
+        <span class="toc-num">4.</span><span data-i18n="manual.section.anomaly">ANOMALY RESPONSE</span>
       </div>
       <div class="toc-item" data-section="radiation">
-        <span class="toc-num">4.</span>RADIATION MONITORING
+        <span class="toc-num">5.</span><span data-i18n="manual.section.radiation">RADIATION MONITORING</span>
       </div>
       <div class="toc-item" data-section="emergency">
-        <span class="toc-num">5.</span>EMERGENCY PROCEDURES
+        <span class="toc-num">6.</span><span data-i18n="manual.section.emergency">EMERGENCY PROCEDURES</span>
       </div>
     </div>
 
@@ -412,7 +650,7 @@
       <!-- SECTION 1 — OVERVIEW -->
       <div class="section active" id="section-overview">
         <div class="section-eyebrow">SECTION 1</div>
-        <div class="section-title">SYSTEM OVERVIEW</div>
+        <div class="section-title" data-i18n="manual.section.overview">SYSTEM OVERVIEW</div>
         <hr class="section-rule">
 
         <div class="para">
@@ -462,10 +700,237 @@
         </div>
       </div>
 
-      <!-- SECTION 2 — PARAMETERS -->
-      <div class="section" id="section-parameters">
+      <!-- SECTION 2 — INTERFACE & CONTROLS (onboarding) -->
+      <div class="section" id="section-interface">
         <div class="section-eyebrow">SECTION 2</div>
-        <div class="section-title">NORMAL OPERATING PARAMETERS</div>
+        <div class="section-title" data-i18n="manual.section.interface">INTERFACE &amp; CONTROLS</div>
+        <hr class="section-rule">
+
+        <div class="para">
+          The console at your station presents three primary system gauges, allocation
+          controls, and a set of mini-procedure terminals that activate as situations
+          arise. The diagrams below mirror the actual on-shift display.
+        </div>
+
+        <!-- ── 2.1 SYSTEM GAUGES ───────────────────────────────────── -->
+        <div class="para-label">2.1 — SYSTEM GAUGES</div>
+        <div class="para">
+          Three live readouts: TEMPERATURE, PRESSURE, POWER. Each fill bar reflects
+          the current value against the safe envelope. Colour indicates status.
+        </div>
+
+        <div class="ui-demo ui-gauge-row">
+          <div class="ui-gauge">
+            <div class="ui-gauge-label">TEMP <span class="ui-gauge-val">82.4°C</span></div>
+            <div class="ui-gauge-bg"><div class="ui-gauge-fill ok"   style="width:54%"></div></div>
+            <div class="ui-gauge-status">OK</div>
+          </div>
+          <div class="ui-gauge">
+            <div class="ui-gauge-label">PRESS <span class="ui-gauge-val">1.42 atm</span></div>
+            <div class="ui-gauge-bg"><div class="ui-gauge-fill warn" style="width:71%"></div></div>
+            <div class="ui-gauge-status warn">WARN</div>
+          </div>
+          <div class="ui-gauge">
+            <div class="ui-gauge-label">POWER <span class="ui-gauge-val">94%</span></div>
+            <div class="ui-gauge-bg"><div class="ui-gauge-fill crit" style="width:94%"></div></div>
+            <div class="ui-gauge-status crit">CRIT</div>
+          </div>
+        </div>
+
+        <div class="para">
+          A system that remains in <span class="hi">CRIT</span> state for 120 cumulative
+          seconds will trigger uncontrolled shutdown — meltdown. The shift ends. There
+          is no recovery from this state.
+        </div>
+
+        <!-- ── 2.2 RESOURCE ALLOCATION ─────────────────────────────── -->
+        <div class="para-label">2.2 — RESOURCE ALLOCATION</div>
+        <div class="para">
+          Beneath each gauge are <span class="hi">+ / −</span> buttons. Resources are a
+          fixed pool: increasing one system reduces another. Plan ahead.
+        </div>
+
+        <div class="ui-demo ui-alloc-row">
+          <div class="ui-alloc">
+            <div class="ui-alloc-label">TEMP</div>
+            <div class="ui-alloc-row-inner">
+              <button class="ui-alloc-btn">−</button>
+              <span class="ui-alloc-value">4</span>
+              <button class="ui-alloc-btn">+</button>
+            </div>
+          </div>
+          <div class="ui-alloc">
+            <div class="ui-alloc-label">PRESS</div>
+            <div class="ui-alloc-row-inner">
+              <button class="ui-alloc-btn">−</button>
+              <span class="ui-alloc-value">3</span>
+              <button class="ui-alloc-btn">+</button>
+            </div>
+          </div>
+          <div class="ui-alloc">
+            <div class="ui-alloc-label">POWER</div>
+            <div class="ui-alloc-row-inner">
+              <button class="ui-alloc-btn">−</button>
+              <span class="ui-alloc-value">3</span>
+              <button class="ui-alloc-btn">+</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="para">
+          Higher allocation slows or reverses deterioration of that system but starves
+          the others. The safe operating posture is balanced: nothing at zero, nothing
+          at maximum. Anomalies and ER codes will demand temporary departures from
+          balance — return to it as soon as conditions allow.
+        </div>
+
+        <!-- ── 2.3 VALVE PANEL ─────────────────────────────────────── -->
+        <div class="para-label">2.3 — VALVE PANEL</div>
+        <div class="para">
+          Four manual relief valves (V1–V4). Activated by the VALVE MANAGER routine when
+          the primary loop requires direct operator intervention. Click in the prescribed
+          sequence; wrong order resets the input.
+        </div>
+
+        <div class="ui-demo ui-valve-row">
+          <div class="ui-valve"><div class="ui-valve-label">V1</div><div class="ui-valve-state">CLOSED</div></div>
+          <div class="ui-valve open"><div class="ui-valve-label">V2</div><div class="ui-valve-state">OPEN</div></div>
+          <div class="ui-valve"><div class="ui-valve-label">V3</div><div class="ui-valve-state">CLOSED</div></div>
+          <div class="ui-valve"><div class="ui-valve-label">V4</div><div class="ui-valve-state">CLOSED</div></div>
+        </div>
+
+        <!-- ── 2.4 SURVEY GRID ─────────────────────────────────────── -->
+        <div class="para-label">2.4 — SURVEY (GEIGER) GRID</div>
+        <div class="para">
+          A 5 × 8 cell map of Unit 4's interior. Used during radiation surveys to mark
+          hot spots — and during ER procedures to enter tone sequences. Cells are
+          labelled column-row (A1, A2, … E8).
+        </div>
+
+        <div class="ui-demo ui-survey">
+          <div class="ui-sv-row">
+            <span class="ui-sv-cell">A1</span><span class="ui-sv-cell">A2</span>
+            <span class="ui-sv-cell">A3</span><span class="ui-sv-cell hot">A4</span>
+            <span class="ui-sv-cell">A5</span><span class="ui-sv-cell">A6</span>
+            <span class="ui-sv-cell">A7</span><span class="ui-sv-cell">A8</span>
+          </div>
+          <div class="ui-sv-row">
+            <span class="ui-sv-cell">B1</span><span class="ui-sv-cell">B2</span>
+            <span class="ui-sv-cell">B3</span><span class="ui-sv-cell">B4</span>
+            <span class="ui-sv-cell">B5</span><span class="ui-sv-cell">B6</span>
+            <span class="ui-sv-cell">B7</span><span class="ui-sv-cell">B8</span>
+          </div>
+          <div class="ui-sv-row">
+            <span class="ui-sv-cell">C1</span><span class="ui-sv-cell">C2</span>
+            <span class="ui-sv-cell">C3</span><span class="ui-sv-cell">C4</span>
+            <span class="ui-sv-cell">C5</span><span class="ui-sv-cell">C6</span>
+            <span class="ui-sv-cell">C7</span><span class="ui-sv-cell">C8</span>
+          </div>
+          <div class="ui-sv-row">
+            <span class="ui-sv-cell">D1</span><span class="ui-sv-cell">D2</span>
+            <span class="ui-sv-cell">D3</span><span class="ui-sv-cell">D4</span>
+            <span class="ui-sv-cell">D5</span><span class="ui-sv-cell">D6</span>
+            <span class="ui-sv-cell">D7</span><span class="ui-sv-cell">D8</span>
+          </div>
+          <div class="ui-sv-row">
+            <span class="ui-sv-cell">E1</span><span class="ui-sv-cell">E2</span>
+            <span class="ui-sv-cell">E3</span><span class="ui-sv-cell">E4</span>
+            <span class="ui-sv-cell">E5</span><span class="ui-sv-cell">E6</span>
+            <span class="ui-sv-cell">E7</span><span class="ui-sv-cell">E8</span>
+          </div>
+        </div>
+
+        <!-- ── 2.5 CRM (FREQUENCY MONITOR) ─────────────────────────── -->
+        <div class="para-label">2.5 — COOLANT RESONANCE MONITOR (CRM)</div>
+        <div class="para">
+          Two knobs — FREQUENCY and AMPLITUDE — driven against a moving reference signal.
+          Maintain SYNC ≥ 75% to keep the temperature subsystem trim bonus active.
+          Sustained sync below 50 % for 30 seconds triggers a sensor anomaly.
+        </div>
+
+        <div class="ui-demo ui-crm">
+          <div class="ui-crm-knobs">
+            <div class="ui-crm-knob"><div class="ui-crm-needle" style="transform:rotate(-30deg)"></div><div class="ui-crm-knob-label">FREQ</div></div>
+            <div class="ui-crm-knob"><div class="ui-crm-needle" style="transform:rotate(45deg)"></div><div class="ui-crm-knob-label">AMP</div></div>
+          </div>
+          <div class="ui-crm-bar-wrap">
+            <div class="ui-crm-bar"><div class="ui-crm-bar-fill" style="width:82%"></div></div>
+            <div class="ui-crm-bar-label">SYNC <span class="hi">82%</span></div>
+          </div>
+        </div>
+
+        <!-- ── 2.6 DISPATCH ────────────────────────────────────────── -->
+        <div class="para-label">2.6 — DISPATCH (FIELD WORKER RADIO)</div>
+        <div class="para">
+          Periodic radio calls from maintenance personnel. Each request lists a name,
+          a current dose reading, and a set of action choices. Higher-risk choices yield
+          better outcomes for Unit 4 but accumulate operator-attributable dose on the
+          worker. Workers do collapse. Their dose is a permanent record.
+        </div>
+
+        <div class="ui-demo ui-dispatch">
+          <div class="ui-dp-header">
+            <span class="ui-dp-name">L. MOROZOV</span>
+            <span class="ui-dp-role">PIPEFITTER — 12 YRS</span>
+            <span class="ui-dp-dose">DOSE: <span class="warn">0.42 Sv</span></span>
+          </div>
+          <div class="ui-dp-line">"Filter housing leaks worse than the report says. Worth re-seating?"</div>
+          <div class="ui-dp-actions">
+            <span class="ui-dp-btn">[ RE-SEAT NOW. ]</span>
+            <span class="ui-dp-btn">[ FLAG FOR DAY SHIFT. ]</span>
+            <span class="ui-dp-btn">[ ABORT, RETURN TO POST. ]</span>
+          </div>
+        </div>
+
+        <!-- ── 2.7 ERROR CODE PANEL ────────────────────────────────── -->
+        <div class="para-label">2.7 — SYSTEM ERROR CODES (ER-XXXX)</div>
+        <div class="para">
+          When a subsystem destabilises beyond automatic correction, the console issues
+          an alphanumeric error code. While unresolved, the reactor degrades faster than
+          normal. Press <span class="hi">[H]</span> to consult the procedure entry for
+          the displayed code. Each fix is a four-condition lock: required POWER value,
+          required PRESSURE value, valve sequence, and survey-tone sequence. All four
+          must hold simultaneously.
+        </div>
+
+        <div class="ui-demo ui-er">
+          <div class="ui-er-tag">// SYSTEM ERROR</div>
+          <div class="ui-er-code">ER-3505</div>
+          <div class="ui-er-hint">// CONSULT MANUAL — PRESS [H]</div>
+        </div>
+
+        <div class="para warn-block">
+          The procedure manual for ER codes is maintained by an office that has not
+          revised its content in some time. Operators have, on occasion, found the
+          listed prescription to be incorrect. Cross-reference unfamiliar codes with
+          the operator log archive in the home terminal before acting.
+        </div>
+
+        <!-- ── 2.8 CONTROLS REFERENCE ──────────────────────────────── -->
+        <div class="para-label">2.8 — KEY BINDINGS</div>
+        <div class="para">
+          Default keys (rebindable from <span class="hi">SETTINGS → CONTROLS</span>):
+        </div>
+
+        <div class="ui-keys">
+          <div class="ui-key-row"><span class="ui-key">[H]</span> Open procedure manual</div>
+          <div class="ui-key-row"><span class="ui-key">[M]</span> Minimise / expand active error panel</div>
+          <div class="ui-key-row"><span class="ui-key">[ESC]</span> Pause shift (freezes everything)</div>
+          <div class="ui-key-row"><span class="ui-key">[1] [2] [4]</span> Game speed 1× / 2× / 4×</div>
+          <div class="ui-key-row"><span class="ui-key">[ ] [ ]</span> Speed step down / up</div>
+        </div>
+
+        <div class="section-footer">
+          INTERFACE REFERENCE — APPENDIX TO REVISION 3<br>
+          DIAGRAMS REPRESENT NOMINAL DISPLAY STATES.<br>
+          ACTUAL READINGS WILL VARY.
+        </div>
+      </div>
+
+      <!-- SECTION 3 — PARAMETERS -->
+      <div class="section" id="section-parameters">
+        <div class="section-eyebrow">SECTION 3</div>
+        <div class="section-title" data-i18n="manual.section.parameters">NORMAL OPERATING PARAMETERS</div>
         <hr class="section-rule">
 
         <div class="para">
@@ -549,8 +1014,8 @@
 
       <!-- SECTION 3 — ANOMALY RESPONSE -->
       <div class="section" id="section-anomaly">
-        <div class="section-eyebrow">SECTION 3</div>
-        <div class="section-title">ANOMALY RESPONSE</div>
+        <div class="section-eyebrow">SECTION 4</div>
+        <div class="section-title" data-i18n="manual.section.anomaly">ANOMALY RESPONSE</div>
         <hr class="section-rule">
 
         <div class="para">
@@ -628,8 +1093,8 @@
 
       <!-- SECTION 4 — RADIATION -->
       <div class="section" id="section-radiation">
-        <div class="section-eyebrow">SECTION 4</div>
-        <div class="section-title">RADIATION MONITORING</div>
+        <div class="section-eyebrow">SECTION 5</div>
+        <div class="section-title" data-i18n="manual.section.radiation">RADIATION MONITORING</div>
         <hr class="section-rule">
 
         <div class="para">
@@ -693,8 +1158,8 @@
 
       <!-- SECTION 5 — EMERGENCY -->
       <div class="section" id="section-emergency">
-        <div class="section-eyebrow">SECTION 5</div>
-        <div class="section-title">EMERGENCY PROCEDURES</div>
+        <div class="section-eyebrow">SECTION 6</div>
+        <div class="section-title" data-i18n="manual.section.emergency">EMERGENCY PROCEDURES</div>
         <hr class="section-rule">
 
         <div class="para">

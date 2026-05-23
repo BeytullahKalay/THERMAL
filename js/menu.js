@@ -52,27 +52,30 @@ function paintMenu() {
   var primMeta  = document.getElementById('menu-primary-meta')
   var progEl    = document.getElementById('menu-money-progress')
 
+  var t = (window.i18n && window.i18n.t) ? window.i18n.t : function (k, v) { return k }
   if (c === 'continue') {
     /* CASE 2 — save exists, not game-over */
     primary.style.display = ''
     newgame.style.display = ''
-    primLabel.textContent = 'CONTINUE — SHIFT ' + s.shiftNumber
+    primLabel.textContent = t('menu.primary.continueShift', { n: s.shiftNumber })
     primMeta.textContent  = ''
     updatePrefixes(true)
   } else {
     /* CASE 1 / CASE 3 — only [01 NEW GAME] */
     primary.style.display = ''
     newgame.style.display = 'none'
-    primLabel.textContent = 'NEW GAME'
+    primLabel.textContent = t('menu.primary.newGame')
     if (c === 'ended') {
-      primMeta.textContent = s.gameOverReason === 'win' ? '// RUN COMPLETE' : '// RUN ENDED'
+      primMeta.textContent = s.gameOverReason === 'win'
+        ? t('menu.status.runComplete')
+        : t('menu.status.runEnded')
     } else {
       primMeta.textContent = ''
     }
     updatePrefixes(false)
   }
 
-  if (progEl) progEl.textContent = s.totalMoney + ' / ' + s.targetMoney
+  if (progEl) progEl.textContent = t('menu.money.progress', { money: s.totalMoney, target: s.targetMoney })
 
   /* Operator File: unlocked only when a live run exists */
   var opfileItem  = document.getElementById('menu-item-operatorfile')
@@ -84,7 +87,7 @@ function paintMenu() {
     if (opfileItem)  opfileItem.classList.add('opfile-unlocked')
   } else {
     if (opfileLabel) opfileLabel.classList.add('locked')
-    if (opfileLock)  { opfileLock.textContent = '// LOCKED'; opfileLock.className = 'menu-lock' }
+    if (opfileLock)  { opfileLock.textContent = t('menu.locked'); opfileLock.className = 'menu-lock' }
     if (opfileItem)  opfileItem.classList.remove('opfile-unlocked')
   }
 }
@@ -119,6 +122,7 @@ document.getElementById('menu-item-primary')      .addEventListener('click', onP
 document.getElementById('menu-item-newgame')      .addEventListener('click', onNewGameRequest)
 document.getElementById('menu-item-manual')       .addEventListener('click', () => navigateTo('manual.html'))
 document.getElementById('menu-item-settings')     .addEventListener('click', openSettings)
+document.getElementById('menu-item-credits')      .addEventListener('click', () => navigateTo('credits.html'))
 document.getElementById('menu-item-exit')         .addEventListener('click', () => window.close())
 document.getElementById('menu-item-operatorfile') .addEventListener('click', function() {
   if (menuCase() === 'continue') openOpFile()
@@ -130,6 +134,22 @@ document.getElementById('reset-confirm-no') .addEventListener('click', onNewGame
 
 paintMenu()
 paintSnapshot()
+
+/* Refresh JS-rendered dynamic strings whenever the language changes.
+   data-i18n elements are auto-updated by window.i18n.setLang(), but
+   anything we write via textContent in JS (primary label, controls
+   list, language list selection state, snapshot strings) needs an
+   explicit re-render. */
+window.addEventListener('thermal-lang-changed', function () {
+  try { paintMenu() } catch (e) {}
+  try { paintSnapshot() } catch (e) {}
+  /* Only rebuild settings sub-lists if the overlay is open */
+  var settingsOpen = document.getElementById('settings-overlay')
+  if (settingsOpen && settingsOpen.classList.contains('active')) {
+    try { buildControlsList() } catch (e) {}
+    try { buildLanguageList() } catch (e) {}
+  }
+})
 
 /* ── Populate status snapshot from last shift report ────────────── */
 function paintSnapshot() {
@@ -188,6 +208,30 @@ function paintSnapshot() {
   var powEl   = document.getElementById('snap-val-power')
   if (powBar) { powBar.style.width = Math.min(100, Math.round(powVal)) + '%'; powBar.className = barCls(powSt) }
   if (powEl)  { powEl.textContent = powVal.toFixed(1) + '%'; powEl.className = cls(powSt) }
+
+  /* LAST ENTRY — final 3 lines from the most recent shift's anomaly log */
+  var entryEl = document.getElementById('last-shift-entry')
+  if (entryEl) {
+    var anomLog = null
+    try { anomLog = JSON.parse(localStorage.getItem('thermalAnomalyLog')) } catch(e) {}
+
+    if (anomLog && anomLog.length > 0) {
+      var lastShift   = anomLog[anomLog.length - 1]
+      var entries     = lastShift.entries || []
+      var tail        = entries.slice(-3)   /* last 3 entries */
+
+      if (tail.length > 0) {
+        entryEl.innerHTML = tail.map(function(e, i) {
+          var tsSpan   = '<span class="ts">' + (e.ts || '——') + '</span>'
+          var textNode = e.cls === 'lo'
+            ? '<span class="conflict">' + e.text + '</span>'
+            : e.text
+          var cursor   = (i === tail.length - 1) ? '<span class="cursor"></span>' : ''
+          return tsSpan + textNode + cursor
+        }).join('<br>')
+      }
+    }
+  }
 }
 
 /* ═══════════════════════════════════════════════════════════════════
@@ -219,9 +263,124 @@ async function openSettings() {
   buildModeList()
   buildResList()
   updateResSection()
+  buildControlsList()
+  buildLanguageList()
 
   document.getElementById('settings-overlay').classList.add('active')
 }
+
+/* ═══════════════════════════════════════════════════════════════════
+   LANGUAGE — locale picker
+   Lists window.i18n.LANGS, marks the active code, switches on click.
+   ═══════════════════════════════════════════════════════════════════ */
+function buildLanguageList() {
+  if (!window.i18n) return
+  var listEl = document.getElementById('language-list')
+  if (!listEl) return
+  var current = window.i18n.getLang()
+  listEl.innerHTML = ''
+  window.i18n.LANGS.forEach(function (l) {
+    var el = document.createElement('div')
+    var isSel = (l.code === current)
+    el.className = 'settings-option' + (isSel ? ' selected' : '')
+    el.setAttribute('data-lang', l.code)
+    el.innerHTML =
+      '<span class="opt-selector">' + (isSel ? '▶' : ' ') + '</span>' +
+      '<span class="opt-label">' + l.native + '</span>' +
+      '<span class="opt-tag">' + l.name + '</span>'
+    el.addEventListener('click', function () {
+      window.i18n.setLang(l.code)
+      buildLanguageList()  // re-render with new selection
+    })
+    listEl.appendChild(el)
+  })
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   CONTROLS — keybind rebinding UI
+   Reads window.keybinds.META for action ids + labels, renders rows,
+   wires capture-modal flow for each unprotected action.
+   ═══════════════════════════════════════════════════════════════════ */
+function buildControlsList() {
+  if (!window.keybinds) return
+  var listEl = document.getElementById('controls-list')
+  if (!listEl) return
+
+  listEl.innerHTML = ''
+  var meta = window.keybinds.META
+  /* Pull localised action labels from i18n if available. */
+  var t = (window.i18n && window.i18n.t) ? window.i18n.t : function (k, f) { return f }
+  Object.keys(meta).forEach(function (action) {
+    var info  = meta[action]
+    var label = t('controls.' + action, info.label) || info.label
+    var row   = document.createElement('div')
+    row.className = 'control-row' + (info.protected ? ' protected' : '')
+    row.setAttribute('data-action', action)
+    row.innerHTML =
+      '<span class="control-label">' + label +
+        (info.protected ? ' <span class="control-locked">' + t('controls.locked', '(locked)') + '</span>' : '') +
+      '</span>' +
+      '<button type="button" class="control-key-btn" data-action="' + action + '">' +
+        window.keybinds.label(action) +
+      '</button>'
+    listEl.appendChild(row)
+  })
+}
+
+/* Capture-modal state */
+var _rebindAction = null
+function _openRebind(action) {
+  if (!window.keybinds || !window.keybinds.META[action]) return
+  if (window.keybinds.META[action].protected) return
+  _rebindAction = action
+  var actEl = document.getElementById('rebind-action')
+  if (actEl) actEl.textContent = window.keybinds.META[action].label
+  var ov = document.getElementById('rebind-overlay')
+  if (ov) ov.classList.add('active')
+  /* Visual flag on the originating button */
+  var btn = document.querySelector('.control-key-btn[data-action="' + action + '"]')
+  if (btn) btn.classList.add('capturing')
+}
+function _closeRebind() {
+  _rebindAction = null
+  var ov = document.getElementById('rebind-overlay')
+  if (ov) ov.classList.remove('active')
+  document.querySelectorAll('.control-key-btn.capturing').forEach(function (b) {
+    b.classList.remove('capturing')
+  })
+}
+
+/* Capture phase listener so we beat any other keydown handler. */
+document.addEventListener('keydown', function (ev) {
+  if (!_rebindAction) return
+  ev.preventDefault()
+  ev.stopPropagation()
+  if (ev.key === 'Escape') { _closeRebind(); return }
+  /* Reject pure modifier keys */
+  if (ev.key === 'Shift' || ev.key === 'Control' || ev.key === 'Alt' || ev.key === 'Meta') return
+  window.keybinds.set(_rebindAction, ev.key)
+  _closeRebind()
+  buildControlsList()
+}, true)
+
+/* Click handler — open capture modal on key-button click */
+document.addEventListener('click', function (ev) {
+  var btn = ev.target.closest && ev.target.closest('.control-key-btn[data-action]')
+  if (!btn) return
+  var action = btn.getAttribute('data-action')
+  _openRebind(action)
+})
+
+/* Reset button */
+;(function wireResetBtn() {
+  var btn = document.getElementById('controls-reset')
+  if (!btn) return
+  btn.addEventListener('click', function () {
+    if (!window.keybinds) return
+    window.keybinds.reset()
+    buildControlsList()
+  })
+})()
 
 /* Close without applying */
 function closeSettings() {

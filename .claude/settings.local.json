@@ -1,0 +1,23 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__plugin_context-mode_context-mode__ctx_execute",
+      "Bash(npm install *)",
+      "Bash(npx electron-builder *)",
+      "mcp__plugin_context-mode_context-mode__ctx_batch_execute",
+      "mcp__plugin_context-mode_context-mode__ctx_execute_file",
+      "Bash(node -c \"C:/Users/Beytullah KALAY/OneDrive/Desktop/THERMAL/js/game.js\")",
+      "Bash(node -c \"C:/Users/Beytullah KALAY/OneDrive/Desktop/THERMAL/js/error-system.js\")",
+      "Bash(node -c \"C:/Users/Beytullah KALAY/OneDrive/Desktop/THERMAL/js/manual-overlay.js\")",
+      "Bash(node -c \"C:/Users/Beytullah KALAY/OneDrive/Desktop/THERMAL/js/log-reader.js\")",
+      "Bash(node -c js/game.js)",
+      "Bash(node -c js/shift-end.js)",
+      "Bash(node -e \"for \\(const c of ['en','tr','zh-Hans','ru','de','ja']\\) JSON.parse\\(require\\('fs'\\).readFileSync\\('locales/'+c+'.json'\\)\\)\")",
+      "Bash(node -c js/saveSystem.js)",
+      "Bash(node -c js/hoverSfx.js)",
+      "Bash(node -c js/error-system.js)",
+      "Bash(node -c js/manual-overlay.js)",
+      "Bash(node -c js/messaging.js)"
+    ]
+  }
+}

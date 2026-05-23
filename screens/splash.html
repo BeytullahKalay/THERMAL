@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MILDLY EPIC INTERACTIVE</title>
+<style>
+  :root {
+    --phosphor: #a8ff3e;
+    --phosphor-dim: #4a7a1a;
+    --bg: #080a04;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+
+  html, body {
+    background: #000;
+    height: 100vh;
+    overflow: hidden;
+    cursor: none;
+  }
+
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'VT323', 'Share Tech Mono', monospace;
+    color: var(--phosphor);
+  }
+
+  /* CRT scanlines — match the rest of the game */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: repeating-linear-gradient(
+      0deg,
+      rgba(0,0,0,0.18) 0px,
+      rgba(0,0,0,0.18) 1px,
+      transparent 1px,
+      transparent 3px
+    );
+    pointer-events: none;
+    z-index: 1000;
+  }
+
+  /* CRT vignette */
+  body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 55%, rgba(0,0,0,0.75) 100%);
+    pointer-events: none;
+    z-index: 999;
+  }
+
+  /* Slow rolling scan line (same visual language as boot screen) */
+  .scan-roll {
+    position: fixed;
+    left: 0; right: 0;
+    height: 120px;
+    background: linear-gradient(180deg,
+      transparent 0%,
+      rgba(168,255,62,0.03) 45%,
+      rgba(168,255,62,0.06) 50%,
+      rgba(168,255,62,0.03) 55%,
+      transparent 100%
+    );
+    animation: scanRoll 9s linear infinite;
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  @keyframes scanRoll {
+    from { top: -120px; }
+    to   { top: 100vh; }
+  }
+
+  /* The whole splash frame animates in with the shared CRT powerOn
+     name so hoverSfx.js's animationstart hook fires the crtOn sound. */
+  @keyframes powerOn {
+    0%   { transform: scaleY(0.01); filter: brightness(8) saturate(0); opacity: 0.6; }
+    12%  { transform: scaleY(0.01); filter: brightness(12) saturate(0); opacity: 1; }
+    24%  { transform: scaleY(1);    filter: brightness(2);              opacity: 1; }
+    36%  { transform: scaleY(1);    filter: brightness(0.75);           opacity: 1; }
+    50%  { transform: scaleY(1);    filter: brightness(1.3);            opacity: 1; }
+    70%  { transform: scaleY(1);    filter: brightness(1);              opacity: 1; }
+    100% { transform: scaleY(1);    filter: brightness(1);              opacity: 1; }
+  }
+
+  @keyframes crtOff {
+    0%   { transform: scaleY(1);    filter: brightness(1); opacity: 1; }
+    8%   { transform: scaleY(1);    filter: brightness(3) saturate(0); opacity: 1; }
+    22%  { transform: scaleY(0.04); filter: brightness(8); opacity: 1; }
+    55%  { transform: scaleY(0.02); filter: brightness(3); opacity: 1; }
+    100% { transform: scaleY(0.01); filter: brightness(0); opacity: 0; }
+  }
+
+  .frame {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 28px;
+    animation: powerOn 0.9s cubic-bezier(0, 0, 0.4, 1) forwards,
+               flicker 6s 0.9s infinite;
+    transform-origin: center center;
+  }
+
+  @keyframes flicker {
+    0%, 97%, 100% { opacity: 1; }
+    98%           { opacity: 0.88; }
+    99%           { opacity: 0.96; }
+  }
+
+  .logo-wrap {
+    position: relative;
+    padding: 18px 28px;
+  }
+
+  /* Logo — phosphor tint + bloom. filter tricks turn any full-colour
+     source image into the game's amber/green CRT palette so the logo
+     feels like it belongs on this monitor rather than pasted in. */
+  .logo {
+    /* Preserve native aspect ratio. We size by width and let height
+       follow; max-height is enforced via object-fit so no axis ever
+       gets stretched, even when the box would clip the image. */
+    width: min(52vw, 620px);
+    height: auto;
+    max-width: 100%;
+    max-height: 60vh;
+    object-fit: contain;
+    display: block;
+    filter:
+      drop-shadow(0 0 10px rgba(168,255,62,0.55))
+      drop-shadow(0 0 28px rgba(168,255,62,0.25));
+    opacity: 0;
+    animation: logoIn 0.7s 0.9s ease-out forwards,
+               logoFlicker 4.5s 1.6s infinite;
+  }
+
+  @keyframes logoFlicker {
+    0%, 94%, 100% { opacity: 1; }
+    95%           { opacity: 0.82; }
+    96%           { opacity: 0.95; }
+    97%           { opacity: 0.78; }
+    98%           { opacity: 1; }
+  }
+
+  @keyframes logoIn {
+    0%   { opacity: 0;   transform: scale(0.985); filter: drop-shadow(0 0 18px rgba(168,255,62,0.9)) brightness(2); }
+    60%  { opacity: 1;   transform: scale(1);     filter: drop-shadow(0 0 14px rgba(168,255,62,0.6)) brightness(1.15); }
+    100% { opacity: 1;   transform: scale(1);
+      filter:
+        drop-shadow(0 0 10px rgba(168,255,62,0.55))
+        drop-shadow(0 0 28px rgba(168,255,62,0.25));
+    }
+  }
+
+
+  /* Soft horizontal band overlay — fake "CRT beam brightness" that
+     occasionally sweeps across the logo. */
+  .logo-wrap::after {
+    content: '';
+    position: absolute;
+    left: -6%; right: -6%;
+    top: 40%;
+    height: 22%;
+    background: linear-gradient(180deg,
+      transparent 0%,
+      rgba(168,255,62,0.05) 50%,
+      transparent 100%);
+    pointer-events: none;
+    mix-blend-mode: screen;
+    animation: sweep 6s 2s infinite;
+    opacity: 0;
+  }
+
+  @keyframes sweep {
+    0%   { top: -30%; opacity: 0; }
+    20%  { opacity: 0.9; }
+    60%  { opacity: 0.9; }
+    100% { top: 110%; opacity: 0; }
+  }
+
+  /* Caption below the logo */
+  .byline {
+    font-size: 18px;
+    letter-spacing: 10px;
+    color: var(--phosphor-dim);
+    text-shadow: 0 0 6px rgba(168,255,62,0.25);
+    opacity: 0;
+    animation: fadeIn 0.6s 1.6s forwards;
+  }
+
+  .presents {
+    font-size: 14px;
+    letter-spacing: 6px;
+    color: var(--phosphor-dim);
+    opacity: 0;
+    animation: fadeIn 0.6s 2.3s forwards;
+  }
+
+  @keyframes fadeIn { to { opacity: 1; } }
+
+  /* Exit animation class — applied by JS to trigger crtOff */
+  .frame.crt-off {
+    animation: crtOff 0.65s cubic-bezier(0.4, 0, 1, 1) forwards;
+  }
+</style>
+</head>
+<body>
+
+<div class="scan-roll"></div>
+
+<div class="frame" id="frame">
+  <div class="logo-wrap">
+    <img class="logo" src="../MildlyEpicLogo2.png" alt="Mildly Epic Interactive">
+  </div>
+  <div class="byline">M I L D L Y &nbsp; E P I C &nbsp; I N T E R A C T I V E</div>
+  <div class="presents">PRESENTS</div>
+</div>
+
+<script src="../js/hoverSfx.js"></script>
+<script src="../js/i18n.js"></script>
+<script>
+  /* Total on-screen time ≈ 3.6 s, then CRT-off transition to boot.html.
+     Allow a keypress / click to skip for impatient players. */
+  var HOLD_MS   = 4600
+  var OFF_MS    = 650
+  var advanced  = false
+
+  function go() {
+    if (advanced) return
+    advanced = true
+    var frame = document.getElementById('frame')
+    if (frame) frame.classList.add('crt-off')   // fires crtOff sfx via animationstart
+    setTimeout(function() {
+      window.location.href = 'boot.html'
+    }, OFF_MS - 30)
+  }
+
+  setTimeout(go, HOLD_MS)
+  window.addEventListener('keydown',     go, { once: true })
+  window.addEventListener('pointerdown', go, { once: true })
+</script>
+
+</body>
+</html>

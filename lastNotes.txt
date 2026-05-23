@@ -1,0 +1,30 @@
+Bütün sistemi gözden geçirdim. Kategoriye göre güçlü öneriler — hepsi mevcut altyapıya cleanly oturur:
+
+## Hikâye
+1. **OP17 fate reveal** (çok güçlü): Shift 3-5 arası bir NEWS item çıksın — *"Local plant operator found dead in apartment, age unspecified"*. Kayıt seninle tanışmadan önce ölmüş olduğunu doğrular. Korku artar: sıradaki sensin.
+2. **3 yalanı keşfetme payoff**: 3 hack tamamlanınca kendin bir entry yazıyormuş gibi otomatik **OP18_NOTE.LOG** oluşur ("I see what they did. I am writing this down.") — gelecek operatörler için. Tema sürekliliği.
+3. **Manual revision event** (shift 6+): HQ "REVISION 2018.05" push eder, MANUAL annotations silinir → footer "PROCEDURE UPDATED — DISCREPANCIES REPORTED MAY HAVE BEEN ADDRESSED" yazar ama prescriptionlar yine yalan. Operatör işaretlemeyi tekrar yapmak zorunda. Bürokratik ironi.
+4. **Game-end coda**: Kazansan da kaybetsen de save → otomatik `OP18_FINAL.LOG` oluşur, sonraki run'da OP19 olarak başlarken kendi eski kayıtlarını görürsün. Roguelike dehşet.
+
+## Game design
+5. **Shift-locked harder ERs**: Şu an 10 kod hep havuzda. ER-A101 (5 vana + 3 tone, tek lie) gibi 4-5 yeni "tier 2" kod ekle, shift 4+ açılır. JSON'a `minShift` field.
+6. **ER cascade** (shift 7+): İkinci ER ilk çözülmeden fire edilebilir → oyuncu hangisine odaklanacağını seçmeli, ikinci panel altına alttan kayar. Zorluk eğrisi tepe.
+7. **Hızlı çözüm bonusu**: ER 30s altında çözülürse +5$, 60s altında +2$. Reward speed/precision; oyuncu çözüm cesareti kazanır.
+8. **Affected system indicator**: ER'nın `systemTag` özelliğine göre o gauge'a kırmızı pulse halkası ekle. "Hangi sistem patlıyor" görsel.
+
+## Polish
+9. **Annotation reveal animasyonu**: Hack'lendikten sonra MANUAL'ı ilk açışta yeşil correction "yazılıyormuş" gibi typewriter effect (200ms karakter karakter). Bir kere oynanır, magic moment.
+10. **ER alarm escalation**: Çözülmedikçe 60s aralıklarla alarm tonu yükselsin (frequency +20Hz her seferinde) — paniği akustik olarak ifade.
+11. **Sleep transition**: Home-terminal'den game'e geçiş şu an direkt — fade-out + "TIME PASSES — 21:54" gibi single-line karanlık ekran (1.5s) çok daha atmosferik.
+12. **Past shifts archive expansion**: `SHIFT_X_OPLOG.DAT` zaten var ama içine final score / ER count / casualties da ekle. Oyuncu geriye dönüp performansını görür.
+
+## QoL
+13. **TRAINING mode** main menüden — hayalet shift, ölüm yok, ER pratiği yapabilir. Yeni oyuncuya öğrenme alanı.
+14. **MANUAL keyboard nav**: ↑/↓ ile index gez, Enter ile aç. Crisis sırasında daha hızlı.
+15. **F1 debug → "RELEASE" build flag**: package.json'a env var ekle, F1 paneli sadece dev'de görünsün.
+16. **Statistics tab** home-terminal'de: total ERs solved, total ERs missed, casualties, fastest ER fix, etc.
+
+## En güçlü 3 önerim
+**Sırayla yapılırsa max impact**: (1) OP17 fate reveal — 30dk iş, mood transformation. (2) Game-end coda — roguelike persistence, replayability. (3) Manual revision event — temayı netleştirir, late-game tension peak.
+
+Hangisini istersen başlayayım.

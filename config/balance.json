@@ -1,0 +1,144 @@
+{
+  "_comment": "THERMAL — Balance Configuration. Edit freely; game reads this at startup.",
+
+  "systems": {
+    "sicaklik": {
+      "label": "TEMPERATURE",
+      "unit": "°C",
+      "dec": 1,
+      "safe":      [40, 85],
+      "warn":      [37, 88],
+      "crit":      [34, 92],
+      "deterRate": 0.20,
+      "direction": 1,
+      "gaugeMin":  0,
+      "gaugeMax":  120,
+      "initValue": 65.0,
+      "hintSafe":  "SAFE: 40–85°C"
+    },
+    "basinc": {
+      "label": "PRESSURE",
+      "unit": "%",
+      "dec": 1,
+      "safe":      [40, 80],
+      "warn":      [36, 84],
+      "crit":      [32, 88],
+      "deterRate": 0.15,
+      "direction": 1,
+      "gaugeMin":  0,
+      "gaugeMax":  100,
+      "initValue": 52.0,
+      "hintSafe":  "SAFE: 40–80%"
+    },
+    "guc": {
+      "label": "POWER",
+      "unit": "%",
+      "dec": 1,
+      "safe":      [50, 90],
+      "warn":      [42, 93],
+      "crit":      [35, 95],
+      "deterRate": 0.10,
+      "direction": -1,
+      "gaugeMin":  0,
+      "gaugeMax":  100,
+      "initValue": 72.0,
+      "hintSafe":  "SAFE: 50–90%"
+    }
+  },
+
+  "resources": {
+    "init": { "sicaklik": 4, "basinc": 3, "guc": 3 }
+  },
+
+  "meltdown": {
+    "critTimerMax": 120
+  },
+
+  "difficulty": {
+    "initScale": 0.4,
+    "steps": [
+      { "elapsed":   0, "scale": 0.4 },
+      { "elapsed":  60, "scale": 0.7 },
+      { "elapsed": 180, "scale": 1.0 },
+      { "elapsed": 300, "scale": 1.4 },
+      { "elapsed": 420, "scale": 1.8 }
+    ]
+  },
+
+  "_shiftScalingComment": "Shift-to-shift escalation. All three levers use the same ramp: value = base * (1 ± perShift * min(shiftNumber-1, maxBonusShifts)). Curve is tuned for 'flow' — barely felt in shift 1-2, noticeable by 4-5, demanding but fair at the 8-10 cap. deterPerShift ADDS to deterioration rate; anomSpeed/dispSpeed SUBTRACT from their intervals (higher values = shorter gaps between events). intervalFloorMult prevents intervals from collapsing to nothing at the cap.",
+  "shiftScaling": {
+    "deterPerShift":     0.030,
+    "anomSpeedPerShift": 0.020,
+    "dispSpeedPerShift": 0.022,
+    "maxBonusShifts":       10,
+    "intervalFloorMult":  0.60
+  },
+
+  "radiation": {
+    "warnLeakRate":  0.004,
+    "critLeakRate":  0.010,
+    "cap":           9.9,
+    "initValue":     0.80,
+    "ventThreshold": 2.2
+  },
+
+  "vent": {
+    "authorizeCooldown":    120,
+    "containCooldown":       90,
+    "dischargeMultiplier":   0.65,
+    "systemReliefFactor":    0.35,
+    "decisionWindowSeconds": 25
+  },
+
+  "pay": {
+    "brackets": [
+      { "maxRad": 1.5, "amount": 400 },
+      { "maxRad": 2.5, "amount": 300 },
+      { "maxRad": 3.5, "amount": 200 },
+      { "maxRad": 999, "amount": 100 }
+    ],
+    "meltdownAmount": 0,
+    "targetMoney":    2400
+  },
+
+  "anomaly": {
+    "firstSpawnMs":      180000,
+    "firstSpawnRandMs":  120000,
+    "earlyElapsed":         240,
+    "earlyMinMs":         60000,
+    "earlyRandMs":       120000,
+    "midElapsed":           120,
+    "midMinMs":          120000,
+    "midRandMs":         120000,
+    "lateMinMs":         240000,
+    "lateRandMs":        180000,
+    "decideWindowMs":     90000,
+    "stage1WindowMs":     60000,
+    "fakeClueMinMs":      60000,
+    "fakeClueRandMs":     30000,
+    "postResolveDelayMs":  5000,
+    "postMissDelayMs":     3000
+  },
+
+  "crm": {
+    "firstSpawnMs":     240000,
+    "firstSpawnRandMs": 120000,
+    "respawnMs":        240000,
+    "respawnRandMs":    240000,
+    "windowSeconds":        60,
+    "driftIntervalMs":   20000,
+    "driftRandMs":       10000,
+    "penalty2AtSeconds":    90,
+    "penalty3AtSeconds":   120
+  },
+
+  "valve": {
+    "firstSpawnMs":     300000,
+    "firstSpawnRandMs": 180000,
+    "respawnMs":        300000,
+    "respawnRandMs":    240000,
+    "windowSeconds":        45,
+    "idleBreathMs":      40000,
+    "idleBreathRandMs":  20000
+  }
+}
