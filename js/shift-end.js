@@ -343,17 +343,28 @@ if (_runEnded && btnNext) {
   btnNext.style.display = 'none'
 }
 
-/* Senaryo — WIN epilogue routing. Detect from save (the WIN flag
-   is set in updateShift after the report is written). When won,
-   repurpose the NEXT button to send the player to the epilogue
-   instead of the home terminal. NEXT label is retained as-is via
-   data-i18n so locale switches still work; only the click target
-   changes. */
+/* Senaryo + J.1 — WIN epilogue routing. Detect from save (gameOver
+   reason set in updateShift) OR from money threshold (defensive).
+   Hide MAIN MENU and relabel NEXT so the player can't accidentally
+   skip the epilogue. */
 var _isWin = false
 try {
   var _sv = (window.saveSystem ? window.saveSystem.loadGame() : null)
-  _isWin = !!(_sv && _sv.gameOver && _sv.gameOverReason === 'win')
+  _isWin = !!(_sv && ((_sv.gameOver && _sv.gameOverReason === 'win') ||
+             (typeof _sv.totalMoney === 'number' && typeof _sv.targetMoney === 'number'
+              && _sv.totalMoney >= _sv.targetMoney)))
 } catch(e){}
+if (_isWin) {
+  try {
+    var _btnMenuEl = document.getElementById('btn-menu')
+    if (_btnMenuEl) _btnMenuEl.style.display = 'none'
+    var _btnNextEl = document.getElementById('btn-next')
+    if (_btnNextEl) {
+      _btnNextEl.textContent = '[ READ FINAL MESSAGE ]'
+      _btnNextEl.removeAttribute('data-i18n')   /* prevent locale re-write */
+    }
+  } catch(e){}
+}
 
 /* ═══════════════════════════════════════════════════════════════════
    NAVIGATION
@@ -369,12 +380,20 @@ document.getElementById('btn-menu').addEventListener('click', function() {
 })
 
 if (!_runEnded) document.getElementById('btn-next').addEventListener('click', function() {
-  if (window.saveSystem) {
-    var s = window.saveSystem.loadGame()
-    try { localStorage.setItem('thermalShiftNumber', String(s.shiftNumber)) } catch (e) {}
-  }
-  /* Senaryo — WIN diverts to the epilogue instead of home. */
-  if (_isWin) { crtNavigate('death.html'); return }
+  /* J.1 — re-check WIN at click time (script-load check could race
+     updateShift on slow saves). Also fall back to money-vs-target
+     comparison if gameOverReason isn't set yet. */
+  var winNow = false
+  try {
+    var s2 = window.saveSystem ? window.saveSystem.loadGame() : null
+    if (s2) {
+      try { localStorage.setItem('thermalShiftNumber', String(s2.shiftNumber)) } catch (e) {}
+      winNow = (s2.gameOver && s2.gameOverReason === 'win') ||
+               (typeof s2.totalMoney === 'number' && typeof s2.targetMoney === 'number'
+                && s2.totalMoney >= s2.targetMoney)
+    }
+  } catch(e){}
+  if (winNow) { crtNavigate('death.html'); return }
   /* Atmospheric transition home — CRT off, then a black-screen
      interstitial held long enough to register before the home
      terminal loads. Total ~3.4s. */

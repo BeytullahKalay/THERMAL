@@ -3185,6 +3185,17 @@ body.er-active::after {
   100% { color: inherit;         text-shadow: none;                            transform: scale(1.0); }
 }
 
+/* A2 — Bound worker line inside ER panel. Subtler than the
+   code line; reads as a sub-credit "who's in there right now". */
+.er-operator {
+  font-family:    'Share Tech Mono', monospace;
+  font-size:      10px;
+  letter-spacing: 1.5px;
+  color:          var(--phosphor-dim);
+  margin:         2px 0 4px;
+  padding:        0 4px;
+}
+
 /* H.3 — Post-FIXED settle. Brief green wash on .terminal that
    matches the valveRelease audio sweep — 900ms tail, no jitter. */
 .terminal.er-settle {

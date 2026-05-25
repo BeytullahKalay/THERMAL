@@ -15,10 +15,10 @@
 
   "_scheduleComment": "Auto-spawn timing for ER. firstMs is min delay before the FIRST ER of a shift; firstRnd is added randomly. After resolution, next ER waits respawnMs + random(respawnRnd). All in ms. shiftScale tightens timing on later shifts (multiplied per shift number).",
   "schedule": {
-    "firstMs":      180000,
-    "firstRnd":     120000,
-    "respawnMs":    240000,
-    "respawnRnd":   180000,
+    "firstMs":       40000,
+    "firstRnd":      30000,
+    "respawnMs":     70000,
+    "respawnRnd":    45000,
     "shiftScale":   0.92,
     "_cascadeComment": "From shift `cascadeShift` onward, after each ER is resolved the next one queues with `cascadeMs + random(cascadeRnd)` instead of the normal respawn — almost no breathing room.",
     "cascadeShift":  7,

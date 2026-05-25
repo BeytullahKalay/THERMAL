@@ -17,7 +17,9 @@
       "Bash(node -c js/hoverSfx.js)",
       "Bash(node -c js/error-system.js)",
       "Bash(node -c js/manual-overlay.js)",
-      "Bash(node -c js/messaging.js)"
+      "Bash(node -c js/messaging.js)",
+      "Bash(node -e \"JSON.parse\\(require\\('fs'\\).readFileSync\\('config/error-codes.json'\\)\\)\")",
+      "WebSearch"
     ]
   }
 }

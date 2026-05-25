@@ -1717,7 +1717,7 @@
     /* Block while meltdown/end screens */
     if (gameState && gameState.systemFailure) return
 
-    var speedList = [0.5, 1, 2, 4]
+    var speedList = [0.5, 1, 2, 6]   /* J.4 — 4× → 6× per playtest feedback */
     /* Step bracket controls (always-on) */
     if (e.key === ']' || e.key === '+') {
       e.preventDefault()
@@ -1738,7 +1738,7 @@
     function hit(act, lit) { return kb ? kb.matches(e, act) : (e.key === lit) }
     if (hit('speed1', '1')) { e.preventDefault(); _setSpeed(1) }
     else if (hit('speed2', '2')) { e.preventDefault(); _setSpeed(2) }
-    else if (hit('speed3', '4')) { e.preventDefault(); _setSpeed(4) }
+    else if (hit('speed3', '4')) { e.preventDefault(); _setSpeed(6) }
     else if (e.key === '0') { _setSpeed(1) }
   })
 
@@ -3414,6 +3414,49 @@
     window.errorSystem.startScheduler(shiftNum)
   })()
 
+  /* B3 — Manual revision 2018.05 irony beat. The news article on
+     shift 6+ announces the revision; the in-shift log makes the
+     irony land: the prescriptions are unchanged. Player who has
+     been working around the lies (via predecessor logs) reads
+     this and understands the cover-up. Fires once per run. */
+  ;(function _manualRevisionIrony() {
+    try {
+      var s = window.saveSystem ? saveSystem.loadGame() : null
+      if (!s) return
+      if ((s.shiftNumber || 1) < 6) return
+      if (s._manualRevIronySeen) return
+      setTimeout(function () {
+        if (typeof _lsAdd === 'function') {
+          _lsAdd('// MANUAL REV 2018.05 INSTALLED — prescriptions unchanged from 2018.04.', 'warning')
+        }
+      }, 6000)
+      s._manualRevIronySeen = true
+      saveSystem.saveGame(s)
+    } catch(e){}
+  })()
+
+  /* B1 — Per-shift opening hook. One CRT log line per shift, fired
+     at ~2 game-sec after boot. Cold + atmospheric — each line
+     advances the run's mood without explaining anything. Shift 1
+     gets no hook because orientation tips already do the work. */
+  ;(function _shiftHook() {
+    try {
+      var sN = ((_save && _save.shiftNumber) || 1) | 0
+      var HOOKS = {
+        2: '// SHIFT 2 — THE WORKERS REMEMBER YOUR NAME NOW.',
+        3: "// SHIFT 3 — KOWALSKI'S LAST PAGE WAS TORN OUT HERE.",
+        4: '// SHIFT 4 — REVISION 2018.04 IS DUE. SOMETHING ALWAYS CHANGES.',
+        5: '// SHIFT 5 — REZNOV LOGGED 47 SHIFTS. YOU HAVE TWO LEFT.',
+        6: '// SHIFT 6 — REVISION 2018.05 INSTALLED. PAGES FRESH. PRESCRIPTIONS NOT.',
+        7: '// SHIFT 7 — THE NEXT ENTRY IN THE LOG WILL NOT HAVE YOUR NAME.'
+      }
+      if (!HOOKS[sN]) return
+      setTimeout(function () {
+        if (typeof _lsAdd === 'function') _lsAdd(HOOKS[sN], 'warning')
+      }, 2000)
+    } catch(e){}
+  })()
+
 
   /* ── Debug force-end buttons ─────────────────────────────────── */
   /* Each preset stamps gameState / _radMax to synthesize a specific
@@ -3831,18 +3874,101 @@
   var path = require('path')
 
   /* ── Worker roster (name, age, role, gender → portrait file) ───── */
+  /* C1 — Worker biographies. Tone: cold, factual, realistic.
+     Per This War of Mine research: depth + specificity → attachment.
+     Each worker carries:
+       bio            — one-line backstory shown in PERSONNEL panel +
+                        on dispatch overlay
+       voiceLine      — what they say on their first dispatch this run
+       flaggedSuffix  — appended to bio after FLAGGED return (C6)
+       flaggedVoice   — replaces voiceLine after FLAGGED return — the
+                        worker lies about being OK
+       familyLetter   — unique letter shown in MESSAGES after death
+                        (replaces pool from earlier sprint) */
   var ROSTER = [
-    { id: 'w01', name: 'SERGEI I.',   gender: 'm', portrait: 'male1.txt',   age: 34, role: 'LOOP-2 TECH' },
-    { id: 'w02', name: 'VIKTOR M.',   gender: 'm', portrait: 'male2.txt',   age: 42, role: 'SR. MECHANIC' },
-    { id: 'w03', name: 'DMITRY P.',   gender: 'm', portrait: 'male3.txt',   age: 29, role: 'DOSIMETRIST' },
-    { id: 'w04', name: 'YURI K.',     gender: 'm', portrait: 'male4.txt',   age: 51, role: 'SHIFT FOREMAN' },
-    { id: 'w05', name: 'ALEKSEI R.',  gender: 'm', portrait: 'male5.txt',   age: 26, role: 'TRAINEE' },
-    { id: 'w06', name: 'TATIANA V.',  gender: 'f', portrait: 'female1.txt', age: 38, role: 'I&C ENGINEER' },
-    { id: 'w07', name: 'NATALYA S.',  gender: 'f', portrait: 'female2.txt', age: 45, role: 'RAD-CONTROL' },
-    { id: 'w08', name: 'IRINA B.',    gender: 'f', portrait: 'female3.txt', age: 31, role: 'VALVE TECH' },
-    { id: 'w09', name: 'OLGA N.',     gender: 'f', portrait: 'female4.txt', age: 27, role: 'TRAINEE' },
-    { id: 'w10', name: 'ELENA Z.',    gender: 'f', portrait: 'female5.txt', age: 49, role: 'HEALTH PHYS.' },
+    { id: 'w01', name: 'SERGEI I.',   gender: 'm', portrait: 'male1.txt',   age: 34, role: 'LOOP-2 TECH',
+      bio:           'Eight-year shift veteran. Wife works as a nurse at the regional clinic. Two daughters.',
+      voiceLine:     '"Sergei. Loop-2. Ready."',
+      flaggedSuffix: '— Lost weight. Doesn\'t mention his wife anymore.',
+      flaggedVoice:  '"I\'m ready. I\'m fine."',
+      familyLetter:  'he used to bring home small things. a spool of wire. a clean rag. he said they were good for the garden. he didn\'t tell us he was tired.',
+      leftBehind:    'A spool of copper wire wrapped in a clean rag.' },
+
+    { id: 'w02', name: 'VIKTOR M.',   gender: 'm', portrait: 'male2.txt',   age: 42, role: 'SR. MECHANIC',
+      bio:           'Twenty years at the facility. Divorced. Keeps a small dog named PASHA.',
+      voiceLine:     '"Viktor. Tell me what\'s wrong with it."',
+      flaggedSuffix: '— Limp in his left leg. Refuses to have it looked at.',
+      flaggedVoice:  '"I can still work."',
+      familyLetter:  'he left the dog at our place last spring and never picked her up. PASHA waits at the door every night. we don\'t know what to tell her.',
+      leftBehind:    'A photograph of a small dog on a chair. The corner is creased.' },
+
+    { id: 'w03', name: 'DMITRY P.',   gender: 'm', portrait: 'male3.txt',   age: 29, role: 'DOSIMETRIST',
+      bio:           'Joined two years ago. Lives with his mother. Was supposed to start engineering school in the autumn.',
+      voiceLine:     '"Dmitry. Reading is — wait, let me get a fresh badge."',
+      flaggedSuffix: '— Hands shake when he holds the badge now.',
+      flaggedVoice:  '"It\'s just the cold. I\'m fine."',
+      familyLetter:  'he kept the acceptance letter for the engineering school in his coat pocket. we didn\'t know until we washed it.',
+      leftBehind:    'An acceptance letter from the engineering school. Folded into thirds.' },
+
+    { id: 'w04', name: 'YURI K.',     gender: 'm', portrait: 'male4.txt',   age: 51, role: 'SHIFT FOREMAN',
+      bio:           'Foreman for nine years. Widowed. Son works in a steel plant three districts over.',
+      voiceLine:     '"Foreman. What do you need."',
+      flaggedSuffix: '— Pauses between words now. Repeats himself.',
+      flaggedVoice:  '"Foreman. Yes. What."',
+      familyLetter:  'he called my brother every sunday at six. last sunday the phone rang and we didn\'t pick up. we thought he\'d call again. he didn\'t.',
+      leftBehind:    'A wallet with three rubles and a phone number written on a torn page.' },
+
+    { id: 'w05', name: 'ALEKSEI R.',  gender: 'm', portrait: 'male5.txt',   age: 26, role: 'TRAINEE',
+      bio:           'Six weeks into the program. Engaged to be married in the spring. Sleeps in the dorm block.',
+      voiceLine:     '"Control? Aleksei — sorry, Operator R., trainee. First call. What do I do?"',
+      flaggedSuffix: '— No longer wears the engagement band.',
+      flaggedVoice:  '"I\'m here. Sorry. I\'m here."',
+      familyLetter:  'we\'ve cancelled the wedding. we are returning the invitations. we did not know who to tell first.',
+      leftBehind:    'A simple gold engagement band. Second-hand.' },
+
+    { id: 'w06', name: 'TATIANA V.',  gender: 'f', portrait: 'female1.txt', age: 38, role: 'I&C ENGINEER',
+      bio:           'Instrumentation engineer. Single. Younger brother is in conscription service.',
+      voiceLine:     '"Tatiana. I\'m at the panel. Talk."',
+      flaggedSuffix: '— Reads the gauges twice now. Doesn\'t trust her own count.',
+      flaggedVoice:  '"Tatiana. I\'m reading. Stand by."',
+      familyLetter:  'my brother got leave for her birthday. he arrived a day late. we hadn\'t told him yet.',
+      leftBehind:    'A reading folder with the corners worn through.' },
+
+    { id: 'w07', name: 'NATALYA S.',  gender: 'f', portrait: 'female2.txt', age: 45, role: 'RAD-CONTROL',
+      bio:           'Rad-control senior. Three grown sons. Cousin works the day shift in Block A.',
+      voiceLine:     '"Natalya. Rad-control. Numbers please."',
+      flaggedSuffix: '— Doesn\'t ask after the day shift anymore.',
+      flaggedVoice:  '"Numbers. Tell me the numbers."',
+      familyLetter:  'her cousin came by to bring the news. he sat in the kitchen for an hour and didn\'t drink the tea.',
+      leftBehind:    'A photograph of three boys at a riverbank.' },
+
+    { id: 'w08', name: 'IRINA B.',    gender: 'f', portrait: 'female3.txt', age: 31, role: 'VALVE TECH',
+      bio:           'Valve technician. Single mother. Daughter is seven and asks about the noises at night.',
+      voiceLine:     '"Irina. Valve block. I have to be home by seven, control."',
+      flaggedSuffix: '— Asks if she can leave before the morning bell now.',
+      flaggedVoice:  '"I\'m here. I have to leave early."',
+      familyLetter:  'our girl asks every night when her mother is coming back. we told her not yet. we don\'t know how long we can say that.',
+      leftBehind:    'A child\'s drawing of a house with three windows.' },
+
+    { id: 'w09', name: 'OLGA N.',     gender: 'f', portrait: 'female4.txt', age: 27, role: 'TRAINEE',
+      bio:           'Trainee. Came from a teaching college. Took the night-shift posting for the housing allowance.',
+      voiceLine:     '"Olga, trainee. I — I read the procedure twice on the way here."',
+      flaggedSuffix: '— Carries the procedure folder everywhere. Won\'t put it down.',
+      flaggedVoice:  '"I have the procedure. I have it."',
+      familyLetter:  'she gave up the teaching post for this. we told her it was a mistake. she said the money was real and the children were not.',
+      leftBehind:    'A teaching college certificate. Never framed.' },
+
+    { id: 'w10', name: 'ELENA Z.',    gender: 'f', portrait: 'female5.txt', age: 49, role: 'HEALTH PHYS.',
+      bio:           'Health physicist. Two grandchildren. Plans to retire at fifty-three.',
+      voiceLine:     '"Health phys. on the line. Make this quick."',
+      flaggedSuffix: '— No longer mentions the retirement date.',
+      flaggedVoice:  '"On the line. What."',
+      familyLetter:  'she had four years left. we had pencilled in the date on the kitchen calendar. we have not taken it down.',
+      leftBehind:    'A kitchen calendar with a date circled in pencil.' },
   ]
+  /* Small lookup for code that needs to fetch a worker by id without
+     scanning the array each time (PERSONNEL panel, family letters). */
+  window.ROSTER = ROSTER
 
   /* ── Load portrait ASCII files once ────────────────────────────── */
   var _portraits = {}
@@ -3878,6 +4004,87 @@
 
   /* Initialise missing dose entries for any newly-added workers */
   ROSTER.forEach(function(w) { if (typeof _roster.doses[w.id] !== 'number') _roster.doses[w.id] = 0 })
+
+  /* C6 — persistent benched + flagged-survivor state. Survives
+     across shifts so a MEDICAL HOLD actually persists.
+     benched: { workerId: shiftNumberWhenFlagged }
+     flaggedSurvivors: { workerId: shiftNumberWhenReturned } */
+  if (!_roster.benched)          _roster.benched          = {}
+  if (!_roster.flaggedSurvivors) _roster.flaggedSurvivors = {}
+
+  /* C6 — promote bench → flagged-survivor when 2 shifts have passed.
+     Runs once at load (game.js boots per shift). After promotion the
+     worker is selectable again, with bio suffix + flaggedVoice + a
+     lower death threshold (1.7 Sv instead of 2.0). */
+  ;(function _promoteFlaggedSurvivors() {
+    var curShift = 1
+    try { curShift = (window.saveSystem ? saveSystem.loadGame().shiftNumber : 1) || 1 } catch(e){}
+    var changed = false
+    Object.keys(_roster.benched).forEach(function(id) {
+      var since = _roster.benched[id] | 0
+      if (curShift >= since + 2) {
+        _roster.flaggedSurvivors[id] = curShift
+        delete _roster.benched[id]
+        changed = true
+      }
+    })
+    if (changed) _saveRoster()
+  })()
+
+  /* Helper for code outside this IIFE that needs to ask "is this
+     worker a flagged survivor right now?" — used by death threshold
+     check + bio/voice line wiring. */
+  function _isFlaggedSurvivor(workerId) {
+    return !!(_roster.flaggedSurvivors && _roster.flaggedSurvivors[workerId])
+  }
+
+  /* A2 — Bind an ER to a specific worker by systemTag. error-system.js
+     calls window._erWorkerPick(systemTag) at fire time and stores the
+     result on its _state.boundWorker. Display layer uses it; outcomes
+     (slow fix → dose +0.10) call _erWorkerDose. */
+  var _ER_ROLE_POOL = {
+    basinc:    ['w08', 'w02'],          // IRINA (valve), VIKTOR (mechanic)
+    sicaklik:  ['w01', 'w06'],          // SERGEI (loop-2), TATIANA (I&C)
+    guc:       ['w06', 'w04'],          // TATIANA (I&C), YURI (foreman)
+    radiation: ['w03', 'w07', 'w10']    // DMITRY (dosim), NATALYA (rad-ctl), ELENA (HP)
+  }
+  window._erWorkerPick = function (systemTag) {
+    var pool = _ER_ROLE_POOL[systemTag] || ['w04']
+    var dead = _roster.dead || []
+    var bench = _roster.benched || {}
+    /* Prefer specialists who are alive AND not benched */
+    var alive = pool.filter(function (id) { return dead.indexOf(id) === -1 && !bench[id] })
+    if (alive.length === 0) {
+      /* All specialists out — fall back to anyone alive */
+      alive = ROSTER.filter(function(w){ return dead.indexOf(w.id) === -1 && !bench[w.id] }).map(function(w){return w.id})
+    }
+    if (alive.length === 0) return null
+    var pickId = alive[Math.floor(Math.random() * alive.length)]
+    var w = ROSTER.find(function (r) { return r.id === pickId })
+    return w || null
+  }
+  window._erWorkerDose = function (workerId, amount) {
+    if (!workerId || !amount) return
+    try {
+      _roster.doses[workerId] = (_roster.doses[workerId] || 0) + amount
+      _saveRoster()
+    } catch(e){}
+  }
+  window._erWorkerLabel = function (worker, systemTag) {
+    if (!worker) return ''
+    /* "DMITRY'S LOOP" / "IRINA'S BLOCK" — system-flavoured possessive
+       so the code feels like a place, not a string. */
+    var firstName = worker.name.split(' ')[0]
+    var loc
+    switch (systemTag) {
+      case 'basinc':    loc = 'BLOCK';  break
+      case 'sicaklik':  loc = 'LOOP';   break
+      case 'guc':       loc = 'PANEL';  break
+      case 'radiation': loc = 'CHECK';  break
+      default:          loc = 'STATION'
+    }
+    return firstName + "'S " + loc
+  }
 
   /* ── DOM refs ──────────────────────────────────────────────────── */
   /* _dpPanel is the full-viewport overlay. DISPATCH no longer has a
@@ -4241,6 +4448,13 @@
   }
   function _pickWorker() {
     var pool = _idleWorkers()
+    /* J.2 + C6 — exclude workers on MEDICAL HOLD. Per-shift flag
+       (gameState._benchedWorkers) AND persistent (_roster.benched)
+       both checked. Falls back to full pool if everyone is benched. */
+    var perShift  = (gameState && gameState._benchedWorkers) || {}
+    var persistent = (_roster && _roster.benched) || {}
+    var filtered = pool.filter(function(w){ return !perShift[w.id] && !persistent[w.id] })
+    if (filtered.length > 0) pool = filtered
     if (pool.length === 0) return null
     /* Bias toward lower-dose workers so the same one doesn't die immediately */
     pool.sort(function(a, b) { return _roster.doses[a.id] - _roster.doses[b.id] })
@@ -4511,8 +4725,40 @@
     _showOverlay()
     _pushLine(script.intro, 'dp-line-sys')
     _pushLine('→ ' + script.title, 'dp-line-sys')
+    /* C3 — first time we ever dispatch this worker this run, push
+       a one-line bio so the player has a face + history before they
+       send them somewhere dangerous. Flagged returners show the
+       updated suffix. Tracked in gameState so it survives saves. */
+    try {
+      if (!gameState._voicedWorkers) gameState._voicedWorkers = {}
+      var firstCall = !gameState._voicedWorkers[w.id]
+      var isFlagged = _isFlaggedSurvivor(w.id)
+      if (firstCall && w.bio) {
+        var bioLine = w.bio
+        if (isFlagged && w.flaggedSuffix) bioLine += ' ' + w.flaggedSuffix
+        _pushLine('// PERSONNEL — ' + w.name + ' · ' + w.age + ' · ' + w.role, 'dp-line-sys')
+        _pushLine('// ' + bioLine, 'dp-line-sys')
+        if (isFlagged) {
+          _pushLine('// FLAGGED RETURN — medical threshold lowered.', 'dp-line-crit')
+        }
+        gameState._voicedWorkers[w.id] = true
+      }
+    } catch(e){}
     setTimeout(function() {
-      _pushLine('"' + w.name + ' on channel. Location secured. Awaiting orders."', 'dp-line-worker', {
+      /* C1/C6 — worker says their unique voice line on FIRST dispatch
+         (this run). Flagged returners use flaggedVoice — the player
+         hears them lying about being OK. Subsequent dispatches use
+         the generic "on channel" line so the moment doesn't lose
+         weight by repetition. */
+      var openingLine
+      try {
+        if (firstCall && isFlagged && w.flaggedVoice) openingLine = w.flaggedVoice
+        else if (firstCall && w.voiceLine)            openingLine = w.voiceLine
+        else openingLine = '"' + w.name + ' on channel. Location secured. Awaiting orders."'
+      } catch(e) {
+        openingLine = '"' + w.name + ' on channel. Location secured. Awaiting orders."'
+      }
+      _pushLine(openingLine, 'dp-line-worker', {
         typewriter: true,
         onDone: function() { setTimeout(function() { _showStep(0) }, 450) }
       })
@@ -4550,13 +4796,20 @@
     /* Log player's pick instantly (no typewriter — it's your own voice) */
     _pushLine('YOU: ' + c.label, 'dp-line-you')
 
+    /* J.2 — snapshot pre-dose so the status report can show the
+       delta the player just inflicted. */
+    var _doseBefore = _roster.doses[w.id] || 0
+
     /* Dose accrues */
     _roster.doses[w.id] = (_roster.doses[w.id] || 0) + (c.dose || 0)
     _saveRoster()
     _renderDose(w)
 
-    /* Death check — worker collapses at >= 2.0 Sv */
-    if (_roster.doses[w.id] >= 2.0) {
+    /* C6 — Death check. Flagged survivors collapse at 1.7 Sv —
+       they came back broken from the previous MEDICAL HOLD, body
+       has less left to give. Regular workers still die at 2.0. */
+    var _deathAt = _isFlaggedSurvivor(w.id) ? 1.7 : 2.0
+    if (_roster.doses[w.id] >= _deathAt) {
       setTimeout(function() { _killWorker(w, c) }, 700)
       return
     }
@@ -4568,6 +4821,48 @@
       _showStep(nextIdx)
     }
 
+    /* J.2 — Status report card pushed before _endDispatch on any
+       abort branch. Tells the player exactly what their decision
+       cost the worker: new total dose, the delta, and a status
+       word that escalates with cumulative dose. Player MUST see
+       the consequence before the channel closes. */
+    function _pushStatusReport() {
+      try {
+        var doseNow = _roster.doses[w.id] || 0
+        var delta = Math.max(0, doseNow - _doseBefore)
+        var statusWord, statusCls
+        if      (doseNow >= 1.5) { statusWord = 'MEDICAL HOLD — UNAVAILABLE FOR 2 SHIFTS'; statusCls = 'dp-line-crit' }
+        else if (doseNow >= 0.8) { statusWord = 'ELEVATED — FLAGGED FOR REVIEW';           statusCls = 'dp-line-crit' }
+        else                     { statusWord = 'STABLE — RETURNING TO POST';              statusCls = 'dp-line-sys' }
+        _pushLine('// ────────────────────────',          'dp-line-sys')
+        _pushLine('// PERSONNEL STATUS — ' + w.name,       'dp-line-sys')
+        _pushLine('// DOSE: ' + doseNow.toFixed(2) + ' Sv  (+' + delta.toFixed(2) + ' this dispatch)',
+                  delta >= 0.30 ? 'dp-line-crit' : 'dp-line-sys')
+        _pushLine('// ' + statusWord, statusCls)
+        /* C6 — MEDICAL HOLD persists across shifts. Worker is
+           bench-flagged with the shiftNumber when it happened;
+           _promoteFlaggedSurvivors at next-shift boot will release
+           them after 2 shifts as a FLAGGED returner (lower death
+           threshold + lying voice line). */
+        if (doseNow >= 1.5) {
+          try {
+            var curShift = 1
+            try { curShift = (window.saveSystem ? saveSystem.loadGame().shiftNumber : 1) || 1 } catch(e){}
+            if (!_roster.benched) _roster.benched = {}
+            if (!_roster.benched[w.id]) {
+              _roster.benched[w.id] = curShift
+              _saveRoster()
+            }
+            /* Keep the per-shift gameState flag too so _pickWorker
+               honours the bench for the rest of this shift even
+               before the persistent layer kicks in. */
+            if (!gameState._benchedWorkers) gameState._benchedWorkers = {}
+            gameState._benchedWorkers[w.id] = true
+          } catch(e){}
+        }
+      } catch(e){}
+    }
+
     setTimeout(function() {
       if (!_active) return
       if (c.fix) _applyFix(c.fix)
@@ -4576,14 +4871,26 @@
           typewriter: true,
           onDone: function() {
             if (c.abort) {
-              setTimeout(function() { _endDispatch() }, 600)
+              /* J.2 — show status BEFORE channel closes, give
+                 player 2.2s to read it. */
+              setTimeout(function() {
+                if (!_active) return
+                _pushStatusReport()
+                setTimeout(function() { _endDispatch() }, 2200)
+              }, 500)
             } else {
               setTimeout(doAdvance, 500)
             }
           }
         })
       } else {
-        if (c.abort) setTimeout(function() { _endDispatch() }, 500)
+        if (c.abort) {
+          setTimeout(function() {
+            if (!_active) return
+            _pushStatusReport()
+            setTimeout(function() { _endDispatch() }, 2200)
+          }, 400)
+        }
         else setTimeout(doAdvance, 700)
       }
     }, 550)
@@ -4683,6 +4990,10 @@
         shiftDied:   (sv2 && sv2.shiftNumber) ? sv2.shiftNumber : 0,
         choiceLabel: (choice && choice.label) ? choice.label : '[ UNKNOWN ]',
         doseAtDeath: parseFloat((_roster.doses[w.id] || 0).toFixed(2)),
+        /* C4 — recovered personal item, unique per worker.
+           Surfaces in home-terminal FILES on next shift as a
+           "// FOUND IN LOCKER" line. Cold, mundane, devastating. */
+        leftBehind:  w.leftBehind || null,
         ts:          Date.now()
       })
       localStorage.setItem('thermalMemorial', JSON.stringify(mem))

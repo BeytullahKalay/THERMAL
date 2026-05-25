@@ -119,16 +119,32 @@
     var manualKey = (window.keybinds ? window.keybinds.label('manual') : 'H')
     var miniKey   = (window.keybinds ? window.keybinds.label('erMini') : 'M')
 
+    /* A2 — bound worker label appended to the code so the player
+       reads "ER-204 — DMITRY'S LOOP" instead of an anonymous code. */
+    var boundLabel = ''
+    try {
+      if (_state.boundWorker && typeof window._erWorkerLabel === 'function') {
+        boundLabel = window._erWorkerLabel(_state.boundWorker, c.systemTag)
+      }
+    } catch(e){}
+    var codeDisplay = c.id + (boundLabel ? ' — ' + boundLabel : '')
+    var operatorLine = ''
+    if (_state.boundWorker) {
+      operatorLine = '<div class="er-operator">// ' + _state.boundWorker.name +
+                     ' · ' + _state.boundWorker.role + ' · ON STATION</div>'
+    }
+
     ov.innerHTML =
       '<div class="er-badge" id="er-badge">' +
         '<div class="er-badge-tag">// SYSTEM ERROR</div>' +
-        '<div class="er-badge-code">' + c.id + '</div>' +
+        '<div class="er-badge-code">' + codeDisplay + '</div>' +
         '<div class="er-badge-hint">CLICK TO EXPAND</div>' +
       '</div>' +
       '<div class="er-panel er-panel-minimal">' +
         '<button class="er-min-btn" id="er-min-btn" title="Minimize (' + miniKey + ')">_</button>' +
         '<div class="er-tag">// SYSTEM ERROR</div>' +
-        '<div class="er-code" id="er-code-display">' + c.id + '</div>' +
+        '<div class="er-code" id="er-code-display">' + codeDisplay + '</div>' +
+        operatorLine +
         '<div class="er-hint">// CONSULT MANUAL — PRESS [' + manualKey + ']</div>' +
       '</div>'
   }
@@ -361,9 +377,21 @@
     var bonus = 0
     if      (elapsedMs <  30000) bonus = 5
     else if (elapsedMs <  60000) bonus = 2
+    /* A3 — Bound worker outcome: fast fix = relief log line.
+       Slow fix (>60s) = worker exposure. Coupled with the named
+       display so the player understands "I left DMITRY in there
+       too long" rather than abstract math. */
+    var boundW = _state.boundWorker
     if (bonus > 0 && window.gameState) {
       window.gameState.erBonusTotal = (window.gameState.erBonusTotal || 0) + bonus
-      _log('// ER ' + fixedCode + ' — FIXED in ' + (elapsedMs/1000).toFixed(1) + 's. +$' + bonus + ' efficiency bonus.', 'normal')
+      var who = boundW ? boundW.name : 'OPERATOR'
+      _log('// ER ' + fixedCode + ' — ' + who + ' tagged out clean in ' + (elapsedMs/1000).toFixed(1) + 's. +$' + bonus + ' hazard pay.', 'normal')
+    } else if (boundW) {
+      /* Slow fix — bound worker absorbed extra exposure */
+      if (typeof window._erWorkerDose === 'function') {
+        try { window._erWorkerDose(boundW.id, 0.10) } catch(e){}
+      }
+      _log('// ER ' + fixedCode + ' — ' + boundW.name + ' was in there for ' + (elapsedMs/1000).toFixed(0) + 's. Dose +0.10 Sv logged.', 'warning')
     } else {
       _log('// ER ' + fixedCode + ' — FIXED. Resources held at recovery values; rebalance manually.', 'normal')
     }
@@ -437,6 +465,16 @@
     _state.surveyProgress = 0
     _state.condFlags = null   // H.2 — reset per-condition tracker
     _state.firedAt = Date.now()
+    /* A2 — bind this ER to a specific worker. The display layer
+       paints the worker's name into the ER panel and the FIXED /
+       slow-fix outcomes dose them. Falls back gracefully if game.js
+       binding helpers aren't loaded. */
+    _state.boundWorker = null
+    try {
+      if (typeof window._erWorkerPick === 'function') {
+        _state.boundWorker = window._erWorkerPick(code.systemTag)
+      }
+    } catch(e){}
     /* Mark body so CSS can force valves + survey cells fully clickable
      even though their host mini-games are idle. */
     document.body.classList.add('er-active')
@@ -468,6 +506,35 @@
        that the player learns ER vs other warnings by ear alone. */
     if (window.hoverSfx && window.hoverSfx.alarm) window.hoverSfx.alarm()
     _log('// SYSTEM ERROR ' + code.id + ' — ' + (code.title || ''), 'anomaly')
+
+    /* A4 — First-fire narrative for codes the operator should
+       cross-reference with predecessor logs. Per user decision: the
+       FIRST time this specific code is seen across the entire run,
+       drop a one-line breadcrumb. Subsequent fires are procedural
+       (no extra log). State persists in save._erFirstSeen. */
+    try {
+      if (window.saveSystem) {
+        var _svFs = saveSystem.loadGame()
+        var seen = _svFs._erFirstSeen || {}
+        if (!seen[code.id]) {
+          /* A5 — three-beat chain. Each beat assumes the player has
+             seen the previous one (the chain only forces at the
+             shift-pin point, but a player can luck into them out
+             of order too). Wording stays cold and factual. */
+          if (code.id === 'ER-3505') {
+            _log('// CROSS-REFERENCE: this code matches KOWALSKI\'s final shift entry. He died resolving it.', 'warning')
+          } else if (code.id === 'ER-7782') {
+            _log('// CROSS-REFERENCE: REZNOV logged this code three times. The last entry is unfinished.', 'warning')
+          } else if (code.id === 'ER-9031') {
+            _log('// CROSS-REFERENCE: ER-3505, ER-7782, ER-9031 — three lies, one cascade. OP.16\'s file was deleted because it said so.', 'warning')
+          }
+          seen[code.id] = true
+          _svFs._erFirstSeen = seen
+          saveSystem.saveGame(_svFs)
+        }
+      }
+    } catch(e){}
+
     return true
   }
 
@@ -593,7 +660,20 @@
       _schedTimer = null
       if (!_schedRunning) return
       if (_isShiftBlocked() || _state.active) {
-        _scheduleNext(false)
+        /* Sprint J.3 — Short retry when blocked (mini-game / ER
+           in progress). Old behaviour was to schedule a full
+           respawn (3-7 min real), which on fast shifts meant zero
+           ERs ever fired because mini-games kept stealing the
+           window. Now retry in 20-30 real-seconds (still speed-
+           scaled by _spawnMs). */
+        var retryMs = 20000 + Math.random() * 10000
+        var realRetry = (typeof window.__spawnMs === 'function')
+          ? window.__spawnMs(Math.floor(retryMs))
+          : Math.floor(retryMs)
+        _schedTimer = setTimeout(function() {
+          _schedTimer = null
+          if (_schedRunning) _scheduleNext(false)
+        }, realRetry)
         return
       }
       var ok = fire()  // random code
@@ -605,6 +685,52 @@
     if (typeof shiftNumber === 'number') _shiftNo = shiftNumber
     _schedRunning = true
     _scheduleNext(true)
+    /* K.1 — Shift 1 GUARANTEE. The ER mechanic is the central
+       teaching moment of the game (manual unreliability). If a
+       new player can finish shift 1 without seeing one, the
+       theme never lands. Force-fire at ~3 game-min, regardless
+       of mini-game state. Skipped if an ER already fired
+       naturally before that. */
+    if (_shiftNo === 1) {
+      var forceMs = (typeof window.__spawnMs === 'function')
+        ? window.__spawnMs(45000)   // 45 game-sec real-scaled
+        : 45000
+      setTimeout(function() {
+        if (!_schedRunning) return
+        if (_state.active) return        // one already fired — skip
+        try {
+          if (_schedTimer) { clearTimeout(_schedTimer); _schedTimer = null }
+          fire()   // random code
+        } catch(e){}
+      }, forceMs)
+    }
+    /* A4/A5 — The Manual-Lies Chain. Three forced ER fires across
+       the run, one per "lying" code, each with a unique narrative
+       breadcrumb tying it back to a dead operator. Together they
+       reconstruct what KOWALSKI / REZNOV / OP.16 found out — and
+       what got them killed or erased.
+
+         shift 3 → ER-3505  (sicaklik / loop)       → KOWALSKI thread
+         shift 5 → ER-7782  (guc / bus)             → REZNOV thread
+         shift 7 → ER-9031  (basinc / seal)         → OP.16 [DELETED] thread
+
+       Each fire is discovery-paced, not didactic. The player has
+       to put it together themselves. */
+    var _chainShift = { 3: 'ER-3505', 5: 'ER-7782', 7: 'ER-9031' }
+    if (_chainShift[_shiftNo]) {
+      var disc = (typeof window.__spawnMs === 'function')
+        ? window.__spawnMs(50000)
+        : 50000
+      var pinned = _chainShift[_shiftNo]
+      setTimeout(function() {
+        if (!_schedRunning) return
+        if (_state.active) return
+        try {
+          if (_schedTimer) { clearTimeout(_schedTimer); _schedTimer = null }
+          fire(pinned)
+        } catch(e){}
+      }, disc)
+    }
   }
 
   function stopScheduler() {

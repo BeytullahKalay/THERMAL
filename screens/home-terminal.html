@@ -1758,6 +1758,26 @@
     else if (e.key === '5') setTab('stats')
   })
 
+  /* ESC → MAIN MENU. Skipped if any overlay is currently open
+     (news-reader, log-reader, manual) so the user's existing
+     close-handlers fire first. Same CRT transition as click-nav. */
+  document.addEventListener('keydown', function(e) {
+    if (e.key !== 'Escape') return
+    /* Defer to overlays — each has its own ESC handler that closes it */
+    var newsOv = document.getElementById('news-overlay')
+    var logOv  = document.getElementById('log-overlay')
+    var manOv  = document.getElementById('manual-overlay')
+    if (newsOv && newsOv.style.display && newsOv.style.display !== 'none') return
+    if (logOv  && logOv.style.display  && logOv.style.display  !== 'none') return
+    if (manOv  && manOv.classList && manOv.classList.contains('mn-open')) return
+    e.preventDefault()
+    try {
+      var t = document.querySelector('.terminal')
+      if (t) t.style.animation = 'crtOff 0.65s cubic-bezier(0.4, 0, 1, 1) forwards'
+    } catch(err){}
+    setTimeout(function(){ window.location.href = 'menu.html' }, 620)
+  })
+
   /* ── Sleep button gating ─────────────────────────────────────── */
   var btnSleep   = document.getElementById('btn-sleep')
   var hint       = document.getElementById('action-hint')
@@ -2231,12 +2251,61 @@
       listEl.appendChild(div)
     })
 
+    /* ── C2 — PERSONNEL alt-section ───────────────────────────────
+       All 10 workers listed with bio + status. Read-only roster
+       view so the player sees who's alive, who's benched, who's
+       a FLAGGED returner. Per user decision: lives inside FILES,
+       not its own tab. */
+    try {
+      var roster = JSON.parse(localStorage.getItem('thermalWorkerRoster') || '{}')
+      var dead   = roster.dead || []
+      var benched = roster.benched || {}
+      var flagSurv = roster.flaggedSurvivors || {}
+      var rosterDoses = roster.doses || {}
+      var workers = window.ROSTER || null
+      /* Only render if game.js is loaded — home-terminal can be
+         opened before it (e.g. screenshot mode). */
+      if (workers && workers.length > 0) {
+        var persHeader = document.createElement('div')
+        persHeader.className = 'memorial-section-header'
+        persHeader.textContent = '// PERSONNEL — UNIT 4 NIGHT ROTATION'
+        listEl.appendChild(persHeader)
+        workers.forEach(function(w, wi) {
+          var row = document.createElement('div')
+          row.className = 'memorial-entry'
+          row.style.animationDelay = (wi * 0.03) + 's'
+          var isDead   = dead.indexOf(w.id) !== -1
+          var isBench  = !!benched[w.id]
+          var isFlag   = !!flagSurv[w.id]
+          var dose     = (typeof rosterDoses[w.id] === 'number') ? rosterDoses[w.id].toFixed(2) : '0.00'
+          var statusTxt, statusCol
+          if      (isDead)  { statusTxt = 'DECEASED';        statusCol = '#7a3a1a' }
+          else if (isBench) { statusTxt = 'MEDICAL HOLD';    statusCol = '#7a5a1a' }
+          else if (isFlag)  { statusTxt = 'FLAGGED RETURN';  statusCol = '#7a5a1a' }
+          else              { statusTxt = 'ACTIVE';          statusCol = '#5a8a3a' }
+          var bioLine = w.bio || ''
+          if (isFlag && w.flaggedSuffix) bioLine += ' ' + w.flaggedSuffix
+          row.innerHTML =
+            '<div class="memorial-name" style="' + (isDead ? 'text-decoration:line-through;opacity:0.65;' : '') + '">' +
+              w.name + ' · ' + w.age + ' · ' + w.role + '</div>' +
+            '<div class="memorial-meta">' + bioLine + '</div>' +
+            '<div class="memorial-cause">' +
+              '<span class="memorial-cause-label">// STATUS:</span>' +
+              '<span style="color:' + statusCol + ';">' + statusTxt + '</span>' +
+              '<span style="color:#3a5a1a;margin-left:14px;">// DOSE: ' + dose + ' Sv</span>' +
+            '</div>'
+          listEl.appendChild(row)
+        })
+      }
+    } catch(e) { /* roster unavailable — silently skip */ }
+
     /* ── Sprint I.3 — MEMORIAL ────────────────────────────────────
        Render every worker the player has killed across all shifts.
        Persistent across a run (thermalMemorial localStorage). Each
        entry shows the choice label that put them there — the player
        has to look at what they decided. No hover affordance, no
-       "open" button — the entry isn't a file. It's a name. */
+       "open" button — the entry isn't a file. It's a name.
+       C4 — Now also surfaces each worker's leftBehind item. */
     try {
       var memorial = JSON.parse(localStorage.getItem('thermalMemorial') || '[]')
       if (memorial.length > 0) {
@@ -2257,6 +2326,17 @@
           var ship  = (typeof m.shiftDied === 'number') ? m.shiftDied : 0
           var cause = (m.choiceLabel || '[ UNKNOWN ]').toString()
           var dose  = (typeof m.doseAtDeath === 'number') ? m.doseAtDeath.toFixed(2) : '?.??'
+          /* C4 — recovered personal effect line, if memorialised
+             with one. Plain text, no styling beyond the .memorial-
+             cause base — reads like a property-disposal record. */
+          var leftLine = ''
+          if (m.leftBehind) {
+            leftLine =
+              '<div class="memorial-cause">' +
+                '<span class="memorial-cause-label">// RECOVERED FROM LOCKER:</span>' +
+                m.leftBehind +
+              '</div>'
+          }
           row.innerHTML =
             '<div class="memorial-name">' + name + '</div>' +
             '<div class="memorial-meta">' + age + ' &middot; ' + role +
@@ -2265,7 +2345,8 @@
             '<div class="memorial-cause">' +
               '<span class="memorial-cause-label">' +
                 _t('memorial.lineCause', '// CAUSE OF DEATH ON RECORD:') +
-              '</span>' + cause + '</div>'
+              '</span>' + cause + '</div>' +
+            leftLine
           listEl.appendChild(row)
         })
       }

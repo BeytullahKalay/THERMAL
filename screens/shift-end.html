@@ -816,6 +816,16 @@
 
   </div>
 
+  <!-- B2 — Handover note picker. Player picks one preset line per
+       shift (or skips). Choices accumulate in save._handoverNotes
+       and print in the WIN epilogue as "// YOUR HANDOVER NOTES". -->
+  <div id="handover-picker" style="display:none;border:1px solid var(--border);padding:10px 14px;margin:14px 14px 0;background:#0b0f05;">
+    <div style="font-family:'Share Tech Mono',monospace;font-size:10px;letter-spacing:2px;color:var(--phosphor-dim);margin-bottom:8px;">
+      // ADD TO YOUR HANDOVER NOTE — ONE LINE (OPTIONAL)
+    </div>
+    <div id="handover-options" style="display:flex;flex-direction:column;gap:4px;"></div>
+  </div>
+
   <!-- ACTION BAR -->
   <div class="action-bar">
     <button class="action-btn btn-menu-end" id="btn-menu">[ MAIN MENU ]</button>

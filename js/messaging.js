@@ -108,11 +108,36 @@
 
   /* ── Per-character typewriter with audible tick ─────────────────
      Used by playMessages for fresh Elena lines. Replays (replay-
-     Messages) render instantly — no replay-typewriter. */
+     Messages) render instantly — no replay-typewriter.
+     K.2 — Click-to-skip: while a message types, any click on the
+     log instantly completes the current message and triggers the
+     normal onDone path (so the next message + decision can follow
+     without disruption). */
+  var _skipCurrent = false
+  var _typingTimer = null
+  /* Module-scoped reference to the current message's finish() so the
+     click handler can force-complete it without depending on the
+     next setTimeout fire. Bug fix for K.2 soft-lock: clearTimeout
+     alone leaves onDone uncalled → next message never starts. */
+  var _finishFn = null
   function typeInto(textEl, text, onDone) {
     var i = 0
+    var done = false
+    _skipCurrent = false
+    function finish() {
+      if (done) return
+      done = true
+      textEl.textContent = text
+      scrollBottom()
+      _typingTimer = null
+      _finishFn = null
+      if (onDone) onDone()
+    }
+    _finishFn = finish
     function step() {
-      if (i >= text.length) { if (onDone) onDone(); return }
+      if (done) return
+      if (_skipCurrent) { finish(); return }
+      if (i >= text.length) { finish(); return }
       var ch = text.charAt(i)
       textEl.textContent = textEl.textContent + ch
       if (ch !== ' ' && ch !== '\n' && ch !== '\t' &&
@@ -125,10 +150,27 @@
       if (ch === '.' || ch === '?' || ch === '!') delay = 240
       else if (ch === ',' || ch === ';' || ch === ':') delay = 150
       else if (ch === ' ') delay = 38
-      setTimeout(step, delay)
+      _typingTimer = setTimeout(step, delay)
     }
     step()
   }
+  /* Single delegated click handler on the message log — calls
+     finish() directly so onDone fires and the next message starts.
+     Setting only _skipCurrent + clearing the timer (old behaviour)
+     left the loop dead — soft-lock. */
+  if (logEl) {
+    logEl.addEventListener('click', function() {
+      _skipCurrent = true
+      if (_typingTimer) { clearTimeout(_typingTimer); _typingTimer = null }
+      if (_finishFn) {
+        try { _finishFn() } catch(e){}
+      }
+      _skipGap = true
+    })
+  }
+  /* Gap-skip flag — playMessages reads this to fast-forward the
+     typing-indicator dwell between consecutive messages. */
+  var _skipGap = false
 
   function makeTyping() {
     var el = document.createElement('div')
@@ -372,6 +414,22 @@
     for (var i = 0; i < seed.length; i++) h = (h * 31 + seed.charCodeAt(i)) | 0
     return FAMILY_LETTER_TEMPLATES[Math.abs(h) % FAMILY_LETTER_TEMPLATES.length]
   }
+  /* C5 — look up the worker by id and return their UNIQUE letter
+     written in ROSTER. Falls back to the template pool only if the
+     save was made before bios shipped, or if window.ROSTER isn't
+     available (loaded in a screen without game.js). */
+  function _letterForWorker(workerId, seedFallback) {
+    try {
+      if (window.ROSTER && workerId) {
+        for (var i = 0; i < window.ROSTER.length; i++) {
+          if (window.ROSTER[i].id === workerId && window.ROSTER[i].familyLetter) {
+            return window.ROSTER[i].familyLetter
+          }
+        }
+      }
+    } catch(e){}
+    return _pickLetterTemplate(seedFallback || workerId || '')
+  }
   function _renderFamilyLetters() {
     var mem = []
     try { mem = JSON.parse(localStorage.getItem('thermalMemorial') || '[]') } catch(e){ return }
@@ -384,7 +442,7 @@
       var name = (m.name || '——').toString()
       /* "Last-name family" — strip first-name initial if present */
       var family = name.replace(/\s*[A-Z]\.\s*$/, '').toUpperCase()
-      var body = _pickLetterTemplate(name + idx)
+      var body = _letterForWorker(m.id, name + idx)
       var block = document.createElement('div')
       block.className = 'msg-block family-letter'
       block.style.cssText =
